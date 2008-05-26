@@ -38,6 +38,7 @@ static int initSound(lua_State *L) {
 	atexit(Mix_CloseAudio);
 	return 0;
 }
+
 /*******************************************
 	Sound functions
 ********************************************/
@@ -62,10 +63,13 @@ static int Lua_Sound_load(lua_State *L) {
 static int Lua_Sound_play(lua_State *L) {
 	Mix_Chunk **sample = checksound(L);
 	int loops = luaL_optint(L, 2, 1);	/* default: play sample one time */
-	int ms = luaL_optint(L, 3, 0);		/* default: no fade-in */
+	
+	/* fade-in functionality has been disabled due to bugs in SDL-Mixer 1.2.8 */
+	//int ms = luaL_optint(L, 3, 0);		/* default: no fade-in */
 	luaL_argcheck(L, loops>=0, 2, "number of loops has to be positive");
-	luaL_argcheck(L, ms>=0, 3, "Fade-in time has to be positive");
-	int channel = Mix_FadeInChannel(-1, *sample, loops-1, ms);
+	//luaL_argcheck(L, ms>=0, 3, "Fade-in time has to be positive");
+	//int channel = Mix_FadeInChannel(-1, *sample, loops-1, 100);
+	int channel = Mix_PlayChannel(-1, *sample, loops-1);
 	if (channel == -1)
 		fprintf(stderr, "Error playing sound: %s\n", Mix_GetError());
 	else
@@ -107,14 +111,17 @@ static int Lua_Sound_resume (lua_State *L) {
 	return 0;
 }
 
-static int Lua_Sound_halt (lua_State *L) {
+static int Lua_Sound_stop (lua_State *L) {
 	Mix_Chunk **sample = checksound(L);
-	int ms = luaL_optint(L, 2, 0);	/* default: no fade-out */
-	luaL_argcheck(L, ms>=0, 2, "Fade-out time has to be positive");
+	
+	/* fade-out functionality has been disabled due to bugs in SDL-Mixer 1.2.8 */
+	//int ms = luaL_optint(L, 2, 0);	/* default: no fade-out */
+	//luaL_argcheck(L, ms>=0, 2, "Fade-out time has to be positive");
 	int i;
 	for (i=0; i<CHANNELS; i++) {
 		if (channels[i] == *sample)
-			Mix_FadeOutChannel(i, ms);
+			Mix_HaltChannel(i);
+			//Mix_FadeOutChannel(i, ms);
 	}
 	return 0;
 }
@@ -216,7 +223,7 @@ static int Lua_Music_rewind (lua_State *L) {
 	return 0;
 }
 
-static int Lua_Music_halt (lua_State *L) {
+static int Lua_Music_stop (lua_State *L) {
 	int ms = luaL_optint(L, 1, 0);
 	luaL_argcheck(L, ms>=0, 1, "Fade-out time has to be positive");
 	Mix_FadeOutMusic(ms);
@@ -247,16 +254,16 @@ static int music_tostring(lua_State *L) {
 }
 
 static const struct luaL_Reg soundlib [] = {
-	{"addSound", Lua_Sound_load},
-	{"addMusic", Lua_Music_load},
-	{"setMusicVolume", Lua_Music_setVolume},
-	{"getMusicVolume", Lua_Music_getVolume},
-	{"pauseMusic", Lua_Music_pause},
-	{"resumeMusic", Lua_Music_resume},
-	{"rewindMusic", Lua_Music_rewind},
-	{"haltMusic", Lua_Music_halt},
-	{"isMusicPlaying", Lua_Music_isPlaying},
-	{"isMusicPaused", Lua_Music_isPaused},
+	{"addSound",		Lua_Sound_load},
+	{"addMusic",		Lua_Music_load},
+	{"setMusicVolume",	Lua_Music_setVolume},
+	{"getMusicVolume",	Lua_Music_getVolume},
+	{"pauseMusic",		Lua_Music_pause},
+	{"resumeMusic",		Lua_Music_resume},
+	{"rewindMusic",		Lua_Music_rewind},
+	{"stopMusic",		Lua_Music_stop},
+	{"isMusicPlaying",	Lua_Music_isPlaying},
+	{"isMusicPaused",	Lua_Music_isPaused},
 	{NULL, NULL}
 };
 
@@ -266,7 +273,7 @@ static const struct luaL_Reg soundlib_m [] = {
 	{"play", 			Lua_Sound_play},
 	{"pause",			Lua_Sound_pause},
 	{"resume",			Lua_Sound_resume},
-	{"halt",			Lua_Sound_halt},
+	{"stop",			Lua_Sound_stop},
 	{"isPlaying",		Lua_Sound_isPlaying},
 	{"isPaused",		Lua_Sound_isPaused},
 	{"setVolume",		Lua_Sound_setVolume},
@@ -278,7 +285,6 @@ static const struct luaL_Reg musiclib_m [] = {
 	{"__gc",			music_gc},
 	{"__tostring",		music_tostring},
 	{"play",			Lua_Music_play},
-	{"setVolume",		Lua_Music_setVolume},
 	{NULL, NULL}
 };
 

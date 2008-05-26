@@ -220,12 +220,12 @@ static int Lua_Graphics_showCursor(lua_State *L) {
 	return 1;
 }
 
-static int Lua_Graphics_getDisplayWidth(lua_State *L) {
+static int Lua_Graphics_getWindowWidth(lua_State *L) {
 	lua_pushinteger(L, screen->w);
 	return 1;
 }
 
-static int Lua_Graphics_getDisplayHeight(lua_State *L) {
+static int Lua_Graphics_getWindowHeight(lua_State *L) {
 	lua_pushinteger(L, screen->h);
 	return 1;
 }
@@ -240,7 +240,7 @@ static int Lua_Image_load(lua_State *L) {
 	SDL_RWops *temp;
 	SDL_Surface *surface;
 	if (SDL_GetVideoSurface() == NULL)
-		return luaL_error(L, "Error: Initialize SDL before loading images.\n");
+		return luaL_error(L, "Error: Run game.init() before loading images.\n");
 	temp = PHYSFSRWOPS_openRead(filename);
 	if (!temp)
 		return luaL_error(L, "Error loading file '%s': %s", filename, SDL_GetError());
@@ -350,7 +350,7 @@ static int Lua_Graphics_draw(lua_State *L){
 	int color[] = {255, 255, 255, 255};
 	GLfloat size = 1.0f;
 	int connect = 0;
-	int filled = 0;
+	int fill = 0;
 	int pixelList = 0;
 	int antialias = 0;
 
@@ -393,12 +393,12 @@ static int Lua_Graphics_draw(lua_State *L){
 	lua_getfield(L, -1, "connect");
 	connect = lua_toboolean(L, -1);
 	lua_pop(L, 1);
-	/* check for "filled"-entry */
-	lua_getfield(L, -1, "filled");
-	filled = lua_toboolean(L, -1);
+	/* check for "fill"-entry */
+	lua_getfield(L, -1, "fill");
+	fill = lua_toboolean(L, -1);
 	lua_pop(L, 1);
-	/* check for "antialias"-entry */
-	lua_getfield(L, -1, "antialias");
+	/* check for "antialiasing"-entry */
+	lua_getfield(L, -1, "antialiasing");
 	antialias = lua_toboolean(L, -1);
 	lua_pop(L, 1);
 	/* check for "pixellist"-entry */
@@ -406,7 +406,7 @@ static int Lua_Graphics_draw(lua_State *L){
 	pixelList = lua_toboolean(L, -1);
 	lua_pop(L, 1);
 
-	if (!connect && !filled && !pixelList && (n % 4 != 0) && (n > 2)) {
+	if (!connect && !fill && !pixelList && (n % 4 != 0) && (n > 2)) {
 		free(coords);
 		luaL_argerror(L, 1, "unconnected lines need an even number of coordinate-pairs");
 	}
@@ -428,7 +428,7 @@ static int Lua_Graphics_draw(lua_State *L){
 	glDisable(GL_TEXTURE_2D);
 	if (n == 2 || pixelList)
 		glBegin(GL_POINTS);
-	else if (filled) {
+	else if (fill) {
 		if (n == 4)
 			glBegin(GL_LINE_STRIP);
 		else if (n == 6)
@@ -455,8 +455,8 @@ static int Lua_Graphics_draw(lua_State *L){
 
 static const struct luaL_Reg graphicslib [] = {
 	{"init", 				Lua_Graphics_init},
-	{"getDisplayWidth", 	Lua_Graphics_getDisplayWidth},
-	{"getDisplayHeight", 	Lua_Graphics_getDisplayHeight},
+	{"getWindowWidth", 		Lua_Graphics_getWindowWidth},
+	{"getWindowHeight", 	Lua_Graphics_getWindowHeight},
 	{"showCursor", 			Lua_Graphics_showCursor},
 	{"getTicks", 			Lua_Graphics_getTicks},
 	{"addImage", 			Lua_Image_load},

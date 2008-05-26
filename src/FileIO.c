@@ -88,6 +88,10 @@ void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
 		/* change the filename to its basename -> later call to FS_runLuaFile will find it in the path */
 		*filename = base;
 	}
+	
+	/* allow symlinks */
+	PHYSFS_permitSymbolicLinks(1);
+	
 	atexit(FS_Quit);
 
 	char ** arr = PHYSFS_getSearchPath();
