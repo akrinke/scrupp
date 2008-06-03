@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     SDL_Event event;
     Uint32 lastTick;	/* Last iteration's tick value */
     Uint32 delta = 0;
-	int i, n;
+	int i, n, narg, err;
 	int e_flag = 0;
 	char *filename = NULL;
 
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
 
     /* create arg-table for the command-line-arguments */
     /* taken from lua.c of Lua */
-	int narg = argc - (n+1); /* number of arguments to the script */
+	narg = argc - (n+1); /* number of arguments to the script */
 	luaL_checkstack(L, narg + 3, "too many arguments to script");
 	for (i=n+1; i<argc; i++)
 		lua_pushstring(L, argv[i]);
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
     /* run main lua file */
     /* if two arguments are given (then the first has to be '-e'), */
     /* the second one will be executed as Lua file */
-    int err = FS_runLuaFile(filename, narg);
+    err = FS_runLuaFile(filename, narg);
     if (err && !check_for_exit())
 		error(L, "Error executing %s: [%s\n", filename, lua_tostring(L, -1)+8);
 

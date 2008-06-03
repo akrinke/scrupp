@@ -44,8 +44,10 @@ static int initSound(lua_State *L) {
 ********************************************/
 static int Lua_Sound_load(lua_State *L) {
 	Mix_Chunk *sample;
+	Mix_Chunk **ptr;
 	SDL_RWops *src;
 	const char* filename = luaL_checkstring(L, 1);
+
 	src = PHYSFSRWOPS_openRead(filename);
 	if (!src)
 		return luaL_error(L, "Error loading sound '%s': %s", filename, SDL_GetError());
@@ -53,7 +55,7 @@ static int Lua_Sound_load(lua_State *L) {
 	if (!sample)
 		return luaL_error(L, "Error loading sound '%s': %s\n", filename, Mix_GetError());
 	/* new userdata for pointer to sample */
-	Mix_Chunk **ptr = lua_newuserdata(L, sizeof(Mix_Chunk*));
+	ptr = lua_newuserdata(L, sizeof(Mix_Chunk*));
 	*ptr = sample;
 	luaL_getmetatable(L, "game.sound");
 	lua_setmetatable(L, -2);
@@ -62,6 +64,7 @@ static int Lua_Sound_load(lua_State *L) {
 
 static int Lua_Sound_play(lua_State *L) {
 	Mix_Chunk **sample = checksound(L);
+	int channel;
 	int loops = luaL_optint(L, 2, 1);	/* default: play sample one time */
 	
 	/* fade-in functionality has been disabled due to bugs in SDL-Mixer 1.2.8 */
@@ -69,7 +72,7 @@ static int Lua_Sound_play(lua_State *L) {
 	luaL_argcheck(L, loops>=0, 2, "number of loops has to be positive");
 	//luaL_argcheck(L, ms>=0, 3, "Fade-in time has to be positive");
 	//int channel = Mix_FadeInChannel(-1, *sample, loops-1, 100);
-	int channel = Mix_PlayChannel(-1, *sample, loops-1);
+	channel = Mix_PlayChannel(-1, *sample, loops-1);
 	if (channel == -1)
 		fprintf(stderr, "Error playing sound: %s\n", Mix_GetError());
 	else
@@ -168,8 +171,10 @@ static int sound_tostring(lua_State *L) {
 ********************************************/
 static int Lua_Music_load(lua_State *L) {
 	Mix_Music *music;
+	Mix_Music **ptr;
 	SDL_RWops *src;
 	const char* filename = luaL_checkstring(L, 1);
+
 	src = PHYSFSRWOPS_openRead(filename);
 	if (!src)
 		return luaL_error(L, "Error loading music '%s': %s", filename, SDL_GetError());
@@ -177,7 +182,7 @@ static int Lua_Music_load(lua_State *L) {
 	if (!music)
 		return luaL_error(L, "Error loading music '%s': %s\n", filename, Mix_GetError());
 	/* new userdata for pointer to music */
-	Mix_Music **ptr = lua_newuserdata(L, sizeof(Mix_Music*));
+	ptr = lua_newuserdata(L, sizeof(Mix_Music*));
 	*ptr = music;
 	luaL_getmetatable(L, "game.music");
 	lua_setmetatable(L, -2);

@@ -17,11 +17,12 @@ void error (lua_State *L, const char *fmt, ...) {
 
 /* Dumps the stack - DEBUG function */
 void stackDump (lua_State *L) {
-	printf("stackDump: ");
-	int i;
+	int i, t;
 	int top = lua_gettop(L);
+	
+	printf("stackDump: ");
 	for (i = 1; i <= top; i++) {  /* repeat for each level */
-	int t = lua_type(L, i);
+	t = lua_type(L, i);
 	switch (t) {
 		case LUA_TSTRING:  /* strings */
 			printf("`%s'", lua_tostring(L, i));

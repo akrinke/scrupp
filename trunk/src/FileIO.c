@@ -8,7 +8,6 @@
 #include "Macros.h"
 #include "FileIO.h"
 
-#include <unistd.h>		/* chdir */
 #include <string.h>
 #include <stdlib.h>
 #include <physfs.h>
@@ -41,9 +40,15 @@ static void splitPath(const char *path, char **dirname, char **basename) {
     }
 }
 
+void FS_Quit() {
+	fprintf(stdout,"Running FS_Quit.\n");
+	PHYSFS_deinit();
+}
+
 void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
 	char *dir = NULL;
 	char *base = NULL;
+	char ** arr = NULL;
 	/* initialize PhysFS */
 	if ( !PHYSFS_init(argv[0]) ) {
 		fprintf(stderr,"Error: Couldn't initialize PhysFS: %s.\n", PHYSFS_getLastError());
@@ -94,34 +99,55 @@ void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
 	
 	atexit(FS_Quit);
 
-	char ** arr = PHYSFS_getSearchPath();
+	arr = PHYSFS_getSearchPath();
 	while (*arr != NULL)
 		printf("search path: %s\n", *arr++);
 
 }
 
-void FS_Quit() {
-	fprintf(stdout,"Running FS_Quit.\n");
-	PHYSFS_deinit();
-}
-
-
 int FS_runLuaFile(const char *filename, int narg) {
 	char *buffer;		/* buffer for the file */
 	char *entryPoint;	/* entry point of file (differs from buffer, if "#!" in the first line is skipped */
-	int fileLength;
 	int error;
+	PHYSFS_file *Hndfile = NULL;
+	PHYSFS_sint64 fileLength, size;
 	if (PHYSFS_exists(filename) == 0) {
 		fprintf(stderr, "Error executing %s: file not found.\n", filename);
 		lua_pop(L, narg);
 		return 0;
 	}
 	fprintf(stdout, "Executing \"%s\"...\n", filename);
-	PHYSFS_file* Hndfile = PHYSFS_openRead(filename); /* open file to read! */
-	buffer = malloc(PHYSFS_fileLength(Hndfile));
-	fileLength = PHYSFS_read(Hndfile, buffer, 1, PHYSFS_fileLength(Hndfile));
+	Hndfile = PHYSFS_openRead(filename); /* open file to read! */
+	if (Hndfile == NULL) {
+		fprintf(stderr, "Error while reading from %s: %s\n", filename, PHYSFS_getLastError());
+		lua_pop(L, narg);
+		return 0;
+	}
+	size = PHYSFS_fileLength(Hndfile);
+	if (size == -1) {
+		fprintf(stderr, "Error while determining the size of %s\n", filename);
+		lua_pop(L, narg);
+		return 0;
+	}
+	buffer = (char *)malloc((unsigned int)size);
+	if (buffer == NULL) { 
+		fprintf(stderr, "Error loading %s: Insufficient memory available\n", filename);
+		lua_pop(L, narg);
+		return 0;
+	}
+	fileLength = PHYSFS_read(Hndfile, buffer, 1, (unsigned int)size);
+	if (fileLength < size) {
+		fprintf(stderr, "Error while reading from %s: %s\n", filename, PHYSFS_getLastError());
+		lua_pop(L, narg);
+		return 0;
+	}
 	/* close the file */
-	PHYSFS_close(Hndfile);
+	error = PHYSFS_close(Hndfile);
+	if (error == 0) {
+		fprintf(stderr, "Error closing %s: %s\n", filename, PHYSFS_getLastError());
+		lua_pop(L, narg);
+		return 0;
+	}
 	/* skip #! if nescessary */
 	entryPoint = buffer;
 	if (buffer[0] == '#') {
@@ -130,7 +156,7 @@ int FS_runLuaFile(const char *filename, int narg) {
 			fileLength--;
 		}
 	}
-	error =	luaL_loadbuffer(L, entryPoint, fileLength, filename);
+	error =	luaL_loadbuffer(L, entryPoint, (size_t)fileLength, filename);
 	lua_insert(L, -(narg+1));
 	if (!error)
 		error = lua_pcall(L, narg, 0, 0);
