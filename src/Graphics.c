@@ -114,13 +114,13 @@ int blitTexture(int x, int y, Lua_Image *image, Rect *clip_rect) {
 	glColor4ub( 255, 255, 255, image->alpha);
 	glBegin( GL_QUADS );
 		glTexCoord2f( texCoords.x1, texCoords.y1 );
-		glVertex3f( x, y, 0 );
+		glVertex3i( x, y, 0 );
 		glTexCoord2f( texCoords.x1, texCoords.y2 );
-		glVertex3f( x, y+height, 0 );
+		glVertex3i( x, y+height, 0 );
 		glTexCoord2f( texCoords.x2, texCoords.y2 );
-		glVertex3f( x+width, y+height, 0 );
+		glVertex3i( x+width, y+height, 0 );
 		glTexCoord2f( texCoords.x2, texCoords.y1 );
-		glVertex3f( x+width, y, 0 );
+		glVertex3i( x+width, y, 0 );
 	glEnd();
 	return 0;
 }
@@ -190,9 +190,9 @@ static Uint32 getpixel(SDL_Surface *surface, int x, int y) {
 
 static int Lua_Graphics_init(lua_State *L) {
 	const char* appName = luaL_checkstring(L, 1);
-	double width = luaL_checkint(L, 2);
-	double height = luaL_checkint(L, 3);
-	double bpp = luaL_checkint(L, 4);
+	int width = luaL_checkint(L, 2);
+	int height = luaL_checkint(L, 3);
+	int bpp = luaL_checkint(L, 4);
 	int fullscreen;
 	luaL_checkany(L, 5);
 	fullscreen = lua_toboolean(L, 5);
@@ -239,6 +239,8 @@ static int Lua_Image_load(lua_State *L) {
 	const char* filename = luaL_checkstring(L, 1);
 	SDL_RWops *temp;
 	SDL_Surface *surface;
+	Lua_Image *ptr;
+
 	if (SDL_GetVideoSurface() == NULL)
 		return luaL_error(L, "Error: Run game.init() before loading images.\n");
 	temp = PHYSFSRWOPS_openRead(filename);
@@ -247,7 +249,7 @@ static int Lua_Image_load(lua_State *L) {
 	surface = IMG_Load_RW(temp, 1);
 	if (!surface)
 		return luaL_error(L, "Error loading file '%s': %s", filename, IMG_GetError());
-	Lua_Image *ptr = lua_newuserdata(L, sizeof(Lua_Image));
+	ptr = lua_newuserdata(L, sizeof(Lua_Image));
 	createTexture(surface, ptr, 255);
 	SDL_FreeSurface(surface);
 	luaL_getmetatable(L, "game.image");

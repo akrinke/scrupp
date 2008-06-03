@@ -18,6 +18,7 @@
 static int Lua_Font_load(lua_State *L) {
 	TTF_Font *font;
 	SDL_RWops *src;
+	TTF_Font **ptr;
 	const char* filename = luaL_checkstring(L, 1);
 	int size = luaL_checkint(L, 2);
 	src = PHYSFSRWOPS_openRead(filename);
@@ -27,7 +28,7 @@ static int Lua_Font_load(lua_State *L) {
 	if (!font)
 		return luaL_error(L, "Error loading font '%s': %s\n", filename, TTF_GetError());
 	/* new userdata for pointer to font */
-	TTF_Font **ptr = lua_newuserdata(L, sizeof(TTF_Font*));
+	ptr = lua_newuserdata(L, sizeof(TTF_Font*));
 	*ptr = font;
 	luaL_getmetatable(L, "game.font");
 	lua_setmetatable(L, -2);
@@ -61,6 +62,9 @@ static int Lua_Font_print(lua_State *L) {
 	int x, y;
 	const char *text;
 	int color[] = {255, 255, 255, 255};
+	SDL_Color scolor;
+	SDL_Surface *text_surface;
+	Lua_Image image;
 
 	if (lua_istable(L, 2)) {
 		/* x and y are array elements 1 and 2 */
@@ -88,9 +92,9 @@ static int Lua_Font_print(lua_State *L) {
 		text = luaL_checkstring(L, 4);
 		//luaL_argcheck(L, *text != '\0', 4, "empty string");
 	}
-	SDL_Color scolor = {(Uint8)color[0], (Uint8)color[1], (Uint8)color[2]};
-	SDL_Surface *text_surface;
-	Lua_Image image;
+	scolor.r = (Uint8)color[0];
+	scolor.g = (Uint8)color[1];
+	scolor.b = (Uint8)color[2];	
 	if (!(text_surface = TTF_RenderText_Blended(*font_ptr, text, scolor)))
 		return luaL_error(L, "Error rendering text: %s\n", TTF_GetError());
 	createTexture(text_surface, &image, (GLubyte)color[3]);
@@ -105,6 +109,9 @@ static int Lua_Font_generateImage(lua_State *L) {
 	TTF_Font **font_ptr = checkfont(L);
 	const char *text;
 	int color[] = {255, 255, 255, 255};
+	SDL_Color scolor;
+	SDL_Surface *text_surface;
+	Lua_Image *ptr;
 
 	if (lua_istable(L, 2)) {
 		/* the text is array element 1 */
@@ -124,11 +131,12 @@ static int Lua_Font_generateImage(lua_State *L) {
 	} else {
 		text = luaL_checkstring(L, 2);
 	}
-	SDL_Color scolor = {(Uint8)color[0], (Uint8)color[1], (Uint8)color[2]};
-	SDL_Surface *text_surface;
+	scolor.r = (Uint8)color[0];
+	scolor.g = (Uint8)color[1];
+	scolor.b = (Uint8)color[2];
 	if (!(text_surface = TTF_RenderText_Blended(*font_ptr, text, scolor)))
 		return luaL_error(L, "Error rendering text: %s\n", TTF_GetError());
-	Lua_Image *ptr = lua_newuserdata(L, sizeof(Lua_Image));
+	ptr = lua_newuserdata(L, sizeof(Lua_Image));
 	createTexture(text_surface, ptr, (GLubyte)color[3]);
 	SDL_FreeSurface(text_surface);
 	luaL_getmetatable(L, "game.image");

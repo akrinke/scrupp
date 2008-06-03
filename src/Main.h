@@ -11,7 +11,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
+#ifdef __unix__
+# include <unistd.h>
+#elif __MSDOS__ || __WIN32__ || _MSC_VER
+# include <direct.h>
+# define chdir _chdir
+#endif
 
 #include <SDL.h>
 
