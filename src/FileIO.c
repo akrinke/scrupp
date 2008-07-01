@@ -51,11 +51,11 @@ void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
 	char ** arr = NULL;
 	/* initialize PhysFS */
 	if ( !PHYSFS_init(argv[0]) ) 
-		error(L, "Error: Couldn't initialize PhysFS: %s.\n", PHYSFS_getLastError());
+		error(L, "Error: Couldn't initialize PhysFS: %s.", PHYSFS_getLastError());
 	
 	/* in every case: append base dir to search path */
 	if ( !PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1) )
-		error(L, "Error: Could not add base dir to search path: %s.\n", PHYSFS_getLastError());
+		error(L, "Error: Could not add base dir to search path: %s.", PHYSFS_getLastError());
 	
 	/* if an archive (or directory) is given, try to mount it */
 	if (!e_flag && argv[1] != NULL) {
@@ -63,14 +63,14 @@ void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
 		if (chdir(argv[1]) == 0) {
 			/* prepend the new working directory to the search path */
 			if (!PHYSFS_addToSearchPath(".", 0))
-				error(L, "Error: Could not add directory '%s' to search path: %s.\n", argv[1], PHYSFS_getLastError());
+				error(L, "Error: Could not add directory '%s' to search path: %s.", argv[1], PHYSFS_getLastError());
 		} else {
 			/* chdir was unsuccessful -> archive was probably given on command line */
 			splitPath(argv[1], &dir, &base);
 			/* change the working directory to the directory with the archive */
 			chdir(dir);
 			if (!PHYSFS_addToSearchPath(base, 0))
-				error(L, "Error: Could not add archive '%s' to search path: %s.\n", argv[1], PHYSFS_getLastError());
+				error(L, "Error: Could not add archive '%s' to search path: %s.", argv[1], PHYSFS_getLastError());
 		}
 	/* if a filname to execute is given, add its directory to the search path */
 	} else if (e_flag && *filename != NULL) {
@@ -79,7 +79,7 @@ void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
 		chdir(dir);
 		/* prepend the new working directory to the search path */
 		if (!PHYSFS_addToSearchPath(".", 0))
-			error(L, "Error: Could not add directory containing '%s' to search path: %s.\n", base, PHYSFS_getLastError());
+			error(L, "Error: Could not add directory containing '%s' to search path: %s.", base, PHYSFS_getLastError());
 		/* change the filename to its basename -> later call to FS_runLuaFile will find it in the path */
 		*filename = base;
 	}
