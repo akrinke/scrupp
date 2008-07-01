@@ -30,7 +30,7 @@ static int initSound(lua_State *L) {
 	/* 	open 22.05KHz, signed 16bit, system byte order,
 		stereo audio, using 1024 byte chunks */
 	if(Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 1024)==-1)
-		return luaL_error(L, "Error running Mix_OpenAudio: %s\n", Mix_GetError());
+		return luaL_error(L, "Error running Mix_OpenAudio: %s", Mix_GetError());
 	Mix_AllocateChannels(CHANNELS);
 	for (i=0; i<CHANNELS; i++)
 		channels[i] = NULL;
@@ -53,7 +53,7 @@ static int Lua_Sound_load(lua_State *L) {
 		return luaL_error(L, "Error loading sound '%s': %s", filename, SDL_GetError());
 	sample = Mix_LoadWAV_RW(src, 1);
 	if (!sample)
-		return luaL_error(L, "Error loading sound '%s': %s\n", filename, Mix_GetError());
+		return luaL_error(L, "Error loading sound '%s': %s", filename, Mix_GetError());
 	/* new userdata for pointer to sample */
 	ptr = lua_newuserdata(L, sizeof(Mix_Chunk*));
 	*ptr = sample;
@@ -180,7 +180,7 @@ static int Lua_Music_load(lua_State *L) {
 		return luaL_error(L, "Error loading music '%s': %s", filename, SDL_GetError());
 	music = Mix_LoadMUS_RW(src);
 	if (!music)
-		return luaL_error(L, "Error loading music '%s': %s\n", filename, Mix_GetError());
+		return luaL_error(L, "Error loading music '%s': %s", filename, Mix_GetError());
 	/* new userdata for pointer to music */
 	ptr = lua_newuserdata(L, sizeof(Mix_Music*));
 	*ptr = music;
@@ -197,7 +197,7 @@ static int Lua_Music_play(lua_State *L) {
 	luaL_argcheck(L, ms>=0, 3, "Fade-in time has to be positive");
 	Mix_HaltMusic();
 	if (Mix_FadeInMusic(*music, loops-1, ms) == -1)
-		return luaL_error(L, "Error playing music: %s\n", Mix_GetError());
+		return luaL_error(L, "Error playing music: %s", Mix_GetError());
 	return 0;
 }
 

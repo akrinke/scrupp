@@ -35,5 +35,6 @@ SDL_Surface		*screen;
 lua_State* 		L;
 
 int check_for_exit();
+int error_function(lua_State *L);
 
 #endif /*__MAIN_H__*/

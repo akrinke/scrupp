@@ -27,7 +27,6 @@ typedef struct Rect {
 	int h;
 } Rect;
 
-int nextHigherPowerOfTwo(int k);
 int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha);
 int blitTexture(int x, int y, Lua_Image *image, Rect *clip_rect);
 

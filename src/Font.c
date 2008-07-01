@@ -26,7 +26,7 @@ static int Lua_Font_load(lua_State *L) {
 		return luaL_error(L, "Error loading font '%s': %s", filename, SDL_GetError());
 	font = TTF_OpenFontRW( src, 1, size );
 	if (!font)
-		return luaL_error(L, "Error loading font '%s': %s\n", filename, TTF_GetError());
+		return luaL_error(L, "Error loading font '%s': %s", filename, TTF_GetError());
 	/* new userdata for pointer to font */
 	ptr = lua_newuserdata(L, sizeof(TTF_Font*));
 	*ptr = font;
@@ -96,7 +96,7 @@ static int Lua_Font_print(lua_State *L) {
 	scolor.g = (Uint8)color[1];
 	scolor.b = (Uint8)color[2];	
 	if (!(text_surface = TTF_RenderText_Blended(*font_ptr, text, scolor)))
-		return luaL_error(L, "Error rendering text: %s\n", TTF_GetError());
+		return luaL_error(L, "Error rendering text: %s", TTF_GetError());
 	createTexture(text_surface, &image, (GLubyte)color[3]);
 	blitTexture(x, y, &image, NULL);
 	glDeleteTextures( 1, &image.texture );
@@ -135,7 +135,7 @@ static int Lua_Font_generateImage(lua_State *L) {
 	scolor.g = (Uint8)color[1];
 	scolor.b = (Uint8)color[2];
 	if (!(text_surface = TTF_RenderText_Blended(*font_ptr, text, scolor)))
-		return luaL_error(L, "Error rendering text: %s\n", TTF_GetError());
+		return luaL_error(L, "Error rendering text: %s", TTF_GetError());
 	ptr = lua_newuserdata(L, sizeof(Lua_Image));
 	createTexture(text_surface, ptr, (GLubyte)color[3]);
 	SDL_FreeSurface(text_surface);
@@ -176,7 +176,7 @@ static const struct luaL_Reg fontlib_m [] = {
 int luaopen_font(lua_State *L, const char *parent) {
 	/* initialize SDL_ttf */
 	if ( TTF_Init() == -1 )
-		return luaL_error(L, "Error: TTF_Init: %s\n", TTF_GetError());
+		return luaL_error(L, "Error running TTF_Init: %s", TTF_GetError());
 	atexit(TTF_Quit);
 	luaL_newmetatable(L, "game.font");
 	/* metatable.__index = metatable */

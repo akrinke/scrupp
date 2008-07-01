@@ -21,7 +21,7 @@ typedef struct GLrect {
 
 
 /* calculates the next higher power of two */
-int nextHigherPowerOfTwo(int k) {
+static int nextHigherPowerOfTwo(int k) {
 	int i;
 	k--;
 	for (i=1; i<sizeof(int)*8; i=i*2)
@@ -55,7 +55,7 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 	new_surface = SDL_CreateRGBSurface( SDL_SWSURFACE, new_width, new_height, 32,
 										rmask, gmask, bmask, amask);
 	if ( new_surface == NULL )
-		return luaL_error(L, "CreateRGBSurface failes: %s\n", SDL_GetError());
+		return luaL_error(L, "CreateRGBSurface failed: %s", SDL_GetError());
 	SDL_SetAlpha(src, 0, SDL_ALPHA_TRANSPARENT);
 	SDL_BlitSurface(src, NULL, new_surface, NULL);
 	/* get the number of channels in the SDL surface */
@@ -71,7 +71,7 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 		else
 			texture_format = GL_BGR;
 	} else {
-		return luaL_error( L, "Error: Image is not truecolor!" );
+		return luaL_error( L, "Image is not truecolor!" );
 	}
 	/* generate texture object handle */
 	glGenTextures( 1, &texture );
@@ -132,7 +132,7 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 	if ( fullscreen )
 		flags |= SDL_FULLSCREEN;
 	if ( SDL_Init ( SDL_INIT_VIDEO | SDL_INIT_AUDIO ) != 0 )
-		luaL_error(L, "Error: Couldn't initialize SDL: %s\n", SDL_GetError ());
+		luaL_error(L, "Couldn't initialize SDL: %s", SDL_GetError ());
 	atexit(SDL_Quit);
 	/* set window caption */
 	SDL_WM_SetCaption (appName, appName);
@@ -143,7 +143,7 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,  8);
 	screen = SDL_SetVideoMode(width, height, bpp, flags);
 	if (screen == NULL)
-		return luaL_error(L, 	"Error: Couldn't set %dx%dx%d video mode: %s\n",
+		return luaL_error(L, 	"Couldn't set %dx%dx%d video mode: %s",
 								width, height, bpp, SDL_GetError());
 	/* set the OpenGL state */
 	/* set background color */
@@ -166,24 +166,24 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 }
 
 static Uint32 getpixel(SDL_Surface *surface, int x, int y) {
-    int bpp = surface->format->BytesPerPixel;
-    /* Here p is the address to the pixel we want to retrieve */
-    Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
-    switch(bpp) {
-    case 1:
-        return *p;
-    case 2:
-        return *(Uint16 *)p;
-    case 3:
-        if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
-            return p[0] << 16 | p[1] << 8 | p[2];
-        else
-            return p[0] | p[1] << 8 | p[2] << 16;
-    case 4:
-        return *(Uint32 *)p;
-    default:
-        return 0;       /* shouldn't happen, but avoids warnings */
-    }
+	int bpp = surface->format->BytesPerPixel;
+	/* Here p is the address to the pixel we want to retrieve */
+	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
+	switch(bpp) {
+	case 1:
+		return *p;
+	case 2:
+		return *(Uint16 *)p;
+	case 3:
+		if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
+			return p[0] << 16 | p[1] << 8 | p[2];
+		else
+			return p[0] | p[1] << 8 | p[2] << 16;
+	case 4:
+		return *(Uint32 *)p;
+	default:
+		return 0;	/* shouldn't happen, but avoids warnings */
+	}
 }
 
 /* Lua functions */
@@ -242,7 +242,7 @@ static int Lua_Image_load(lua_State *L) {
 	Lua_Image *ptr;
 
 	if (SDL_GetVideoSurface() == NULL)
-		return luaL_error(L, "Error: Run game.init() before loading images.\n");
+		return luaL_error(L, "Run game.init() before loading images.");
 	temp = PHYSFSRWOPS_openRead(filename);
 	if (!temp)
 		return luaL_error(L, "Error loading file '%s': %s", filename, SDL_GetError());

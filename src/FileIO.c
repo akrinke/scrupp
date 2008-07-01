@@ -14,33 +14,33 @@
 
 /* extracts the dirname and the basename from the path */
 static void splitPath(const char *path, char **dirname, char **basename) {
-    char *ptr;
-    const char *dirsep = NULL;
-    *basename = (char *)path;
-    *dirname = ".";
-    dirsep = PHYSFS_getDirSeparator();
-    if (strlen(dirsep) == 1)  /* fast path. */
-        ptr = strrchr(path, *dirsep);
-    else {
-        ptr = strstr(path, dirsep);
-        if (ptr != NULL) {
-            char *p = ptr;
-            while (p != NULL) {
-                ptr = p;
-                p = strstr(p + 1, dirsep);
-            }
-        }
-    }
-    if (ptr != NULL) {
-        size_t size = (size_t) (ptr - path);
-        *dirname = (char *) malloc(size + 1);
-        memcpy(*dirname, path, size);
-        (*dirname)[size] = '\0';
-        *basename = ptr + strlen(dirsep);
-    }
+	char *ptr;
+	const char *dirsep = NULL;
+	*basename = (char *)path;
+	*dirname = ".";
+	dirsep = PHYSFS_getDirSeparator();
+	if (strlen(dirsep) == 1)  /* fast path. */
+		ptr = strrchr(path, *dirsep);
+	else {
+		ptr = strstr(path, dirsep);
+		if (ptr != NULL) {
+			char *p = ptr;
+			while (p != NULL) {
+				ptr = p;
+				p = strstr(p + 1, dirsep);
+			}
+		}
+	}
+	if (ptr != NULL) {
+		size_t size = (size_t) (ptr - path);
+		*dirname = (char *) malloc(size + 1);
+		memcpy(*dirname, path, size);
+		(*dirname)[size] = '\0';
+		*basename = ptr + strlen(dirsep);
+	}
 }
 
-void FS_Quit() {
+static void FS_Quit(void) {
 	fprintf(stdout,"Running FS_Quit.\n");
 	PHYSFS_deinit();
 }
@@ -50,35 +50,27 @@ void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
 	char *base = NULL;
 	char ** arr = NULL;
 	/* initialize PhysFS */
-	if ( !PHYSFS_init(argv[0]) ) {
-		fprintf(stderr,"Error: Couldn't initialize PhysFS: %s.\n", PHYSFS_getLastError());
-		exit(1);
-	}
-
+	if ( !PHYSFS_init(argv[0]) ) 
+		error(L, "Error: Couldn't initialize PhysFS: %s.\n", PHYSFS_getLastError());
+	
 	/* in every case: append base dir to search path */
-	if ( !PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1) ){
-		fprintf(stderr,"Error: Could not add base dir to search path: %s.\n", PHYSFS_getLastError());
-		exit(1);
-	}
-
+	if ( !PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1) )
+		error(L, "Error: Could not add base dir to search path: %s.\n", PHYSFS_getLastError());
+	
 	/* if an archive (or directory) is given, try to mount it */
 	if (!e_flag && argv[1] != NULL) {
 		/* try to change the working directory (only successful if directory is given) */
 		if (chdir(argv[1]) == 0) {
 			/* prepend the new working directory to the search path */
-			if (!PHYSFS_addToSearchPath(".", 0)) {
-				fprintf(stderr,"Error: Could not add directory '%s' to search path: %s.\n", argv[1], PHYSFS_getLastError());
-				exit(1);
-			}
+			if (!PHYSFS_addToSearchPath(".", 0))
+				error(L, "Error: Could not add directory '%s' to search path: %s.\n", argv[1], PHYSFS_getLastError());
 		} else {
 			/* chdir was unsuccessful -> archive was probably given on command line */
 			splitPath(argv[1], &dir, &base);
 			/* change the working directory to the directory with the archive */
 			chdir(dir);
-			if (!PHYSFS_addToSearchPath(base, 0)) {
-				fprintf(stderr,"Error: Could not add archive '%s' to search path: %s.\n", argv[1], PHYSFS_getLastError());
-				exit(1);
-			}
+			if (!PHYSFS_addToSearchPath(base, 0))
+				error(L, "Error: Could not add archive '%s' to search path: %s.\n", argv[1], PHYSFS_getLastError());
 		}
 	/* if a filname to execute is given, add its directory to the search path */
 	} else if (e_flag && *filename != NULL) {
@@ -86,10 +78,8 @@ void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
 		/* change the working directory to the directory with the Lua file */
 		chdir(dir);
 		/* prepend the new working directory to the search path */
-		if (!PHYSFS_addToSearchPath(".", 0)) {
-			fprintf(stderr,"Error: Could not add directory containing '%s' to search path: %s.\n", base, PHYSFS_getLastError());
-			exit(1);
-		}
+		if (!PHYSFS_addToSearchPath(".", 0))
+			error(L, "Error: Could not add directory containing '%s' to search path: %s.\n", base, PHYSFS_getLastError());
 		/* change the filename to its basename -> later call to FS_runLuaFile will find it in the path */
 		*filename = base;
 	}
@@ -108,45 +98,35 @@ void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
 int FS_runLuaFile(const char *filename, int narg) {
 	char *buffer;		/* buffer for the file */
 	char *entryPoint;	/* entry point of file (differs from buffer, if "#!" in the first line is skipped */
-	int error;
+	int err;
 	PHYSFS_file *Hndfile = NULL;
 	PHYSFS_sint64 fileLength, size;
-	if (PHYSFS_exists(filename) == 0) {
-		fprintf(stderr, "Error executing %s: file not found.\n", filename);
-		lua_pop(L, narg);
-		return 0;
-	}
+	if (PHYSFS_exists(filename) == 0)
+		return luaL_error(L, "Error executing '%s': file not found.", filename);
+
 	fprintf(stdout, "Executing \"%s\"...\n", filename);
 	Hndfile = PHYSFS_openRead(filename); /* open file to read! */
-	if (Hndfile == NULL) {
-		fprintf(stderr, "Error while reading from %s: %s\n", filename, PHYSFS_getLastError());
-		lua_pop(L, narg);
-		return 0;
-	}
+	if (Hndfile == NULL)
+		return luaL_error(L, "Error while reading from '%s': %s", filename, PHYSFS_getLastError());
+
 	size = PHYSFS_fileLength(Hndfile);
-	if (size == -1) {
-		fprintf(stderr, "Error while determining the size of %s\n", filename);
-		lua_pop(L, narg);
-		return 0;
-	}
+	if (size == -1)
+		return luaL_error(L, "Error while determining the size of %s.", filename);
+
 	buffer = (char *)malloc((unsigned int)size);
-	if (buffer == NULL) { 
-		fprintf(stderr, "Error loading %s: Insufficient memory available\n", filename);
-		lua_pop(L, narg);
-		return 0;
-	}
+	if (buffer == NULL)
+		return luaL_error(L, "Error loading %s: Insufficient memory available.", filename);
+
 	fileLength = PHYSFS_read(Hndfile, buffer, 1, (unsigned int)size);
 	if (fileLength < size) {
-		fprintf(stderr, "Error while reading from %s: %s\n", filename, PHYSFS_getLastError());
-		lua_pop(L, narg);
-		return 0;
+		free(buffer);
+		return luaL_error(L, "Error while reading from %s: %s", filename, PHYSFS_getLastError());
 	}
 	/* close the file */
-	error = PHYSFS_close(Hndfile);
-	if (error == 0) {
-		fprintf(stderr, "Error closing %s: %s\n", filename, PHYSFS_getLastError());
-		lua_pop(L, narg);
-		return 0;
+	err = PHYSFS_close(Hndfile);
+	if (err == 0) {
+		free(buffer);
+		return luaL_error(L, "Error closing %s: %s", filename, PHYSFS_getLastError());
 	}
 	/* skip #! if nescessary */
 	entryPoint = buffer;
@@ -156,24 +136,26 @@ int FS_runLuaFile(const char *filename, int narg) {
 			fileLength--;
 		}
 	}
-	error =	luaL_loadbuffer(L, entryPoint, (size_t)fileLength, filename);
+	err = luaL_loadbuffer(L, entryPoint, (size_t)fileLength, filename);
 	lua_insert(L, -(narg+1));
-	if (!error)
-		error = lua_pcall(L, narg, 0, 0);
-	else
+	if (!err) {
+		lua_pushcfunction(L, error_function);
+		lua_insert(L, -(narg+2));
+		err = lua_pcall(L, narg, 0, -(narg+2));
+	} else
 		lua_pop(L, narg);
-	//if (error)
-	//	fprintf(stderr, "Error executing %s: [%s\n", filename, lua_tostring(L, -1)+8);
+
 	fprintf(stdout, "Finished: \"%s\"\n", filename);
 	free(buffer);
-	return error;
+	return err;
 }
 
-int Lua_FS_runLuaFile(lua_State *L) {
+static int Lua_FS_runLuaFile(lua_State *L) {
 	const char *filename = luaL_checkstring(L, 1);
-	int error = FS_runLuaFile(filename, 0);
-	if (error && !check_for_exit())
-		fprintf(stderr, "Error executing %s: [%s\n", filename, lua_tostring(L, -1)+8);
+	int err = FS_runLuaFile(filename, 0);
+	if (err && !check_for_exit())
+		return luaL_error(L, "Error executing [%s", lua_tostring(L, -1)+8);
+	
 	return 0;
 }
 

@@ -6,13 +6,32 @@
 
 #include "Main.h"
 
+#ifdef WIN32
+#include <windows.h>
+#define vsnprintf _vsnprintf
+#endif
+
 void error (lua_State *L, const char *fmt, ...) {
-  va_list argp;
-  va_start(argp, fmt);
-  vfprintf(stderr, fmt, argp);
-  va_end(argp);
-  lua_close(L);
-  exit(1);
+	char str[1024];
+	const char *msg;
+	
+	va_list argp;
+	va_start(argp, fmt);
+	vsnprintf(str, 1023, fmt, argp);
+	va_end(argp);
+	
+	msg = luaL_gsub(L, str, "[\"", "'");
+	msg = luaL_gsub(L, msg, "[string \"", "'");
+	msg = luaL_gsub(L, msg, "\"]", "'");
+	fprintf(stderr, msg);
+
+#ifdef WIN32
+	MessageBox(NULL, msg, PROG_NAME, MB_ICONERROR|MB_OK);
+#endif
+	
+	fprintf(stderr, "\n");
+	lua_close(L);
+	exit(1);
 }
 
 /* Dumps the stack - DEBUG function */
