@@ -336,7 +336,7 @@ static int image_gc(lua_State *L) {
 	Lua_Image *image = checkimage(L);
 	glDeleteTextures( 1, &image->texture );
 	SDL_FreeSurface(image->src);
-	fprintf(stdout, "Freed image.\n");
+	/* fprintf(stdout, "Freed image.\n"); */
 	return 0;
 }
 

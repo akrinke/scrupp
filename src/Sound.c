@@ -157,7 +157,7 @@ static int sound_gc(lua_State *L) {
 	/* stack(-1): sound userdata to free */
 	Mix_Chunk **ptr = checksound(L);
 	Mix_FreeChunk(*ptr);
-	fprintf(stdout, "Freed sound.\n");
+	/* fprintf(stdout, "Freed sound.\n"); */
 	return 0;
 }
 
@@ -249,7 +249,7 @@ static int music_gc(lua_State *L) {
 	/* stack(-1): music userdata to free */
 	Mix_Music **ptr = checkmusic(L);
 	Mix_FreeMusic(*ptr);
-	fprintf(stdout, "Freed music.\n");
+	/* fprintf(stdout, "Freed music.\n"); */
 	return 0;
 }
 

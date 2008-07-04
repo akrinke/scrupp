@@ -148,7 +148,7 @@ static int font_gc(lua_State *L) {
 	/* stack(-1): font userdata to free */
 	TTF_Font **ptr = checkfont(L);
 	TTF_CloseFont(*ptr);
-	fprintf(stdout, "Freed font.\n");
+	/* fprintf(stdout, "Freed font.\n"); */
 	return 0;
 }
 
