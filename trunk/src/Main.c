@@ -26,11 +26,9 @@ Uint32 lastTick;
 /* this lets us exit the app from within Lua */
 int check_for_exit() {
 	const char *err_msg;
-	char *pos;
-	size_t len;
-	err_msg = lua_tolstring(L, -1, &len);
-	pos = strstr(err_msg, "game.exit");
-	if (pos && (len-(pos-err_msg) == 9)) {
+
+	err_msg = lua_tostring(L, -1);
+	if (strcmp(err_msg, "game.exit") == 0) {
 		done = 1;
 		fprintf(stdout, "Exiting game.\n");
 		lua_close(L);
@@ -46,9 +44,18 @@ static void usage(const char* exec_name) {
 }
 
 int error_function(lua_State *L) {
-	const char *msg = lua_tostring(L, -1); /* get error message */
-
-	luaL_gsub(L, msg, ": ", ":\n\t");
+	const char *err_msg;
+	char *pos;
+	size_t len;
+	
+	err_msg = lua_tolstring(L, -1, &len); /* get error message */
+	pos = strstr(err_msg, "game.exit");
+	if (pos && (len-(pos-err_msg) == 9)) { /* ends the error message with "game.exit"? */
+		lua_pushliteral(L, "game.exit");
+		return 1;
+	}
+	
+	luaL_gsub(L, err_msg, ": ", ":\n\t");
 	lua_pushliteral(L, "\n");
 	lua_concat(L, 2);
 
