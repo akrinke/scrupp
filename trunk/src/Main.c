@@ -17,6 +17,8 @@
 #include <string.h>
 #include <SDL_opengl.h>
 
+lua_State *L;
+
 int done = 0;
 
 /* Last iteration's tick value */
@@ -159,7 +161,7 @@ int main(int argc, char *argv[]) {
 	/* the second one will be executed as Lua file */
 	err = FS_runLuaFile(filename, narg);
 	if (err && !check_for_exit())
-		error(L, "Error executing [%s", lua_tostring(L, -1)+8);
+		error(L, lua_tostring(L, -1));
 
 	/* main loop */
 

@@ -27,6 +27,8 @@ typedef struct Rect {
 	int h;
 } Rect;
 
+extern SDL_Surface *screen;
+
 int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha);
 int blitTexture(int x, int y, Lua_Image *image, Rect *clip_rect);
 
