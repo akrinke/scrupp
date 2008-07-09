@@ -31,8 +31,7 @@
 
 #define CHANNELS	16	/* number of audio channels */
 
-SDL_Surface		*screen;
-lua_State* 		L;
+extern lua_State* 		L;
 
 int check_for_exit();
 int error_function(lua_State *L);

@@ -101,32 +101,42 @@ int FS_runLuaFile(const char *filename, int narg) {
 	int err;
 	PHYSFS_file *Hndfile = NULL;
 	PHYSFS_sint64 fileLength, size;
-	if (PHYSFS_exists(filename) == 0)
-		return luaL_error(L, "Error executing '%s': file not found.", filename);
+	if (PHYSFS_exists(filename) == 0) {
+		lua_pushfstring(L, "Error executing '%s': file not found.", filename);
+		return 1;
+	}
 
 	fprintf(stdout, "Executing \"%s\"...\n", filename);
 	Hndfile = PHYSFS_openRead(filename); /* open file to read! */
-	if (Hndfile == NULL)
-		return luaL_error(L, "Error while reading from '%s': %s", filename, PHYSFS_getLastError());
+	if (Hndfile == NULL) {
+		lua_pushfstring(L, "Error while reading from '%s': %s", filename, PHYSFS_getLastError());
+		return 1;
+	}
 
 	size = PHYSFS_fileLength(Hndfile);
-	if (size == -1)
-		return luaL_error(L, "Error while determining the size of %s.", filename);
+	if (size == -1) {
+		lua_pushfstring(L, "Error while determining the size of %s.", filename);
+		return 1;
+	}
 
 	buffer = (char *)malloc((unsigned int)size);
-	if (buffer == NULL)
-		return luaL_error(L, "Error loading %s: Insufficient memory available.", filename);
+	if (buffer == NULL) {
+		lua_pushfstring(L, "Error loading %s: Insufficient memory available.", filename);
+		return 1;
+	}
 
 	fileLength = PHYSFS_read(Hndfile, buffer, 1, (unsigned int)size);
 	if (fileLength < size) {
 		free(buffer);
-		return luaL_error(L, "Error while reading from %s: %s", filename, PHYSFS_getLastError());
+		lua_pushfstring(L, "Error while reading from %s: %s", filename, PHYSFS_getLastError());
+		return 1;
 	}
 	/* close the file */
 	err = PHYSFS_close(Hndfile);
 	if (err == 0) {
 		free(buffer);
-		return luaL_error(L, "Error closing %s: %s", filename, PHYSFS_getLastError());
+		lua_pushfstring(L, "Error closing %s: %s", filename, PHYSFS_getLastError());
+		return 1;
 	}
 	/* skip #! if nescessary */
 	entryPoint = buffer;
@@ -154,7 +164,7 @@ static int Lua_FS_runLuaFile(lua_State *L) {
 	const char *filename = luaL_checkstring(L, 1);
 	int err = FS_runLuaFile(filename, 0);
 	if (err && !check_for_exit())
-		return luaL_error(L, "Error executing [%s", lua_tostring(L, -1)+8);
+		return luaL_error(L, lua_tostring(L, -1));
 	
 	return 0;
 }

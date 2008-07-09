@@ -19,6 +19,7 @@ typedef struct GLrect {
 	GLfloat x1,y1,x2,y2;
 } GLrect;
 
+SDL_Surface *screen;
 
 /* calculates the next higher power of two */
 static int nextHigherPowerOfTwo(int k) {
