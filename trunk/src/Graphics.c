@@ -98,7 +98,7 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 }
 
 /* blit an OpenGL texture (wrapped in a Lua_Image) */
-int blitTexture(int x, int y, Lua_Image *image, Rect *clip_rect) {
+int blitTexture(int x, int y, Lua_Image *image, myRect *clip_rect) {
 	GLrect texCoords = { 0, 0, image->xratio, image->yratio };
 	int width = image->w;
 	int height = image->h;
@@ -308,8 +308,8 @@ static int Lua_Image_getAlpha(lua_State *L) {
 static int Lua_Image_render(lua_State *L) {
 	Lua_Image *image = checkimage(L);
 	int x, y;
-	Rect clip_rect;
-	Rect *pclip_rect = NULL;
+	myRect clip_rect;
+	myRect *pclip_rect = NULL;
 
 	if (lua_istable(L, 2)) {
 		/* x and y are array element 1 and 2 */
