@@ -11,6 +11,10 @@
 #define vsnprintf _vsnprintf
 #endif
 
+#ifdef __APPLE__
+#include <Carbon/Carbon.h>
+#endif
+
 void error (lua_State *L, const char *fmt, ...) {
 	char str[1024];
 	const char *msg;
@@ -27,6 +31,26 @@ void error (lua_State *L, const char *fmt, ...) {
 
 #ifdef WIN32
 	MessageBox(NULL, msg, PROG_NAME, MB_ICONERROR|MB_OK);
+#endif
+
+#ifdef __APPLE__
+	CFUserNotificationDisplayAlert (
+		0, /* timeout */ 
+		kCFUserNotificationStopAlertLevel, /* alert level */
+		NULL, /* icon URL */ 
+		NULL, /* sound URL */
+		NULL, /* localization URL */
+		CFSTR(PROG_NAME), /* header */
+		CFStringCreateWithCString(
+			NULL, /* choose default allocator */
+			msg,
+			kCFStringEncodingASCII /* encoding */			
+		), 
+		NULL, /* default button title (OK) */
+		NULL, /* alternate button title */
+		NULL, /* other button title */
+		NULL /* response codes */
+	);
 #endif
 	
 	fprintf(stderr, "\n");

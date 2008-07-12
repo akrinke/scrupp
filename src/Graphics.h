@@ -20,17 +20,17 @@ typedef struct Lua_Image {
 	GLubyte alpha;	/* alpha value of the whole texture */
 } Lua_Image;
 
-typedef struct Rect {
+typedef struct myRect {
 	int x;
 	int y;
 	int w;
 	int h;
-} Rect;
+} myRect;
 
 extern SDL_Surface *screen;
 
 int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha);
-int blitTexture(int x, int y, Lua_Image *image, Rect *clip_rect);
+int blitTexture(int x, int y, Lua_Image *image, myRect *clip_rect);
 
 int luaopen_graphics(lua_State *L, const char *parent);
 

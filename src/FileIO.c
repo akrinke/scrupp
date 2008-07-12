@@ -162,16 +162,14 @@ int FS_runLuaFile(const char *filename, int narg, int *nres) {
 		}
 	}
 	err = luaL_loadbuffer(L, entryPoint, (size_t)fileLength, filename);
-	lua_insert(L, -(narg+1));
 	free(buffer);
 	if (err != 0)
 		return ERROR;
+	lua_insert(L, -(narg+1));
 	lua_pushcfunction(L, error_function);
 	lua_insert(L, -(narg+2));
-	stackDump(L);
 	n = lua_gettop(L);
 	err = lua_pcall(L, narg, LUA_MULTRET, -(narg+2));
-	stackDump(L);
 	if (err == 0) {
 		fprintf(stdout, "Finished: \"%s\"\n", filename);		
 		*nres = lua_gettop(L) - (n - narg - 1);	/* calc number of results */
