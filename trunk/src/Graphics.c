@@ -62,12 +62,12 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 	/* get the number of channels in the SDL surface */
 	nrOfColors = new_surface->format->BytesPerPixel;
 	if ( nrOfColors == 4 ) {		/* with alpha channel */
-		if ( new_surface->format->Rmask == 0x000000ff )
+		if ( new_surface->format->Rmask == rmask )
 			texture_format = GL_RGBA;
 		else
 			texture_format = GL_BGRA;
 	} else if ( nrOfColors == 3 ) {	/* no alpha channel */
-		if ( new_surface->format->Rmask == 0x000000ff )
+		if ( new_surface->format->Rmask == rmask )
 			texture_format = GL_RGB;
 		else
 			texture_format = GL_BGR;

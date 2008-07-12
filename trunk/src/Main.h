@@ -31,6 +31,11 @@
 
 #define CHANNELS	16	/* number of audio channels */
 
+#define TRUE    0
+#define FALSE   1
+#define SUCCESS 0
+#define ERROR   1
+
 extern lua_State* 		L;
 
 int check_for_exit();
