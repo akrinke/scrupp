@@ -46,6 +46,9 @@ static void FS_Quit(void) {
 }
 
 void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
+	#ifdef __APPLE__
+		char *ch = NULL;
+	#endif
 	char *dir = NULL;
 	char *base = NULL;
 	char ** arr = NULL;
@@ -53,6 +56,17 @@ void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
 	if ( !PHYSFS_init(argv[0]) ) 
 		error(L, "Error: Couldn't initialize PhysFS: %s.", PHYSFS_getLastError());
 	
+	/*	on Mac OS X applications are packed inside a folder with the ending .app;
+		the first thing is to (try to) set the search path to this folder */
+	#ifdef __APPLE__
+		ch = strstr(argv[0], "/Contents/MacOS");
+		if (ch != NULL) {
+			*(ch+1) = '\0';
+			if ( !PHYSFS_addToSearchPath(argv[0], 1) )
+				error(L, "Error: Could not add application folder to search path: %s.", PHYSFS_getLastError() );
+			*(ch+1) = 'C';
+		}
+	#endif
 	/* in every case: append base dir to search path */
 	if ( !PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1) )
 		error(L, "Error: Could not add base dir to search path: %s.", PHYSFS_getLastError());
@@ -95,48 +109,49 @@ void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
 
 }
 
-int FS_runLuaFile(const char *filename, int narg) {
+int FS_runLuaFile(const char *filename, int narg, int *nres) {
 	char *buffer;		/* buffer for the file */
 	char *entryPoint;	/* entry point of file (differs from buffer, if "#!" in the first line is skipped */
+	int n;
 	int err;
 	PHYSFS_file *Hndfile = NULL;
 	PHYSFS_sint64 fileLength, size;
 	if (PHYSFS_exists(filename) == 0) {
 		lua_pushfstring(L, "Error executing '%s': file not found.", filename);
-		return 1;
+		return ERROR;
 	}
 
 	fprintf(stdout, "Executing \"%s\"...\n", filename);
 	Hndfile = PHYSFS_openRead(filename); /* open file to read! */
 	if (Hndfile == NULL) {
 		lua_pushfstring(L, "Error while reading from '%s': %s", filename, PHYSFS_getLastError());
-		return 1;
+		return ERROR;
 	}
 
 	size = PHYSFS_fileLength(Hndfile);
 	if (size == -1) {
 		lua_pushfstring(L, "Error while determining the size of %s.", filename);
-		return 1;
+		return ERROR;
 	}
 
 	buffer = (char *)malloc((unsigned int)size);
 	if (buffer == NULL) {
 		lua_pushfstring(L, "Error loading %s: Insufficient memory available.", filename);
-		return 1;
+		return ERROR;
 	}
 
 	fileLength = PHYSFS_read(Hndfile, buffer, 1, (unsigned int)size);
 	if (fileLength < size) {
 		free(buffer);
 		lua_pushfstring(L, "Error while reading from %s: %s", filename, PHYSFS_getLastError());
-		return 1;
+		return ERROR;
 	}
 	/* close the file */
 	err = PHYSFS_close(Hndfile);
 	if (err == 0) {
 		free(buffer);
 		lua_pushfstring(L, "Error closing %s: %s", filename, PHYSFS_getLastError());
-		return 1;
+		return ERROR;
 	}
 	/* skip #! if nescessary */
 	entryPoint = buffer;
@@ -148,25 +163,31 @@ int FS_runLuaFile(const char *filename, int narg) {
 	}
 	err = luaL_loadbuffer(L, entryPoint, (size_t)fileLength, filename);
 	lua_insert(L, -(narg+1));
-	if (!err) {
-		lua_pushcfunction(L, error_function);
-		lua_insert(L, -(narg+2));
-		err = lua_pcall(L, narg, 0, -(narg+2));
-	} else
-		lua_pop(L, narg);
-
-	fprintf(stdout, "Finished: \"%s\"\n", filename);
 	free(buffer);
-	return err;
+	if (err != 0)
+		return ERROR;
+	lua_pushcfunction(L, error_function);
+	lua_insert(L, -(narg+2));
+	stackDump(L);
+	n = lua_gettop(L);
+	err = lua_pcall(L, narg, LUA_MULTRET, -(narg+2));
+	stackDump(L);
+	if (err == 0) {
+		fprintf(stdout, "Finished: \"%s\"\n", filename);		
+		*nres = lua_gettop(L) - (n - narg - 1);	/* calc number of results */
+		return SUCCESS;
+	} else
+		return ERROR;
 }
 
 static int Lua_FS_runLuaFile(lua_State *L) {
 	const char *filename = luaL_checkstring(L, 1);
-	int err = FS_runLuaFile(filename, 0);
-	if (err && !check_for_exit())
+	int nres = 0;
+	int result = FS_runLuaFile(filename, 0, &nres);
+	if ((result == ERROR) && !check_for_exit())
 		return luaL_error(L, lua_tostring(L, -1));
 	
-	return 0;
+	return nres;
 }
 
 

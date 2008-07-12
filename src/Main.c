@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
 	SDL_Event event;
 	Uint32 lastTick;	/* Last iteration's tick value */
 	Uint32 delta = 0;
-	int i, n, narg, err;
+	int i, n, narg, nres, result;
 	int e_flag = 0;
 	char *filename = NULL;
 
@@ -159,8 +159,8 @@ int main(int argc, char *argv[]) {
 	/* run main lua file */
 	/* if two arguments are given (then the first has to be '-e'), */
 	/* the second one will be executed as Lua file */
-	err = FS_runLuaFile(filename, narg);
-	if (err && !check_for_exit())
+	result = FS_runLuaFile(filename, narg, &nres);
+	if ((result == ERROR) && !check_for_exit())
 		error(L, lua_tostring(L, -1));
 
 	/* main loop */
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
 		lua_pushcfunction(L, error_function);
 		lua_insert(L, -3);
 		if ((lua_pcall(L, 1, 0, -3) != 0) && !check_for_exit())
-			error(L, "Error running main.render:[%s\n", lua_tostring(L, -1)+8);
+			error(L, "Error running main.render:\n\t%s\n", lua_tostring(L, -1));
 		lua_pop(L, 1); /* remove error_function */
 
 		SDL_GL_SwapBuffers();
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
 				lua_pushcfunction(L, error_function);
 				lua_insert(L, -3);
 				if ((lua_pcall(L, 1, 0, -3) != 0) && !check_for_exit())
-					error(L, "Error running main.keypressed:[%s\n", lua_tostring(L, -1)+8);
+					error(L, "Error running main.keypressed:\n\t%s\n", lua_tostring(L, -1));
 				lua_pop(L, 1); /* remove error_function */
 				break;
 
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
 				lua_pushcfunction(L, error_function);
 				lua_insert(L, -3);
 				if ((lua_pcall(L, 1, 0, -3) != 0) && !check_for_exit())
-					error(L, "Error running main.keyreleased:[%s\n", lua_tostring(L, -1)+8);
+					error(L, "Error running main.keyreleased:\n\t%s\n", lua_tostring(L, -1));
 				lua_pop(L, 1); /* remove error_function */
 				break;
 
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
 				lua_pushcfunction(L, error_function);
 				lua_insert(L, -5);
 				if ((lua_pcall(L, 3, 0, -5) != 0) && !check_for_exit())
-					error(L, "Error running main.mousepressed:[%s\n", lua_tostring(L, -1)+8);
+					error(L, "Error running main.mousepressed:\n\t%s\n", lua_tostring(L, -1));
 				lua_pop(L, 1); /* remove error_function */
 				break;
 
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
 				lua_pushcfunction(L, error_function);
 				lua_insert(L, -5);
 				if ((lua_pcall(L, 3, 0, -5) != 0) && !check_for_exit())
-					error(L, "Error running main.mousereleased:[%s\n", lua_tostring(L, -1)+8);
+					error(L, "Error running main.mousereleased:\n\t%s\n", lua_tostring(L, -1));
 				lua_pop(L, 1); /* remove error_function */
 				break;
 			}
