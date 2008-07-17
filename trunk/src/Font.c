@@ -66,6 +66,8 @@ static int Lua_Font_print(lua_State *L) {
 	SDL_Surface *text_surface;
 	Lua_Image image;
 
+	if (SDL_GetVideoSurface() == NULL)
+		return luaL_error(L, "run game.init() before using fonts");
 	if (lua_istable(L, 2)) {
 		/* x and y are array elements 1 and 2 */
 		if (!getint(L, &x, 1) || !getint(L, &y, 2))
@@ -113,6 +115,8 @@ static int Lua_Font_generateImage(lua_State *L) {
 	SDL_Surface *text_surface;
 	Lua_Image *ptr;
 
+	if (SDL_GetVideoSurface() == NULL)
+		return luaL_error(L, "run game.init() before generating images");
 	if (lua_istable(L, 2)) {
 		/* the text is array element 1 */
 		lua_pushinteger(L, 1);

@@ -7,7 +7,7 @@
 #ifndef __FILEIO_H__
 #define __FILEIO_H__
 
-void FS_Init(int argc, char *argv[], int e_flag, char **filename);
+void FS_Init(int argc, char *argv[], char **filename);
 int FS_runLuaFile(const char *filename, int narg, int *nres);
 
 int luaopen_fileio(lua_State *L, const char *parent);

@@ -10,6 +10,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <physfs.h>
 
 /* extracts the dirname and the basename from the path */
@@ -45,10 +46,13 @@ static void FS_Quit(void) {
 	PHYSFS_deinit();
 }
 
-void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
+void FS_Init(int argc, char *argv[], char **pFilename) {
 	#ifdef __APPLE__
 		char *ch = NULL;
 	#endif
+	FILE *fh;
+	char magic[4] = "000"; /* array for the magic bytes used to recognize a zip archive */
+	const char *basedir;
 	char *dir = NULL;
 	char *base = NULL;
 	char ** arr = NULL;
@@ -57,45 +61,66 @@ void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
 		error(L, "Error: Couldn't initialize PhysFS: %s.", PHYSFS_getLastError());
 	
 	/*	on Mac OS X applications are packed inside a folder with the ending .app;
-		the first thing is to (try to) set the search path to this folder */
+		try to set the search path to this folder;
+		if a file is not found in the base dir (the dir containing the app bundle)
+		it is searched inside the bundle */
 	#ifdef __APPLE__
 		ch = strstr(argv[0], "/Contents/MacOS");
 		if (ch != NULL) {
-			*(ch+1) = '\0';
+			*(ch+1) = '\0'; /* substite the 'C' of 'Contents/MacOS' with a line terminator */
+			if (*pFilename == NULL)
+				chdir(argv[0]);
 			if ( !PHYSFS_addToSearchPath(argv[0], 1) )
 				error(L, "Error: Could not add application folder to search path: %s.", PHYSFS_getLastError() );
 			*(ch+1) = 'C';
+		} else {
+			basedir = PHYSFS_getBaseDir();
+			if (*pFilename == NULL)
+				chdir(basedir);
+			if ( !PHYSFS_addToSearchPath(basedir, 1) )
+				error(L, "Error: Could not add base dir to search path: %s.", PHYSFS_getLastError());
 		}
+	#else
+		/* on every other system, append base dir to search path */
+		if ( !PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1) )
+			error(L, "Error: Could not add base dir to search path: %s.", PHYSFS_getLastError());
 	#endif
-	/* in every case: append base dir to search path */
-	if ( !PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1) )
-		error(L, "Error: Could not add base dir to search path: %s.", PHYSFS_getLastError());
 	
-	/* if an archive (or directory) is given, try to mount it */
-	if (!e_flag && argv[1] != NULL) {
+	/* if an Lua file is given, try to mount the parent directory and change the working directory */
+	/* if an archive or directory is given, try to mount it */
+	if (*pFilename == NULL) {
+		*pFilename = "main.lua";
+	} else {
 		/* try to change the working directory (only successful if directory is given) */
-		if (chdir(argv[1]) == 0) {
+		if (chdir(*pFilename) == 0) {
 			/* prepend the new working directory to the search path */
 			if (!PHYSFS_addToSearchPath(".", 0))
 				error(L, "Error: Could not add directory '%s' to search path: %s.", argv[1], PHYSFS_getLastError());
 		} else {
-			/* chdir was unsuccessful -> archive was probably given on command line */
-			splitPath(argv[1], &dir, &base);
-			/* change the working directory to the directory with the archive */
+			/* chdir was unsuccessful -> archive or Lua file was probably given on command line */
+			splitPath(*pFilename, &dir, &base);
+			/* change the working directory to the directory with the archive or the Lua file */
 			chdir(dir);
-			if (!PHYSFS_addToSearchPath(base, 0))
-				error(L, "Error: Could not add archive '%s' to search path: %s.", argv[1], PHYSFS_getLastError());
+			/* check if it's an archive; only zip is supported, so we check for the magic numbers */
+			fh = fopen(base, "r");
+			if (fh == NULL)
+				error(L, "Error: Could not open file '%s' for reading.", argv[1]);
+			fread(magic, 1, 4, fh);
+			fclose(fh);
+			/* look for the four signature bytes that every zip file has */
+			if (magic[0] == 0x50 && magic[1] == 0x4B && magic[2] == 0x03 && magic[3] == 0x04) {
+				fprintf(stdout, "Found zip archive: %s\n", base);
+				if (!PHYSFS_addToSearchPath(base, 0))
+					error(L, "Error: Could not add archive '%s' to search path: %s.", argv[1], PHYSFS_getLastError());				
+			} else {
+				fprintf(stdout, "Found Lua file: %s\n", base);
+				/* prepend the new working directory to the search path */
+				if (!PHYSFS_addToSearchPath(".", 0))
+					error(L, "Error: Could not add directory containing '%s' to search path: %s.", base, PHYSFS_getLastError());
+				/* change the filename to its basename -> later call to FS_runLuaFile will find it in the path */
+				*pFilename = base;
+			}
 		}
-	/* if a filname to execute is given, add its directory to the search path */
-	} else if (e_flag && *filename != NULL) {
-		splitPath(*filename, &dir, &base);
-		/* change the working directory to the directory with the Lua file */
-		chdir(dir);
-		/* prepend the new working directory to the search path */
-		if (!PHYSFS_addToSearchPath(".", 0))
-			error(L, "Error: Could not add directory containing '%s' to search path: %s.", base, PHYSFS_getLastError());
-		/* change the filename to its basename -> later call to FS_runLuaFile will find it in the path */
-		*filename = base;
 	}
 	
 	/* allow symlinks */
@@ -106,7 +131,6 @@ void FS_Init(int argc, char *argv[], int e_flag, char **filename) {
 	arr = PHYSFS_getSearchPath();
 	while (*arr != NULL)
 		printf("search path: %s\n", *arr++);
-
 }
 
 int FS_runLuaFile(const char *filename, int narg, int *nres) {
@@ -116,6 +140,7 @@ int FS_runLuaFile(const char *filename, int narg, int *nres) {
 	int err;
 	PHYSFS_file *Hndfile = NULL;
 	PHYSFS_sint64 fileLength, size;
+	
 	if (PHYSFS_exists(filename) == 0) {
 		lua_pushfstring(L, "Error executing '%s': file not found.", filename);
 		return ERROR;
