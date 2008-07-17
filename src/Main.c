@@ -41,7 +41,7 @@ int check_for_exit() {
 }
 
 static void usage(const char* exec_name) {
-	fprintf(stdout, "usage:\n\t%s [archive] [arguments]\nor\n\t%s -e [Lua file] [arguments]\n", exec_name, exec_name);
+	fprintf(stdout, "usage:\n\t%s [Lua file] [arguments]\nor\n\t%s [archive] [arguments]\nor\n\t%s [directory] [arguments]", exec_name, exec_name, exec_name);
 	exit(1);
 }
 
@@ -104,31 +104,21 @@ int main(int argc, char *argv[]) {
 	Uint32 lastTick;	/* Last iteration's tick value */
 	Uint32 delta = 0;
 	int i, n, narg, nres, result;
-	int e_flag = 0;
 	char *filename = NULL;
 
 	fprintf(stdout, "%s v%s\n", PROG_NAME, VERSION);
-
-	for (n=1; argv[n] != NULL; n++) {
-		if (argv[n][0] == '-') {
-			if ((argv[n][1] == 'e') && (argv[n][2] == '\0')) {
-				e_flag = 1;
-				filename = argv[n+1];
-				if (filename == NULL)
-					usage(argv[0]);
-			} else
-				usage(argv[0]);
-		} else
-			break;
-	}
-	if (filename == NULL) filename = "main.lua";
-	if (argc == 1) n = 0;	/* no arguments given */
-
+	
+	if (argc > 1) {
+		n = 1;
+		if (strcmp(argv[1], "--") != 0)
+			filename = argv[1];			
+	} else
+		n = argc - 1;
+		
 	L = luaL_newstate();	/* initialize Lua */
-
-	FS_Init(argc, argv, e_flag, &filename);	/* initialize Filesystem */
-
 	luaL_openlibs(L);	/* load Lua base libraries */
+	
+	FS_Init(argc, argv, &filename);	/* initialize Filesystem */
 
 	/* register Lua functions */
 	lua_newtable(L);
