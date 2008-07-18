@@ -89,13 +89,14 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 	/* if an Lua file is given, try to mount the parent directory and change the working directory */
 	/* if an archive or directory is given, try to mount it */
 	if (*pFilename == NULL) {
-		*pFilename = "main.lua";
+		*pFilename = DEFAULT_FILE;
 	} else {
 		/* try to change the working directory (only successful if directory is given) */
 		if (chdir(*pFilename) == 0) {
 			/* prepend the new working directory to the search path */
 			if (!PHYSFS_addToSearchPath(".", 0))
 				error(L, "Error: Could not add directory '%s' to search path: %s.", argv[1], PHYSFS_getLastError());
+			*pFilename = DEFAULT_FILE;
 		} else {
 			/* chdir was unsuccessful -> archive or Lua file was probably given on command line */
 			splitPath(*pFilename, &dir, &base);
@@ -111,7 +112,8 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 			if (magic[0] == 0x50 && magic[1] == 0x4B && magic[2] == 0x03 && magic[3] == 0x04) {
 				fprintf(stdout, "Found zip archive: %s\n", base);
 				if (!PHYSFS_addToSearchPath(base, 0))
-					error(L, "Error: Could not add archive '%s' to search path: %s.", argv[1], PHYSFS_getLastError());				
+					error(L, "Error: Could not add archive '%s' to search path: %s.", argv[1], PHYSFS_getLastError());
+				*pFilename = DEFAULT_FILE;
 			} else {
 				fprintf(stdout, "Found Lua file: %s\n", base);
 				/* prepend the new working directory to the search path */

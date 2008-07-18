@@ -29,6 +29,8 @@
 #define COPYRIGHT	"Copyright (C) 2005-2008 Andreas Krinke"
 #define AUTHOR		"Andreas Krinke"
 
+#define DEFAULT_FILE "main.slua"
+
 #define CHANNELS	16	/* number of audio channels */
 
 #define TRUE    0
