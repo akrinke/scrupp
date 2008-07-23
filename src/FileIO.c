@@ -49,10 +49,10 @@ static void FS_Quit(void) {
 void FS_Init(int argc, char *argv[], char **pFilename) {
 	#ifdef __APPLE__
 		char *ch = NULL;
+		const char *basedir;
 	#endif
 	FILE *fh;
 	char magic[4] = "000"; /* array for the magic bytes used to recognize a zip archive */
-	const char *basedir;
 	char *dir = NULL;
 	char *base = NULL;
 	char ** arr = NULL;
