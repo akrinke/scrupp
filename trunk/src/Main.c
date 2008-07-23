@@ -39,12 +39,12 @@ int check_for_exit() {
 	} else
 		return 0;
 }
-
+/*
 static void usage(const char* exec_name) {
 	fprintf(stdout, "usage:\n\t%s [Lua file] [arguments]\nor\n\t%s [archive] [arguments]\nor\n\t%s [directory] [arguments]", exec_name, exec_name, exec_name);
 	exit(1);
 }
-
+*/
 int error_function(lua_State *L) {
 	const char *err_msg;
 	char *pos;
@@ -257,8 +257,8 @@ int main(int argc, char *argv[]) {
 			fprintf(stdout, "delta: %d\n", delta);
 		*/
 
-		if (delta < 20) {
-			SDL_Delay(20 - delta);
+		while (delta < 10) {
+			SDL_Delay(1);
 			delta = SDL_GetTicks() - lastTick;
 		}
 
