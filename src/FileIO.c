@@ -67,11 +67,15 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 	#ifdef __APPLE__
 		ch = strstr(argv[0], "/Contents/MacOS");
 		if (ch != NULL) {
-			*(ch+1) = '\0'; /* substite the 'C' of 'Contents/MacOS' with a line terminator */
+			/* substite the 'C' of 'Contents/MacOS' with a string terminator */
+			*(ch+1) = '\0';
 			if (*pFilename == NULL)
+				/* if no filename was selected */
 				chdir(argv[0]);
+			/* append app folder to search path */
 			if ( !PHYSFS_addToSearchPath(argv[0], 1) )
-				error(L, "Error: Could not add application folder to search path: %s.", PHYSFS_getLastError() );
+				error(L,	"Error: Could not add application folder" 
+							"to search path: %s.", PHYSFS_getLastError() );
 			*(ch+1) = 'C';
 		} else {
 			basedir = PHYSFS_getBaseDir();
@@ -86,10 +90,27 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 			error(L, "Error: Could not add base dir to search path: %s.", PHYSFS_getLastError());
 	#endif
 	
-	/* if an Lua file is given, try to mount the parent directory and change the working directory */
-	/* if an archive or directory is given, try to mount it */
+	/* 
+	 * if a Lua file is given, try to mount the parent directory and change 
+	 * the working directory 
+	 * if an archive or directory is given, try to mount it 
+	 */
 	if (*pFilename == NULL) {
 		*pFilename = DEFAULT_FILE;
+		if (PHYSFS_exists(*pFilename) == 0) {
+			/* if default file not exists */
+			if (PHYSFS_exists(DEFAULT_ARCHIVE) != 0) { 
+				/* if default archive exists, prepend to search path */
+				if ( !PHYSFS_addToSearchPath(DEFAULT_ARCHIVE, 0) )
+					error(L,	"Error: Could not add default archive '"
+								DEFAULT_ARCHIVE "' to search path: %s.", 
+								PHYSFS_getLastError());			
+			} else
+				error(L,	"Error: "
+							"Neither the default Lua file '" DEFAULT_FILE 
+							"' nor the default archive '" DEFAULT_ARCHIVE 
+							"' could be found.");
+		}				
 	} else {
 		/* try to change the working directory (only successful if directory is given) */
 		if (chdir(*pFilename) == 0) {
