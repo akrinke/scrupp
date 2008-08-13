@@ -60,6 +60,9 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 	if ( !PHYSFS_init(argv[0]) ) 
 		error(L, "Error: Couldn't initialize PhysFS: %s.", PHYSFS_getLastError());
 	
+	/* allow symlinks */
+	PHYSFS_permitSymbolicLinks(1);
+	
 	/*	on Mac OS X applications are packed inside a folder with the ending .app;
 		try to set the search path to this folder;
 		if a file is not found in the base dir (the dir containing the app bundle)
@@ -85,7 +88,12 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 				error(L, "Error: Could not add base dir to search path: %s.", PHYSFS_getLastError());
 		}
 	#else
-		/* on every other system, append base dir to search path */
+		/* check whether we are on Linux or Unix */
+		#ifndef WIN32
+			/* on Linux or Unix: Try to append the share directory */
+			PHYSFS_addToSearchPath(SHARE_DIR, 1);
+		#endif
+		/* on every system but OS X, append base dir to search path */
 		if ( !PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1) )
 			error(L, "Error: Could not add base dir to search path: %s.", PHYSFS_getLastError());
 	#endif
@@ -145,9 +153,6 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 			}
 		}
 	}
-	
-	/* allow symlinks */
-	PHYSFS_permitSymbolicLinks(1);
 	
 	atexit(FS_Quit);
 

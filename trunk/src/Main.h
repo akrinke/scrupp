@@ -32,6 +32,10 @@
 #define DEFAULT_FILE	"main.slua"
 #define DEFAULT_ARCHIVE	"main.sar"
 
+#ifndef SHARE_DIR
+#define SHARE_DIR		"/usr/share/scrupp/"
+#endif
+
 #define CHANNELS	16	/* number of audio channels */
 
 #define TRUE    0
