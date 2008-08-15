@@ -97,35 +97,6 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 	return 0;
 }
 
-/* blit an OpenGL texture (wrapped in a Lua_Image) */
-int blitTexture(int x, int y, Lua_Image *image, myRect *clip_rect) {
-	GLrect texCoords = { 0, 0, image->xratio, image->yratio };
-	int width = image->w;
-	int height = image->h;
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture( GL_TEXTURE_2D, image->texture );
-	if (clip_rect) {
-		texCoords.x1 = (GLfloat) clip_rect->x / image->po2width;
-		texCoords.y1 = (GLfloat) clip_rect->y / image->po2height;
-		texCoords.x2 = (GLfloat) (clip_rect->x + clip_rect->w) / image->po2width;
-		texCoords.y2 = (GLfloat) (clip_rect->y + clip_rect->h) / image->po2height;
-		width = clip_rect->w;
-		height = clip_rect->h;
-	}
-	glColor4ub( 255, 255, 255, image->alpha);
-	glBegin( GL_QUADS );
-		glTexCoord2f( texCoords.x1, texCoords.y1 );
-		glVertex3i( x, y, 0 );
-		glTexCoord2f( texCoords.x1, texCoords.y2 );
-		glVertex3i( x, y+height, 0 );
-		glTexCoord2f( texCoords.x2, texCoords.y2 );
-		glVertex3i( x+width, y+height, 0 );
-		glTexCoord2f( texCoords.x2, texCoords.y1 );
-		glVertex3i( x+width, y, 0 );
-	glEnd();
-	return 0;
-}
-
 /* initialize SDL */
 static int initSDL (lua_State *L, const char *appName, int width, int height, int bpp, int fullscreen) {
 	Uint32 flags;
@@ -309,7 +280,10 @@ static int Lua_Image_render(lua_State *L) {
 	Lua_Image *image = checkimage(L);
 	int x, y;
 	myRect clip_rect;
-	myRect *pclip_rect = NULL;
+	int color[] = {255, 255, 255, 255};
+	GLrect texCoords = { 0, 0, image->xratio, image->yratio };
+	int width = image->w;
+	int height = image->h;
 
 	if (lua_istable(L, 2)) {
 		/* x and y are array element 1 and 2 */
@@ -321,15 +295,49 @@ static int Lua_Image_render(lua_State *L) {
 			if (!getint(L, &clip_rect.x, 1) || !getint(L, &clip_rect.y, 2) ||
 				!getint(L, &clip_rect.w, 3) || !getint(L, &clip_rect.h, 4))
 				return luaL_argerror(L, 2, "'rect' has invalid or missing elements");
-			pclip_rect = &clip_rect;
+
+			texCoords.x1 = (GLfloat) clip_rect.x / image->po2width;
+			texCoords.y1 = (GLfloat) clip_rect.y / image->po2height;
+			texCoords.x2 = (GLfloat) (clip_rect.x + clip_rect.w) / image->po2width;
+			texCoords.y2 = (GLfloat) (clip_rect.y + clip_rect.h) / image->po2height;
+			width = clip_rect.w;
+			height = clip_rect.h;
 		} else if (!lua_isnil(L, -1))
 			return luaL_argerror(L, 2, "'rect' should be an array and nothing else");
-		/* lua_pop(L, 1); */ /* nescessary if more arguments are implemented */
+		lua_pop(L, 1);
+		/* check for "color"-entry */
+		lua_getfield(L, -1, "color");
+		if (lua_istable(L, -1)) {
+			if (!getint(L, &color[0], 1) || !getint(L, &color[1], 2) || !getint(L, &color[2], 3))
+				return luaL_argerror(L, 1, "'color' has invalid or missing elements");
+			/* the alpha value of the color is optional */
+			getint(L, &color[3], 4);
+			image->alpha = (GLubyte)color[3];
+		} else if (!lua_isnil(L, -1))
+			return luaL_argerror(L, 1, "'color' should be an array and nothing else");
 	} else {
 		x = luaL_checkint(L, 2);
 		y = luaL_checkint(L, 3);
 	}
-	blitTexture(x, y, image, pclip_rect);
+
+	/* blit the OpenGL texture (wrapped in a Lua_Image) */
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture( GL_TEXTURE_2D, image->texture );
+
+	glColor4ub( (GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], image->alpha);
+
+	glBegin( GL_QUADS );
+		glTexCoord2f( texCoords.x1, texCoords.y1 );
+		glVertex3i( x, y, 0 );
+		glTexCoord2f( texCoords.x1, texCoords.y2 );
+		glVertex3i( x, y+height, 0 );
+		glTexCoord2f( texCoords.x2, texCoords.y2 );
+		glVertex3i( x+width, y+height, 0 );
+		glTexCoord2f( texCoords.x2, texCoords.y1 );
+		glVertex3i( x+width, y, 0 );
+	glEnd();
+
 	return 0;
 }
 
