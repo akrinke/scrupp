@@ -57,56 +57,6 @@ static int Lua_Font_getFontLineSkip(lua_State *L) {
 	return 1;
 }
 
-static int Lua_Font_print(lua_State *L) {
-	TTF_Font **font_ptr = checkfont(L);
-	int x, y;
-	const char *text;
-	int color[] = {255, 255, 255, 255};
-	SDL_Color scolor;
-	SDL_Surface *text_surface;
-	Lua_Image image;
-
-	if (SDL_GetVideoSurface() == NULL)
-		return luaL_error(L, "run game.init() before using fonts");
-	if (lua_istable(L, 2)) {
-		/* x and y are array elements 1 and 2 */
-		if (!getint(L, &x, 1) || !getint(L, &y, 2))
-			return luaL_argerror(L, 2, "invalid or missing x or y component in array");
-		/* the text is array element 3 */
-		lua_pushinteger(L, 3);
-		lua_gettable(L, -2);
-		if (!lua_isstring(L, -1))
-			return luaL_argerror(L, 2, "invalid or missing text in array");
-		text = lua_tostring(L, -1); /* stays on the stack */
-		/* check for "color" entry */
-		lua_getfield(L, -2, "color");
-		if (lua_istable(L, -1)) {
-			if (!getint(L, &color[0], 1) || !getint(L, &color[1], 2) || !getint(L, &color[2], 3))
-				return luaL_argerror(L, 1, "'color' has invalid or missing elements");
-			/* the alpha value of the color is optional */
-			getint(L, &color[3], 4);
-		}
-	} else {
-		x = luaL_checkint(L, 2);
-		y = luaL_checkint(L, 3);
-		//luaL_argcheck(L, x>=0, 2, "out of screen");
-		//luaL_argcheck(L, y>=0, 3, "out of screen");
-		text = luaL_checkstring(L, 4);
-		//luaL_argcheck(L, *text != '\0', 4, "empty string");
-	}
-	scolor.r = (Uint8)color[0];
-	scolor.g = (Uint8)color[1];
-	scolor.b = (Uint8)color[2];	
-	if (!(text_surface = TTF_RenderText_Blended(*font_ptr, text, scolor)))
-		return luaL_error(L, "Error rendering text: %s", TTF_GetError());
-	createTexture(text_surface, &image, (GLubyte)color[3]);
-	blitTexture(x, y, &image, NULL);
-	glDeleteTextures( 1, &image.texture );
-	SDL_FreeSurface(image.src);
-	SDL_FreeSurface(text_surface);
-	return 0;
-}
-
 static int Lua_Font_generateImage(lua_State *L) {
 	TTF_Font **font_ptr = checkfont(L);
 	const char *text;
@@ -172,7 +122,6 @@ static const struct luaL_Reg fontlib_m [] = {
 	{"getTextSize", Lua_Font_getTextSize},
 	{"getHeight", Lua_Font_getFontHeight},
 	{"getLineSkip", Lua_Font_getFontLineSkip},
-	{"print", Lua_Font_print},
 	{"generateImage", Lua_Font_generateImage},
 	{NULL, NULL}
 };
