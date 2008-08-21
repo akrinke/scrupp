@@ -1,10 +1,10 @@
-scrupp-- [[
+--[[
 -- $Id$
 -- Font class to ease usage of TTF fonts
 -- See Copyright Notice in COPYRIGHT
--- ]]
+--]]
 
---require"class"
+-- require"class"
 
 Font = class(function(a, font, size)
 	local str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?()[]{}.,;:-_"
