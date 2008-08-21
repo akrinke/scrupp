@@ -16,7 +16,7 @@ end)
 
 function Animation:addFrame(image, x, y, width, height, delay)
 	if type(image) == "string" then
-		image = game.addImage(image)
+		image = scrupp.addImage(image)
 	end
 	
 	self.frames[#self.frames+1] = {
@@ -31,7 +31,7 @@ end
 
 function Animation:addFrames(image, sizex, sizey, width, height, sep, delay)
 	if type(image) == "string" then
-		image = game.addImage(image)
+		image = scrupp.addImage(image)
 	end
 	
 	for i=1, sizey do

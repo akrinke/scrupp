@@ -13,7 +13,7 @@
 #include "physfsrwops.h"
 
 #define checkimage(L) \
-	(Lua_Image *)luaL_checkudata(L, 1, "game.image")
+	(Lua_Image *)luaL_checkudata(L, 1, "scrupp.image")
 
 typedef struct GLrect {
 	GLfloat x1,y1,x2,y2;
@@ -214,7 +214,7 @@ static int Lua_Image_load(lua_State *L) {
 	Lua_Image *ptr;
 
 	if (SDL_GetVideoSurface() == NULL)
-		return luaL_error(L, "Run game.init() before loading images.");
+		return luaL_error(L, "Run " NAMESPACE ".init() before loading images.");
 	temp = PHYSFSRWOPS_openRead(filename);
 	if (!temp)
 		return luaL_error(L, "Error loading file '%s': %s", filename, SDL_GetError());
@@ -224,7 +224,7 @@ static int Lua_Image_load(lua_State *L) {
 	ptr = lua_newuserdata(L, sizeof(Lua_Image));
 	createTexture(surface, ptr, 255);
 	SDL_FreeSurface(surface);
-	luaL_getmetatable(L, "game.image");
+	luaL_getmetatable(L, "scrupp.image");
 	lua_setmetatable(L, -2);
 	return 1;
 }
@@ -489,7 +489,7 @@ static const struct luaL_Reg imagelib_m [] = {
 };
 
 int luaopen_graphics(lua_State *L, const char *parent) {
-	luaL_newmetatable(L, "game.image");
+	luaL_newmetatable(L, "scrupp.image");
 	/* metatable.__index = metatable */
 	lua_pushvalue(L, -1);	/* duplicates the metatable */
 	lua_setfield(L, -2, "__index");

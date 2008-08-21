@@ -12,10 +12,10 @@
 #include "physfsrwops.h"
 
 #define checksound(L) \
-	(Mix_Chunk **)luaL_checkudata(L, 1, "game.sound")
+	(Mix_Chunk **)luaL_checkudata(L, 1, "scrupp.sound")
 
 #define checkmusic(L) \
-	(Mix_Music **)luaL_checkudata(L, 1, "game.music")
+	(Mix_Music **)luaL_checkudata(L, 1, "scrupp.music")
 
 /* this array connects the loaded samples with the channels they are played on */
 static Mix_Chunk* channels[CHANNELS];
@@ -57,7 +57,7 @@ static int Lua_Sound_load(lua_State *L) {
 	/* new userdata for pointer to sample */
 	ptr = lua_newuserdata(L, sizeof(Mix_Chunk*));
 	*ptr = sample;
-	luaL_getmetatable(L, "game.sound");
+	luaL_getmetatable(L, "scrupp.sound");
 	lua_setmetatable(L, -2);
 	return 1;
 }
@@ -184,7 +184,7 @@ static int Lua_Music_load(lua_State *L) {
 	/* new userdata for pointer to music */
 	ptr = lua_newuserdata(L, sizeof(Mix_Music*));
 	*ptr = music;
-	luaL_getmetatable(L, "game.music");
+	luaL_getmetatable(L, "scrupp.music");
 	lua_setmetatable(L, -2);
 	return 1;
 }
@@ -296,14 +296,14 @@ static const struct luaL_Reg musiclib_m [] = {
 
 int luaopen_sound(lua_State *L, const char *parent) {
 	initSound(L);
-	luaL_newmetatable(L, "game.sound");
+	luaL_newmetatable(L, "scrupp.sound");
 	/* metatable.__index = metatable */
 	lua_pushvalue(L, -1);	/* duplicates the metatable */
 	lua_setfield(L, -2, "__index");
 	luaL_register(L, NULL, soundlib_m);
 	lua_pop(L, 1);	/* pop the metatable */
 
-	luaL_newmetatable(L, "game.music");
+	luaL_newmetatable(L, "scrupp.music");
 	/* metatable.__index = metatable */
 	lua_pushvalue(L, -1);	/* duplicates the metatable */
 	lua_setfield(L, -2, "__index");

@@ -13,7 +13,7 @@
 #include <SDL_ttf.h>
 
 #define checkfont(L) \
-	(TTF_Font **)luaL_checkudata(L, 1, "game.font")
+	(TTF_Font **)luaL_checkudata(L, 1, "scrupp.font")
 
 static int Lua_Font_load(lua_State *L) {
 	TTF_Font *font;
@@ -30,7 +30,7 @@ static int Lua_Font_load(lua_State *L) {
 	/* new userdata for pointer to font */
 	ptr = lua_newuserdata(L, sizeof(TTF_Font*));
 	*ptr = font;
-	luaL_getmetatable(L, "game.font");
+	luaL_getmetatable(L, "scrupp.font");
 	lua_setmetatable(L, -2);
 	return 1;
 }
@@ -66,7 +66,7 @@ static int Lua_Font_generateImage(lua_State *L) {
 	Lua_Image *ptr;
 
 	if (SDL_GetVideoSurface() == NULL)
-		return luaL_error(L, "run game.init() before generating images");
+		return luaL_error(L, "run " NAMESPACE ".init() before generating images");
 	if (lua_istable(L, 2)) {
 		/* the text is array element 1 */
 		lua_pushinteger(L, 1);
@@ -93,7 +93,7 @@ static int Lua_Font_generateImage(lua_State *L) {
 	ptr = lua_newuserdata(L, sizeof(Lua_Image));
 	createTexture(text_surface, ptr, (GLubyte)color[3]);
 	SDL_FreeSurface(text_surface);
-	luaL_getmetatable(L, "game.image");
+	luaL_getmetatable(L, "scrupp.image");
 	lua_setmetatable(L, -2);
 	return 1;
 }
@@ -131,7 +131,7 @@ int luaopen_font(lua_State *L, const char *parent) {
 	if ( TTF_Init() == -1 )
 		return luaL_error(L, "Error running TTF_Init: %s", TTF_GetError());
 	atexit(TTF_Quit);
-	luaL_newmetatable(L, "game.font");
+	luaL_newmetatable(L, "scrupp.font");
 	/* metatable.__index = metatable */
 	lua_pushvalue(L, -1);	/* duplicates the metatable */
 	lua_setfield(L, -2, "__index");
