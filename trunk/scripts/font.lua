@@ -1,4 +1,4 @@
--- [[
+scrupp-- [[
 -- $Id$
 -- Font class to ease usage of TTF fonts
 -- See Copyright Notice in COPYRIGHT
@@ -14,7 +14,7 @@ Font = class(function(a, font, size)
 	local chars = {}
 	local width, height
 	
-	font = game.addFont(font, size)
+	font = scrupp.addFont(font, size)
 	local defaultImage = font:generateImage(str) 
 	
 	a.font = font

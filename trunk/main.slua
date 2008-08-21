@@ -7,19 +7,19 @@
 
 local width, height = 640, 480
 
-game.init("Scrupp", width, height, 32, false)
+scrupp.init("Scrupp", width, height, 32, false)
 
 -- loading fonts
 Fonts = {
-	game.addFont("fonts/Vera.ttf", 28),
-	game.addFont("fonts/Winks.ttf", 150),
+	scrupp.addFont("fonts/Vera.ttf", 28),
+	scrupp.addFont("fonts/Winks.ttf", 150),
 }
 
 -- generating images
 Images = {
 	Fonts[1]:generateImage{"Welcome to"},
 	Fonts[2]:generateImage{"Scrupp", color={190,0,0}},
-	Fonts[1]:generateImage{"Just change 'main.lua' to suit your needs!"}
+	Fonts[1]:generateImage{"Just change 'main.slua' to suit your needs!"}
 }
 
 main = {
@@ -31,7 +31,7 @@ main = {
 
 	keypressed = function(k)
 		if k == key.ESCAPE then
-			game.exit()
+			scrupp.exit()
 		end
 	end
 }
