@@ -7,18 +7,40 @@
 -- require"class"
 
 Font = class(function(a, font, size)
-	local str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?()[]{}.,;:-_"
-			
+	local font = scrupp.addFont(font, size)	
+	a.font = font
+	a.height = font:getHeight()
+	a.lineSkip = font:getLineSkip()	
+	a.chars = {}
+end)
+
+-- begin: wrapping the built-in functions for fonts
+function Font:getTextSize(text)
+	return self.font:getTextSize(text)
+end
+
+function Font:getHeight()
+	return self.height
+end
+
+function Font:getLineSkip()
+	return self.lineSkip
+end
+
+function Font:generateImage(arg)
+	return self.font:generateImage(arg)
+end
+-- end: wrapping the built-in functions for fonts
+
+function Font:cache(str)
+	local str = str or "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?()[]{}.,;:-_"
+	
+	local font = self.font
 	local x -- x-coordinate of the next inserted char
 	local char
-	local chars = {}
+	local chars = self.chars
 	local width, height
-	
-	font = scrupp.addFont(font, size)
 	local defaultImage = font:generateImage(str) 
-	
-	a.font = font
-	a.lineSkip = font:getLineSkip()
 	
 	for i=1,str:len() do
 		char = str:sub(i,i)
@@ -32,15 +54,14 @@ Font = class(function(a, font, size)
 			width = width
 		}
 	end
-	
-	a.chars = chars
-end)
+end
 
 function Font:print(x, y, color, text)
 	local chars = self.chars
 	local char, charTable
 	local orig_x = x
 	local font = self.font
+	text = tostring(text)
 	
 	for i=1,text:len() do
 		char = text:sub(i,i)

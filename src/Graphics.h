@@ -10,6 +10,7 @@
 #include <SDL_opengl.h>
 typedef struct Lua_Image {
 	GLuint texture;	/* OpenGL texture id */
+	GLenum texture_format;
 	SDL_Surface *src; /* surface with the source image; used for getpixel */
 	int w;			/* width of the texture */
 	int h;			/* height of the texture */
@@ -18,6 +19,8 @@ typedef struct Lua_Image {
 	float xratio;
 	float yratio;
 	GLubyte alpha;	/* alpha value of the whole texture */
+	struct Lua_Image *next;
+	struct Lua_Image *prev;
 } Lua_Image;
 
 typedef struct myRect {

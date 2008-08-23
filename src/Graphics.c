@@ -21,6 +21,8 @@ typedef struct GLrect {
 
 SDL_Surface *screen;
 
+Lua_Image *firstImage = NULL;
+
 /* calculates the next higher power of two */
 static int nextHigherPowerOfTwo(int k) {
 	int i;
@@ -30,13 +32,29 @@ static int nextHigherPowerOfTwo(int k) {
 	return k+1;
 }
 
+static int sendTextureToCard(Lua_Image *img) {
+	GLuint texture;
+	/* generate texture object handle */
+	glGenTextures( 1, &texture );
+	/* bind the texture object */
+	glBindTexture( GL_TEXTURE_2D, texture );
+	/* set the texture's stretching properties */
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	/* edit the texture's image data using the information from the surface */
+	glTexImage2D( 	GL_TEXTURE_2D, 0, img->src->format->BytesPerPixel, 
+					img->po2width, img->po2height, 0,
+					img->texture_format, GL_UNSIGNED_BYTE, img->src->pixels );
+	img->texture = texture;
+	return 0;
+}
+
 /* generate an OpenGL texture (wrapped in a Lua_Image) from a SDL_Surface */
 int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 	SDL_Surface *new_surface;
 	Uint32 rmask, gmask, bmask, amask;
 	GLint nrOfColors;
 	GLenum texture_format;
-	GLuint texture;
 	int old_width, old_height, new_width, new_height;
 	old_width = src->w;
 	old_height = src->h;
@@ -59,6 +77,7 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 		return luaL_error(L, "CreateRGBSurface failed: %s", SDL_GetError());
 	SDL_SetAlpha(src, 0, SDL_ALPHA_TRANSPARENT);
 	SDL_BlitSurface(src, NULL, new_surface, NULL);
+	
 	/* get the number of channels in the SDL surface */
 	nrOfColors = new_surface->format->BytesPerPixel;
 	if ( nrOfColors == 4 ) {		/* with alpha channel */
@@ -74,18 +93,9 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 	} else {
 		return luaL_error( L, "Image is not truecolor!" );
 	}
-	/* generate texture object handle */
-	glGenTextures( 1, &texture );
-	/* bind the texture object */
-	glBindTexture( GL_TEXTURE_2D, texture );
-	/* set the texture's stretching properties */
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	/* edit the texture's image data using the information from the surface */
-	glTexImage2D( 	GL_TEXTURE_2D, 0, nrOfColors, new_width, new_height, 0,
-					texture_format, GL_UNSIGNED_BYTE, new_surface->pixels );
+
 	dest->src = new_surface;
-	dest->texture = texture;
+	dest->texture_format = texture_format;
 	dest->w = old_width;
 	dest->h = old_height;
 	dest->po2width = new_width;
@@ -94,18 +104,39 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 	dest->xratio = (float) old_width / new_width;
 	dest->yratio = (float) old_height / new_height;
 	dest->alpha = alpha;
+	dest->next = NULL;
+	dest->prev = NULL;
+	
+	sendTextureToCard(dest);
+	if (firstImage == NULL) {
+		firstImage = dest;
+	} else {
+		firstImage->prev = dest;
+		dest->next = firstImage;
+		firstImage = dest;
+	}
 	return 0;
 }
 
 /* initialize SDL */
 static int initSDL (lua_State *L, const char *appName, int width, int height, int bpp, int fullscreen) {
 	Uint32 flags;
-	flags = SDL_OPENGL | SDL_GL_DOUBLEBUFFER | SDL_HWPALETTE | SDL_HWSURFACE | SDL_HWACCEL;
+	Lua_Image *node;
+	flags = SDL_OPENGL | SDL_GL_DOUBLEBUFFER;
 	if ( fullscreen )
 		flags |= SDL_FULLSCREEN;
-	if ( SDL_Init ( SDL_INIT_VIDEO | SDL_INIT_AUDIO ) != 0 )
-		luaL_error(L, "Couldn't initialize SDL: %s", SDL_GetError ());
-	atexit(SDL_Quit);
+	if (screen == NULL) {
+		if ( SDL_Init ( SDL_INIT_VIDEO | SDL_INIT_AUDIO ) != 0 )
+			luaL_error(L, "Couldn't initialize SDL: %s", SDL_GetError ());
+		atexit(SDL_Quit);
+	} else {
+		/* delete all OpenGL textures */
+		node = firstImage;
+		while (node != NULL) {
+			glDeleteTextures( 1, &node->texture );
+			node = node->next;
+		}
+	}
 	/* set window caption */
 	SDL_WM_SetCaption (appName, appName);
 	/* enable double buffering */
@@ -134,6 +165,12 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 	glOrtho( 0, width, height, 0, -1, 1 );
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();
+	/* reloading all images */
+	node = firstImage;
+	while (node != NULL) {
+		sendTextureToCard(node);
+		node = node->next;
+	}
 	return 0;
 }
 
@@ -345,6 +382,15 @@ static int image_gc(lua_State *L) {
 	Lua_Image *image = checkimage(L);
 	glDeleteTextures( 1, &image->texture );
 	SDL_FreeSurface(image->src);
+	/* remove image from list */
+	if (image->prev == NULL) {
+		firstImage = image->next;
+	} else {
+		image->prev->next = image->next;
+	}
+	if (image->next != NULL) {
+		image->next->prev = image->prev;
+	}		
 	/* fprintf(stdout, "Freed image.\n"); */
 	return 0;
 }
