@@ -239,6 +239,12 @@ static int Lua_Graphics_getWindowHeight(lua_State *L) {
 	return 1;
 }
 
+static int Lua_Graphics_getWindowSize(lua_State *L) {
+	lua_pushinteger(L, screen->w);
+	lua_pushinteger(L, screen->h);
+	return 2;
+}
+	
 static int Lua_Graphics_getTicks(lua_State *L) {
 	lua_pushinteger(L, SDL_GetTicks());
 	return 1;
@@ -509,11 +515,11 @@ static int Lua_Graphics_draw(lua_State *L){
 	return 0;
 }
 
-
 static const struct luaL_Reg graphicslib [] = {
 	{"init", 				Lua_Graphics_init},
 	{"getWindowWidth", 		Lua_Graphics_getWindowWidth},
 	{"getWindowHeight", 	Lua_Graphics_getWindowHeight},
+	{"getWindowSize",		Lua_Graphics_getWindowSize},
 	{"showCursor", 			Lua_Graphics_showCursor},
 	{"getTicks", 			Lua_Graphics_getTicks},
 	{"addImage", 			Lua_Image_load},

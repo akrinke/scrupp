@@ -30,8 +30,6 @@ typedef struct myRect {
 	int h;
 } myRect;
 
-extern SDL_Surface *screen;
-
 int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha);
 
 int luaopen_graphics(lua_State *L, const char *parent);
