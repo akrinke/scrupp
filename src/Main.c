@@ -21,6 +21,9 @@ lua_State *L;
 
 int done = 0;
 
+/* minimum delta between frames in milliseconds */
+Uint32 minimumDelta = 10;
+
 /* Last iteration's tick value */
 Uint32 lastTick;
 
@@ -79,6 +82,13 @@ int error_function(lua_State *L) {
 	return 1;
 }
 
+/* Lua functions */
+
+static int Lua_Main_setDelta(lua_State *L) {
+	minimumDelta = luaL_checkint(L, 1);
+	return 0;
+}
+
 static int Lua_Main_exit(lua_State *L) {
 	/* scrupp.exit is implemented by throwing an error with a special message */
 	/* the error handler checks for this message using check_for_exit() */
@@ -86,6 +96,7 @@ static int Lua_Main_exit(lua_State *L) {
 }
 
 static const struct luaL_Reg mainlib [] = {
+	{"setDelta", Lua_Main_setDelta},
 	{"exit", Lua_Main_exit},
 	{NULL, NULL}
 };
@@ -257,7 +268,7 @@ int main(int argc, char *argv[]) {
 			fprintf(stdout, "delta: %d\n", delta);
 		*/
 
-		while (delta < 10) {
+		while (delta < minimumDelta) {
 			SDL_Delay(1);
 			delta = SDL_GetTicks() - lastTick;
 		}
