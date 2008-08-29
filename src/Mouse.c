@@ -55,10 +55,10 @@ static int Lua_Mouse_isDown(lua_State *L) {
 }
 
 static const struct luaL_Reg mouselib [] = {
-	{"getX", Lua_Mouse_getX},
-	{"getY", Lua_Mouse_getY},
-	{"getPos", Lua_Mouse_getPos},
-	{"isDown", Lua_Mouse_isDown},
+	{"getMouseX", Lua_Mouse_getX},
+	{"getMouseY", Lua_Mouse_getY},
+	{"getMousePos", Lua_Mouse_getPos},
+	{"mouseButtonIsDown", Lua_Mouse_isDown},
 	{NULL, NULL}
 };
 

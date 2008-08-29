@@ -138,11 +138,9 @@ int main(int argc, char *argv[]) {
 	luaopen_font(L, NULL);
 	luaopen_graphics(L, NULL);
 	luaopen_sound(L, NULL);
+	luaopen_mouse(L, NULL);
+	luaopen_keyboard(L, NULL);
 	lua_setglobal(L, NAMESPACE);
-
-	luaopen_mouse(L, "mouse");
-	luaopen_keyboard(L, "key");
-	lua_pop(L, 2); /* pop "mouse" and "key" tables */
 	
 	/* create arg-table for the command-line-arguments */
 	/* taken from lua.c of Lua */
@@ -158,8 +156,6 @@ int main(int argc, char *argv[]) {
 	lua_setglobal(L, "arg");
 	
 	/* run main lua file */
-	/* if two arguments are given (then the first has to be '-e'), */
-	/* the second one will be executed as Lua file */
 	result = FS_runLuaFile(filename, narg, &nres);
 	if ((result == ERROR) && !check_for_exit())
 		error(L, "Error running '%s':\n\t%s", filename, lua_tostring(L, -1));
@@ -180,8 +176,6 @@ int main(int argc, char *argv[]) {
 
 		/* main.render(delta) */
 		lua_getfield(L, -1, "render");
-		if (!lua_isfunction(L, -1))
-			error(L, "Error: main.render is not defined or no function!\n");
 		lua_pushinteger(L, delta);
 		lua_pushcfunction(L, error_function);
 		lua_insert(L, -3);
@@ -199,11 +193,14 @@ int main(int argc, char *argv[]) {
 
 			case SDL_KEYDOWN:
 				lua_getfield(L, -1, "keypressed");
-				if (!lua_isfunction(L, -1)) {
-					lua_pop(L, 1); /* pop if it's no a function */
+				if (lua_isnil(L, -1)) {
+					lua_pop(L, 1); /* pop if it's nil */
 					break;
 				}
-				lua_pushinteger(L, event.key.keysym.sym);
+				lua_pushliteral(L, "Scrupp:key_table");
+				lua_rawget(L, LUA_REGISTRYINDEX);
+				lua_rawgeti(L, -1, event.key.keysym.sym);
+				lua_remove(L, -2); /* remove the key_table */
 				lua_pushcfunction(L, error_function);
 				lua_insert(L, -3);
 				if ((lua_pcall(L, 1, 0, -3) != 0) && !check_for_exit())
@@ -213,11 +210,14 @@ int main(int argc, char *argv[]) {
 
 			case SDL_KEYUP:
 				lua_getfield(L, -1, "keyreleased");
-				if (!lua_isfunction(L, -1)) {
-					lua_pop(L, 1); /* pop if it's no a function */
+				if (lua_isnil(L, -1)) {
+					lua_pop(L, 1); /* pop if it's nil */
 					break;
 				}
-				lua_pushinteger(L, event.key.keysym.sym);
+				lua_pushliteral(L, "Scrupp:key_table");
+				lua_rawget(L, LUA_REGISTRYINDEX);
+				lua_rawgeti(L, -1, event.key.keysym.sym);
+				lua_remove(L, -2); /* remove the key_table */				
 				lua_pushcfunction(L, error_function);
 				lua_insert(L, -3);
 				if ((lua_pcall(L, 1, 0, -3) != 0) && !check_for_exit())
@@ -227,8 +227,8 @@ int main(int argc, char *argv[]) {
 
 			case SDL_MOUSEBUTTONDOWN:
 				lua_getfield(L, -1, "mousepressed");
-				if (!lua_isfunction(L, -1)) {
-					lua_pop(L, 1); /* pop if it's no a function */
+				if (lua_isnil(L, -1)) {
+					lua_pop(L, 1); /* pop if it's nil */
 					break;
 				}
 				lua_pushinteger(L, event.button.x);
@@ -243,8 +243,8 @@ int main(int argc, char *argv[]) {
 
 			case SDL_MOUSEBUTTONUP:
 				lua_getfield(L, -1, "mousereleased");
-				if (!lua_isfunction(L, -1)) {
-					lua_pop(L, 1); /* pop if it's no a function */
+				if (lua_isnil(L, -1)) {
+					lua_pop(L, 1); /* pop if it's nil */
 					break;
 				}
 				lua_pushinteger(L, event.button.x);
