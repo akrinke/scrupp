@@ -30,7 +30,7 @@ main = {
 	end,
 
 	keypressed = function(k)
-		if k == key.ESCAPE then
+		if k == "ESCAPE" then
 			scrupp.exit()
 		end
 	end
