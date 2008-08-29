@@ -410,6 +410,8 @@ static int Lua_Graphics_draw(lua_State *L){
 	int i;
 	int n;
 	int *coords;
+	int xOffset;
+	int yOffset;
 	int color[] = {255, 255, 255, 255};
 	GLfloat size = 1.0f;
 	int connect = 0;
@@ -429,6 +431,16 @@ static int Lua_Graphics_draw(lua_State *L){
 			return luaL_argerror(L, 1, "invalid x or y component in array");
 		}
 	}
+	/* check for "xOffset"-entry */
+	lua_getfield(L, -1, "xOffset");
+	/* lua_tointeger returns 0 if xOffset is nil or not convertable to an integer */
+	xOffset = lua_tointeger(L, -1);
+	lua_pop(L, 1);
+	/* check for "yOffset"-entry */
+	lua_getfield(L, -1, "yOffset");
+	/* lua_tointeger returns 0 if yOffset is nil or not convertable to an integer */
+	yOffset = lua_tointeger(L, -1);
+	lua_pop(L, 1);
 	/* check for "color"-entry */
 	lua_getfield(L, -1, "color");
 	if (lua_istable(L, -1)) {
@@ -473,6 +485,10 @@ static int Lua_Graphics_draw(lua_State *L){
 		free(coords);
 		luaL_argerror(L, 1, "unconnected lines need an even number of coordinate-pairs");
 	}
+	
+	/* save the modelview matrix */
+	glPushMatrix();
+	glTranslatef(xOffset, yOffset, 0);
 
 	glColor4ub((GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], (GLubyte)color[3]);
 	glPointSize(size);
@@ -506,11 +522,15 @@ static int Lua_Graphics_draw(lua_State *L){
 		else
 			glBegin(GL_LINES);
 	}
-
-	for (i=n-2; i>=0; i=i-2)
+	
+	for (i=n-2; i>=0; i=i-2)	
 		glVertex3i(coords[i], coords[i+1], 0);
+
 	glEnd();
 
+	/* restore the modelview matrix */
+	glPopMatrix();
+	
 	free(coords);
 	return 0;
 }

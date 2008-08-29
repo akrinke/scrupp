@@ -267,8 +267,8 @@ static const struct luaL_Reg soundlib [] = {
 	{"resumeMusic",		Lua_Music_resume},
 	{"rewindMusic",		Lua_Music_rewind},
 	{"stopMusic",		Lua_Music_stop},
-	{"isMusicPlaying",	Lua_Music_isPlaying},
-	{"isMusicPaused",	Lua_Music_isPaused},
+	{"musicIsPlaying",	Lua_Music_isPlaying},
+	{"musicIsPaused",	Lua_Music_isPaused},
 	{NULL, NULL}
 };
 

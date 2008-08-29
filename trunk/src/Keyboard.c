@@ -10,12 +10,24 @@
 #include <SDL_keysym.h>
 
 #define E(name, val) \
+  lua_pushliteral(L, name); \
   lua_pushinteger(L, val); \
-  lua_setfield(L, -2, name);
+  lua_rawset(L, -3); \
+  lua_pushliteral(L, name); \
+  lua_rawseti(L, -2, val);
 
 static int Lua_Keyboard_isDown(lua_State *L) {
 	Uint8 *keystate = SDL_GetKeyState(NULL);
-	Uint16 key = (Uint16) luaL_checkint(L, 1);
+	Uint16 key;
+	
+	luaL_argcheck(L, lua_tostring(L, -1) != NULL, 1, "string expected");
+	lua_pushliteral(L, "Scrupp:key_table");
+	lua_rawget(L, LUA_REGISTRYINDEX);
+	lua_pushvalue(L, -2);
+	lua_rawget(L, -2);
+	luaL_argcheck(L, !lua_isnil(L, -1), 1, "unknown key");
+	key = (Uint16) lua_tointeger(L, -1);
+	
 	if (key>1000) {
 		key = key - 1000;
 		lua_pushboolean(L, keystate[key] + keystate[key+1]);
@@ -25,16 +37,21 @@ static int Lua_Keyboard_isDown(lua_State *L) {
 }
 
 static const struct luaL_Reg keyboardlib [] = {
-	{"isDown", Lua_Keyboard_isDown},
+	{"keyIsDown", Lua_Keyboard_isDown},
 	{NULL, NULL}
 };
 
 int luaopen_keyboard(lua_State *L, const char *parent) {
 	luaL_register(L, parent, keyboardlib);	/* leaves table on top of stack */
 
+	/*	create a table in the registry containing the mappings from
+		key names to SDLK numbers and vice versa */
+	lua_newtable(L);
+	
 	/* 	at first: generate virtual entries for SHIFT, CTRL, ALT, META and SUPER
 		these combine the left and right key
-		this way you can write key.isDown(SHIFT) and test for LSHIFT and RSHIFT */
+		this way you can write scrupp.keyIsDown("SHIFT") and test 
+		for LSHIFT and RSHIFT */
 
 	E("SHIFT", 1000 + SDLK_RSHIFT);
 	E("CTRL", 1000 + SDLK_RCTRL);
@@ -44,7 +61,6 @@ int luaopen_keyboard(lua_State *L, const char *parent) {
 
 	/* this generates table entries for every key in SDL_keysym.h */
 	E("UNKNOWN", SDLK_UNKNOWN);
-	E("FIRST", SDLK_FIRST);
 	E("BACKSPACE", SDLK_BACKSPACE);
 	E("TAB", SDLK_TAB);
 	E("CLEAR", SDLK_CLEAR);
@@ -52,20 +68,20 @@ int luaopen_keyboard(lua_State *L, const char *parent) {
 	E("PAUSE", SDLK_PAUSE);
 	E("ESCAPE", SDLK_ESCAPE);
 	E("SPACE", SDLK_SPACE);
-	E("EXCLAIM", SDLK_EXCLAIM);
-	E("QUOTEDBL", SDLK_QUOTEDBL);
-	E("HASH", SDLK_HASH);
-	E("DOLLAR", SDLK_DOLLAR);
-	E("AMPERSAND", SDLK_AMPERSAND);
-	E("QUOTE", SDLK_QUOTE);
-	E("LEFTPAREN", SDLK_LEFTPAREN);
-	E("RIGHTPAREN", SDLK_RIGHTPAREN);
-	E("ASTERISK", SDLK_ASTERISK);
-	E("PLUS", SDLK_PLUS);
-	E("COMMA", SDLK_COMMA);
-	E("MINUS", SDLK_MINUS);
-	E("PERIOD", SDLK_PERIOD);
-	E("SLASH", SDLK_SLASH);
+	E("!", SDLK_EXCLAIM);
+	E("\"", SDLK_QUOTEDBL);
+	E("#", SDLK_HASH);
+	E("$", SDLK_DOLLAR);
+	E("&", SDLK_AMPERSAND);
+	E("'", SDLK_QUOTE);
+	E("(", SDLK_LEFTPAREN);
+	E(")", SDLK_RIGHTPAREN);
+	E("*", SDLK_ASTERISK);
+	E("+", SDLK_PLUS);
+	E(",", SDLK_COMMA);
+	E("-", SDLK_MINUS);
+	E(".", SDLK_PERIOD);
+	E("/", SDLK_SLASH);
 	E("0", SDLK_0);
 	E("1", SDLK_1);
 	E("2", SDLK_2);
@@ -76,22 +92,22 @@ int luaopen_keyboard(lua_State *L, const char *parent) {
 	E("7", SDLK_7);
 	E("8", SDLK_8);
 	E("9", SDLK_9);
-	E("COLON", SDLK_COLON);
-	E("SEMICOLON", SDLK_SEMICOLON);
-	E("LESS", SDLK_LESS);
-	E("EQUALS", SDLK_EQUALS);
-	E("GREATER", SDLK_GREATER);
-	E("QUESTION", SDLK_QUESTION);
-	E("AT", SDLK_AT);
+	E(":", SDLK_COLON);
+	E(";", SDLK_SEMICOLON);
+	E("<", SDLK_LESS);
+	E("=", SDLK_EQUALS);
+	E(">", SDLK_GREATER);
+	E("?", SDLK_QUESTION);
+	E("@", SDLK_AT);
 	/*
 	   Skip uppercase letters
 	 */
-	E("LEFTBRACKET", SDLK_LEFTBRACKET);
-	E("BACKSLASH", SDLK_BACKSLASH);
-	E("RIGHTBRACKET", SDLK_RIGHTBRACKET);
-	E("CARET", SDLK_CARET);
-	E("UNDERSCORE", SDLK_UNDERSCORE);
-	E("BACKQUOTE", SDLK_BACKQUOTE);
+	E("[", SDLK_LEFTBRACKET);
+	E("\\", SDLK_BACKSLASH);
+	E("]", SDLK_RIGHTBRACKET);
+	E("^", SDLK_CARET);
+	E("_", SDLK_UNDERSCORE);
+	E("`", SDLK_BACKQUOTE);
 	E("a", SDLK_a);
 	E("b", SDLK_b);
 	E("c", SDLK_c);
@@ -120,7 +136,7 @@ int luaopen_keyboard(lua_State *L, const char *parent) {
 	E("z", SDLK_z);
 	E("DELETE", SDLK_DELETE);
 	/* End of ASCII mapped keysyms */
-
+	
 	/* International keyboard syms */
 	E("WORLD_0", SDLK_WORLD_0);
 	E("WORLD_1", SDLK_WORLD_1);
@@ -292,6 +308,8 @@ int luaopen_keyboard(lua_State *L, const char *parent) {
 	E("POWER", SDLK_POWER);
 	E("EURO", SDLK_EURO);
 	E("UNDO", SDLK_UNDO);
+	
+	lua_setfield(L, LUA_REGISTRYINDEX, "Scrupp:key_table");
 
 	return 1;
 }
