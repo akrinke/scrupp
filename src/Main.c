@@ -256,6 +256,21 @@ int main(int argc, char *argv[]) {
 					error(L, "Error running main.mousereleased:\n\t%s\n", lua_tostring(L, -1));
 				lua_pop(L, 1); /* remove error_function */
 				break;
+				
+			case SDL_VIDEORESIZE:
+				lua_getfield(L, -1, "resized");
+				if (lua_isnil(L, -1)) {
+					lua_pop(L, 1); /* pop if it's nil */
+					break;
+				}
+				lua_pushinteger(L, event.resize.w);
+				lua_pushinteger(L, event.resize.h);
+				lua_pushcfunction(L, error_function);
+				lua_insert(L, -4);
+				if ((lua_pcall(L, 2, 0, -4) != 0) && !check_for_exit())
+					error(L, "Error running main.resized:\n\t%s\n", lua_tostring(L, -1));
+				lua_pop(L, 1); /* remove error_function */
+				break;
 			}
 		}
 

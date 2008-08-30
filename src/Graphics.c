@@ -119,12 +119,14 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 }
 
 /* initialize SDL */
-static int initSDL (lua_State *L, const char *appName, int width, int height, int bpp, int fullscreen) {
+static int initSDL (lua_State *L, const char *appName, int width, int height, int bpp, int fullscreen, int resizable) {
 	Uint32 flags;
 	Lua_Image *node;
 	flags = SDL_OPENGL | SDL_GL_DOUBLEBUFFER;
-	if ( fullscreen )
+	if (fullscreen)
 		flags |= SDL_FULLSCREEN;
+	else if (resizable)
+		flags |= SDL_RESIZABLE;
 	if (screen == NULL) {
 		if ( SDL_Init ( SDL_INIT_VIDEO | SDL_INIT_AUDIO ) != 0 )
 			luaL_error(L, "Couldn't initialize SDL: %s", SDL_GetError ());
@@ -203,9 +205,13 @@ static int Lua_Graphics_init(lua_State *L) {
 	int height = luaL_checkint(L, 3);
 	int bpp = luaL_checkint(L, 4);
 	int fullscreen;
+	int resizable;
 	luaL_checkany(L, 5);
 	fullscreen = lua_toboolean(L, 5);
-	initSDL(L, appName, width, height, bpp, fullscreen);
+	/* 	lua_toboolean returns 0 when called with a non-valid index
+		this way resizable becomes optional */
+	resizable = lua_toboolean(L, 6);
+	initSDL(L, appName, width, height, bpp, fullscreen, resizable);
 	return 0;
 }
 
