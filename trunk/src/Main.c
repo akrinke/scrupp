@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
 	
 	/* run main lua file */
 	result = FS_runLuaFile(filename, narg, &nres);
-	if ((result == ERROR) && !check_for_exit())
+	if ((result == FILEIO_ERROR) && !check_for_exit())
 		error(L, "Error running '%s':\n\t%s", filename, lua_tostring(L, -1));
 
 	/* main loop */

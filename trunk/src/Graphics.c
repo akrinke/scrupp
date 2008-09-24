@@ -494,7 +494,7 @@ static int Lua_Graphics_draw(lua_State *L){
 	
 	/* save the modelview matrix */
 	glPushMatrix();
-	glTranslatef(xOffset, yOffset, 0);
+	glTranslatef((GLfloat)xOffset, (GLfloat)yOffset, 0);
 
 	glColor4ub((GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], (GLubyte)color[3]);
 	glPointSize(size);
