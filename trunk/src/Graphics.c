@@ -42,7 +42,7 @@ static int sendTextureToCard(Lua_Image *img) {
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	/* edit the texture's image data using the information from the surface */
-	glTexImage2D( 	GL_TEXTURE_2D, 0, img->src->format->BytesPerPixel, 
+	glTexImage2D( 	GL_TEXTURE_2D, 0, img->src->format->BytesPerPixel,
 					img->po2width, img->po2height, 0,
 					img->texture_format, GL_UNSIGNED_BYTE, img->src->pixels );
 	img->texture = texture;
@@ -75,9 +75,10 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 										rmask, gmask, bmask, amask);
 	if ( new_surface == NULL )
 		return luaL_error(L, "CreateRGBSurface failed: %s", SDL_GetError());
+
 	SDL_SetAlpha(src, 0, SDL_ALPHA_TRANSPARENT);
 	SDL_BlitSurface(src, NULL, new_surface, NULL);
-	
+
 	/* get the number of channels in the SDL surface */
 	nrOfColors = new_surface->format->BytesPerPixel;
 	if ( nrOfColors == 4 ) {		/* with alpha channel */
@@ -106,7 +107,7 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 	dest->alpha = alpha;
 	dest->next = NULL;
 	dest->prev = NULL;
-	
+
 	sendTextureToCard(dest);
 	if (firstImage == NULL) {
 		firstImage = dest;
@@ -250,7 +251,7 @@ static int Lua_Graphics_getWindowSize(lua_State *L) {
 	lua_pushinteger(L, screen->h);
 	return 2;
 }
-	
+
 static int Lua_Graphics_getTicks(lua_State *L) {
 	lua_pushinteger(L, SDL_GetTicks());
 	return 1;
@@ -333,11 +334,41 @@ static int Lua_Image_render(lua_State *L) {
 	GLrect texCoords = { 0, 0, image->xratio, image->yratio };
 	int width = image->w;
 	int height = image->h;
+	GLfloat translateX = 0.0f;
+	GLfloat translateY = 0.0f;
+	GLfloat scaleX = 1.0f;
+	GLfloat scaleY = 1.0f;
+	GLfloat rotate = 0.0f;
 
 	if (lua_istable(L, 2)) {
 		/* x and y are array element 1 and 2 */
 		if (!getint(L, &x, 1) || !getint(L, &y, 2))
 			return luaL_argerror(L, 2, "invalid x or y component in array");
+		/* check for "centerX"-entry */
+		lua_getfield(L, -1, "centerX");
+		if (lua_isnumber(L, -1))
+			translateX = (GLfloat)lua_tonumber(L, -1);
+		lua_pop(L, 1);
+		/* check for "centerY"-entry */
+		lua_getfield(L, -1, "centerY");
+		if (lua_isnumber(L, -1))
+			translateY = (GLfloat)lua_tonumber(L, -1);
+		lua_pop(L, 1);
+		/* check for "scaleX"-entry */
+		lua_getfield(L, -1, "scaleX");
+		if (lua_isnumber(L, -1))
+			scaleX = (GLfloat)lua_tonumber(L, -1);
+		lua_pop(L, 1);
+		/* check for "scaleY"-entry */
+		lua_getfield(L, -1, "scaleY");
+		if (lua_isnumber(L, -1))
+			scaleY = (GLfloat)lua_tonumber(L, -1);
+		lua_pop(L, 1);
+		/* check for "rotate"-entry */
+		lua_getfield(L, -1, "rotate");
+		if (lua_isnumber(L, -1))
+			rotate = (GLfloat)lua_tonumber(L, -1);
+		lua_pop(L, 1);
 		/* check for "rect"-entry */
 		lua_getfield(L, -1, "rect");
 		if (lua_istable(L, -1)) {
@@ -371,21 +402,43 @@ static int Lua_Image_render(lua_State *L) {
 
 	/* blit the OpenGL texture (wrapped in a Lua_Image) */
 
+	glEnable(GL_CULL_FACE);
 	glEnable(GL_TEXTURE_2D);
-	glBindTexture( GL_TEXTURE_2D, image->texture );
+	glBindTexture(GL_TEXTURE_2D, image->texture);
+
+	/* save the modelview matrix */
+	glPushMatrix();
+	glTranslatef((GLfloat)x, (GLfloat)y, 0);
+	glScalef(scaleX, scaleY, 0);
+	glRotatef(rotate, 0, 0, 1);
+	glTranslatef(-translateX, -translateY, 0);
 
 	glColor4ub( (GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], image->alpha);
 
-	glBegin( GL_QUADS );
-		glTexCoord2f( texCoords.x1, texCoords.y1 );
-		glVertex3i( x, y, 0 );
-		glTexCoord2f( texCoords.x1, texCoords.y2 );
-		glVertex3i( x, y+height, 0 );
-		glTexCoord2f( texCoords.x2, texCoords.y2 );
-		glVertex3i( x+width, y+height, 0 );
-		glTexCoord2f( texCoords.x2, texCoords.y1 );
-		glVertex3i( x+width, y, 0 );
+	glBegin(GL_QUADS);
+		if (scaleX*scaleY > 0) {
+			glTexCoord2f(texCoords.x1, texCoords.y1);
+			glVertex2i(0, 0);
+			glTexCoord2f(texCoords.x1, texCoords.y2);
+			glVertex2i(0, height);
+			glTexCoord2f( texCoords.x2, texCoords.y2);
+			glVertex2i(width, height);
+			glTexCoord2f(texCoords.x2, texCoords.y1);
+			glVertex2i(width, 0);
+		} else {
+			glTexCoord2f(texCoords.x1, texCoords.y1);
+			glVertex2i(0, 0);
+			glTexCoord2f(texCoords.x2, texCoords.y1);
+			glVertex2i(width, 0);
+			glTexCoord2f( texCoords.x2, texCoords.y2);
+			glVertex2i(width, height);
+			glTexCoord2f(texCoords.x1, texCoords.y2);
+			glVertex2i(0, height);
+		}
 	glEnd();
+
+	/* restore the modelview matrix */
+	glPopMatrix();
 
 	return 0;
 }
@@ -402,7 +455,7 @@ static int image_gc(lua_State *L) {
 	}
 	if (image->next != NULL) {
 		image->next->prev = image->prev;
-	}		
+	}
 	/* fprintf(stdout, "Freed image.\n"); */
 	return 0;
 }
@@ -416,8 +469,14 @@ static int Lua_Graphics_draw(lua_State *L){
 	int i;
 	int n;
 	int *coords;
-	int xOffset;
-	int yOffset;
+	int relative;
+	GLfloat translateX = 0.0f;
+	GLfloat translateY = 0.0f;
+	GLfloat scaleX = 1.0f;
+	GLfloat scaleY = 1.0f;
+	GLfloat rotate = 0.0f;
+	GLfloat centerX = 0.0f;
+	GLfloat centerY = 0.0f;
 	int color[] = {255, 255, 255, 255};
 	GLfloat size = 1.0f;
 	int connect = 0;
@@ -429,6 +488,7 @@ static int Lua_Graphics_draw(lua_State *L){
 	/* get number of elements in the array part of the table */
 	n = luaL_getn(L, 1);	/* alternative: lua_objlen(L, 1); */
 	luaL_argcheck(L, n % 2 == 0, 1, "even number of x- and y-coordinates needed");
+
 	/* collect all coordinates in array */
 	coords = (int*)malloc(n*sizeof(int));
 	for (i=0; i<n; i++) {
@@ -437,15 +497,41 @@ static int Lua_Graphics_draw(lua_State *L){
 			return luaL_argerror(L, 1, "invalid x or y component in array");
 		}
 	}
-	/* check for "xOffset"-entry */
-	lua_getfield(L, -1, "xOffset");
-	/* lua_tointeger returns 0 if xOffset is nil or not convertable to an integer */
-	xOffset = lua_tointeger(L, -1);
+	/* check for "relative"-entry */
+	lua_getfield(L, -1, "relative");
+	relative = lua_toboolean(L, -1);
+	if (relative) {
+		n = n - 2;
+		if (n<0)
+			return luaL_argerror(L, 1, "'relative' needs at least one coordinate pair");
+		translateX = (GLfloat)coords[0];
+		translateY = (GLfloat)coords[1];
+	}
 	lua_pop(L, 1);
-	/* check for "yOffset"-entry */
-	lua_getfield(L, -1, "yOffset");
-	/* lua_tointeger returns 0 if yOffset is nil or not convertable to an integer */
-	yOffset = lua_tointeger(L, -1);
+	/* check for "centerX"-entry */
+	lua_getfield(L, -1, "centerX");
+	if (lua_isnumber(L, -1))
+		centerX = (GLfloat)lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	/* check for "centerY"-entry */
+	lua_getfield(L, -1, "centerY");
+	if (lua_isnumber(L, -1))
+		centerY = (GLfloat)lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	/* check for "scaleX"-entry */
+	lua_getfield(L, -1, "scaleX");
+	if (lua_isnumber(L, -1))
+		scaleX = (GLfloat)lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	/* check for "scaleY"-entry */
+	lua_getfield(L, -1, "scaleY");
+	if (lua_isnumber(L, -1))
+		scaleY = (GLfloat)lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	/* check for "rotate"-entry */
+	lua_getfield(L, -1, "rotate");
+	if (lua_isnumber(L, -1))
+		rotate = (GLfloat)lua_tonumber(L, -1);
 	lua_pop(L, 1);
 	/* check for "color"-entry */
 	lua_getfield(L, -1, "color");
@@ -456,19 +542,12 @@ static int Lua_Graphics_draw(lua_State *L){
 		}
 		/* the alpha value of the color is optional */
 		getint(L, &color[3], 4);
-	} else if (!lua_isnil(L, -1)) {
-		free(coords);
-		return luaL_argerror(L, 1, "'color' should be an array and nothing else");
 	}
 	lua_pop(L, 1);
 	/* check for "size"-entry */
 	lua_getfield(L, -1, "size");
 	if (lua_isnumber(L, -1))
-		size = (float)lua_tonumber(L, -1);
-	else if (!lua_isnil(L, -1)) {
-		free(coords);
-		return luaL_argerror(L, 1, "'size' should be a number and nothing else");
-	}
+		size = (GLfloat)lua_tonumber(L, -1);
 	lua_pop(L, 1);
 	/* check for "connect"-entry */
 	lua_getfield(L, -1, "connect");
@@ -491,10 +570,14 @@ static int Lua_Graphics_draw(lua_State *L){
 		free(coords);
 		luaL_argerror(L, 1, "unconnected lines need an even number of coordinate-pairs");
 	}
-	
+
+	glDisable(GL_CULL_FACE);
 	/* save the modelview matrix */
 	glPushMatrix();
-	glTranslatef((GLfloat)xOffset, (GLfloat)yOffset, 0);
+	glTranslatef(translateX, translateY, 0);
+	glScalef(scaleX, scaleY, 0);
+	glRotatef(rotate, 0, 0, 1);
+	glTranslatef(-centerX, -centerY, 0);
 
 	glColor4ub((GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], (GLubyte)color[3]);
 	glPointSize(size);
@@ -511,11 +594,14 @@ static int Lua_Graphics_draw(lua_State *L){
 	}
 
 	glDisable(GL_TEXTURE_2D);
-	if (n == 2 || pixelList)
+	if (n == 2 || pixelList) {
+		glTranslatef(0.5f, 0.5f, 0.0f);
 		glBegin(GL_POINTS);
-	else if (fill) {
-		if (n == 4)
+	} else if (fill) {
+		if (n == 4) {
+			glTranslatef(0.5f, 0.5f, 0.0f);
 			glBegin(GL_LINE_STRIP);
+		}
 		else if (n == 6)
 			glBegin(GL_TRIANGLES);
 		else if (n == 8)
@@ -523,20 +609,22 @@ static int Lua_Graphics_draw(lua_State *L){
 		else if (n > 8)
 			glBegin(GL_POLYGON);
 	} else {
+		glTranslatef(0.5f, 0.5f, 0.0f);
 		if (connect)
 			glBegin(GL_LINE_STRIP);
 		else
 			glBegin(GL_LINES);
 	}
-	
-	for (i=n-2; i>=0; i=i-2)	
-		glVertex3i(coords[i], coords[i+1], 0);
+
+	for (i=n+2*(relative-1); i>=2*relative; i=i-2) {
+		glVertex2i(coords[i], coords[i+1]);
+	}
 
 	glEnd();
 
 	/* restore the modelview matrix */
 	glPopMatrix();
-	
+
 	free(coords);
 	return 0;
 }
