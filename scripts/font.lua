@@ -9,6 +9,7 @@
 Font = class(function(a, font, size)
 	local font = scrupp.addFont(font, size)	
 	a.font = font
+	a.color = {255, 255, 255}
 	a.height = font:getHeight()
 	a.lineSkip = font:getLineSkip()	
 	a.chars = {}
@@ -31,6 +32,10 @@ function Font:generateImage(arg)
 	return self.font:generateImage(arg)
 end
 -- end: wrapping the built-in functions for fonts
+
+function Font:setColor(color)
+	self.color = color
+end
 
 function Font:cache(str)
 	local str = str or "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?()[]{}.,;:-_"
@@ -56,7 +61,7 @@ function Font:cache(str)
 	end
 end
 
-function Font:print(x, y, color, text)
+function Font:print(x, y, text)
 	local chars = self.chars
 	local char, charTable
 	local orig_x = x
@@ -79,7 +84,7 @@ function Font:print(x, y, color, text)
 			charTable = chars[char]
 			charTable[1] = x
 			charTable[2] = y
-			charTable.color = color
+			charTable.color = self.color
 			charTable.image:render(charTable)
 			x = x + charTable.width
 		end
