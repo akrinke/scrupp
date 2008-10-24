@@ -30,7 +30,7 @@ static int initSound(lua_State *L) {
 	/* 	open 22.05KHz, signed 16bit, system byte order,
 		stereo audio, using 1024 byte chunks */
 	if(Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 1024)==-1)
-		return luaL_error(L, "Error running Mix_OpenAudio: %s", Mix_GetError());
+		return -1;
 	Mix_AllocateChannels(CHANNELS);
 	for (i=0; i<CHANNELS; i++)
 		channels[i] = NULL;
@@ -295,7 +295,12 @@ static const struct luaL_Reg musiclib_m [] = {
 
 
 int luaopen_sound(lua_State *L, const char *parent) {
-	initSound(L);
+	if (initSound(L) == -1) {
+		fprintf(stderr,	"Error running Mix_OpenAudio: %s\n"
+						"\tSupport of sound and music has been disabled.\n", 
+						Mix_GetError());
+		return -1;
+	}
 	luaL_newmetatable(L, "scrupp.sound");
 	/* metatable.__index = metatable */
 	lua_pushvalue(L, -1);	/* duplicates the metatable */

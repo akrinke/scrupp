@@ -7,7 +7,7 @@
 -- require"class"
 
 Font = class(function(a, font, size)
-	local font = scrupp.addFont(font, size)	
+	font = scrupp.addFont(font, size)	
 	a.font = font
 	a.color = {255, 255, 255}
 	a.height = font:getHeight()
@@ -61,32 +61,35 @@ function Font:cache(str)
 	end
 end
 
-function Font:print(x, y, text)
+function Font:print(x, y, ...)
 	local chars = self.chars
 	local char, charTable
 	local orig_x = x
 	local font = self.font
-	text = tostring(text)
+	local text
 	
-	for i=1,text:len() do
-		char = text:sub(i,i)
-		if char == "\n" then
-			x = orig_x
-			y = y + self.lineSkip			
-		else			
-			if not chars[char] then
-				chars[char] = {
-					0, 0, -- placeholders for the x- and y-coordinates used for rendering
-					image = font:generateImage(char),
-					width = font:getTextSize(char)
-				}
+	for n=1, select("#", ...) do
+		text = tostring(select(n, ...))
+		for i=1,text:len() do
+			char = text:sub(i,i)
+			if char == "\n" then
+				x = orig_x
+				y = y + self.lineSkip			
+			else
+				if not chars[char] then
+					chars[char] = {
+						0, 0, -- placeholders for the x- and y-coordinates used for rendering
+						image = font:generateImage(char),
+						width = font:getTextSize(char)
+					}
+				end
+				charTable = chars[char]
+				charTable[1] = x
+				charTable[2] = y
+				charTable.color = self.color
+				charTable.image:render(charTable)
+				x = x + charTable.width
 			end
-			charTable = chars[char]
-			charTable[1] = x
-			charTable[2] = y
-			charTable.color = self.color
-			charTable.image:render(charTable)
-			x = x + charTable.width
 		end
 	end
 end

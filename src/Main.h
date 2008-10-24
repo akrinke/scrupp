@@ -25,7 +25,7 @@
 #include "lauxlib.h"
 
 #define PROG_NAME 	"Scrupp"
-#define VERSION 	"0.1"
+#define VERSION 	"0.2"
 #define COPYRIGHT	"Copyright (C) 2005-2008 Andreas Krinke"
 #define AUTHOR		"Andreas Krinke"
 
