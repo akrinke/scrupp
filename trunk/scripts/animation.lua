@@ -61,6 +61,11 @@ function Animation:getHeight()
 	return self.frames[self.activeFrame].rect[4] or 0
 end
 
+function Animation:getSize()
+	return 	self.frames[self.activeFrame].rect[3] or 0,
+			self.frames[self.activeFrame].rect[4] or 0
+end
+
 function Animation:isTransparent(x, y)
 	local frame = self.frames[self.activeFrame]
 	x = x + frame.rect[1]

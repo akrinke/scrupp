@@ -486,7 +486,7 @@ static int Lua_Graphics_draw(lua_State *L){
 
 	luaL_checktype(L, 1, LUA_TTABLE);
 	/* get number of elements in the array part of the table */
-	n = luaL_getn(L, 1);	/* alternative: lua_objlen(L, 1); */
+	n = lua_objlen(L, 1);
 	luaL_argcheck(L, n % 2 == 0, 1, "even number of x- and y-coordinates needed");
 
 	/* collect all coordinates in array */

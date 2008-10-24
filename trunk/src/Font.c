@@ -128,8 +128,12 @@ static const struct luaL_Reg fontlib_m [] = {
 
 int luaopen_font(lua_State *L, const char *parent) {
 	/* initialize SDL_ttf */
-	if ( TTF_Init() == -1 )
-		return luaL_error(L, "Error running TTF_Init: %s", TTF_GetError());
+	if ( TTF_Init() == -1 ) {
+		fprintf(stderr,	"Error running TTF_Init: %s\n"
+						"\tSupport of truetype fonts has been disabled.\n",
+						TTF_GetError());
+		return -1;
+	}
 	atexit(TTF_Quit);
 	luaL_newmetatable(L, "scrupp.font");
 	/* metatable.__index = metatable */

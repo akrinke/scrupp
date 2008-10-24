@@ -49,7 +49,7 @@ static int Lua_Mouse_isDown(lua_State *L) {
 	else if (strcmp(button, buttonNames[2]) == 0)
 		bitmask &= SDL_BUTTON(SDL_BUTTON_RIGHT);
 	else
-		return luaL_error(L, "Unknown option to Mouse:isDown()", button);
+		return luaL_error(L, "Unknown option to " NAMESPACE ".mouseButtonIsDown()");
 	lua_pushboolean(L, bitmask);
 	return 1;
 }

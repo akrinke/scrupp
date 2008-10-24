@@ -72,9 +72,10 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 		if (ch != NULL) {
 			/* substite the 'C' of 'Contents/MacOS' with a string terminator */
 			*(ch+1) = '\0';
-			if (*pFilename == NULL)
+			if (*pFilename == NULL) {
 				/* if no filename was selected */
 				chdir(argv[0]);
+			}
 			/* append app folder to search path */
 			if ( !PHYSFS_addToSearchPath(argv[0], 1) )
 				error(L,	"Error: Could not add application folder" 
@@ -209,7 +210,7 @@ int FS_runLuaFile(const char *filename, int narg, int *nres) {
 	/* skip #! if nescessary */
 	entryPoint = buffer;
 	if (buffer[0] == '#') {
-		while (*entryPoint != '\n' && *entryPoint != EOF) {
+		while (*entryPoint != 0x0D && *entryPoint != 0x0A && *entryPoint != EOF) {
 			entryPoint++;
 			fileLength--;
 		}
