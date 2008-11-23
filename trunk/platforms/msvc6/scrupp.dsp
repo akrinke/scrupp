@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 OpenGL32.lib glu32.lib glaux.lib physfs.lib lua5.1.lib SDL.lib SDL_image.lib SDL_mixer.lib SDL_ttf.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /libpath:"lib"
+# ADD LINK32 OpenGL32.lib glu32.lib glaux.lib physfs.lib lua5.1.lib SDL.lib SDL_image.lib SDL_mixer.lib SDL_ttf.lib smpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /libpath:"lib"
 
 !ELSEIF  "$(CFG)" == "scrupp - Win32 Debug"
 
@@ -120,6 +120,10 @@ SOURCE="..\..\src\Mouse.c"
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\Movie.c
+# End Source File
+# Begin Source File
+
 SOURCE="..\..\src\physfsrwops.c"
 # End Source File
 # Begin Source File
@@ -161,6 +165,10 @@ SOURCE="..\..\src\Main.h"
 # Begin Source File
 
 SOURCE="..\..\src\Mouse.h"
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\Movie.h
 # End Source File
 # Begin Source File
 
