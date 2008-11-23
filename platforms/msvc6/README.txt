@@ -5,7 +5,7 @@ Open scrupp.dsw, select the active Configuration (Debug or
 Release) and compile everything. The temporary files will 
 be created in the Debug/Release folder. The final 
 executable scrupp.exe will be created in the root folder 
-(..\..; the one which contains main.lua).
+(..\..; the one which contains main.slua).
 
 In order to run the executable you need to download the 
 runtime libraries (DLLs). These are contained in the 
