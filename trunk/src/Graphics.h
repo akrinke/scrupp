@@ -24,12 +24,15 @@ typedef struct Lua_Image {
 } Lua_Image;
 
 typedef struct myRect {
-	int x;
-	int y;
-	int w;
-	int h;
+	int x, y, w, h;
 } myRect;
 
+typedef struct GLrect {
+	GLfloat x1, y1, x2, y2;
+} GLrect;
+
+unsigned int nextHigherPowerOfTwo(unsigned int k);
+int sendTextureToCard(Lua_Image *img);
 int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha);
 
 int luaopen_graphics(lua_State *L, const char *parent);

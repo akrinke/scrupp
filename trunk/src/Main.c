@@ -13,6 +13,7 @@
 #include "Mouse.h"
 #include "Keyboard.h"
 #include "Sound.h"
+#include "Movie.h"
 
 #include <string.h>
 #include <SDL_opengl.h>
@@ -140,6 +141,7 @@ int main(int argc, char *argv[]) {
 	luaopen_sound(L, NULL);
 	luaopen_mouse(L, NULL);
 	luaopen_keyboard(L, NULL);
+	luaopen_movie(L, NULL);
 	lua_setglobal(L, NAMESPACE);
 	
 	/* create arg-table for the command-line-arguments */
@@ -167,7 +169,6 @@ int main(int argc, char *argv[]) {
 		lastTick = SDL_GetTicks();
 
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-		glLoadIdentity();
 
 		lua_getglobal(L, "main");
 

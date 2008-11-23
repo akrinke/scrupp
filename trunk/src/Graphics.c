@@ -15,16 +15,12 @@
 #define checkimage(L) \
 	(Lua_Image *)luaL_checkudata(L, 1, "scrupp.image")
 
-typedef struct GLrect {
-	GLfloat x1,y1,x2,y2;
-} GLrect;
-
 SDL_Surface *screen;
 
 Lua_Image *firstImage = NULL;
 
 /* calculates the next higher power of two */
-static int nextHigherPowerOfTwo(int k) {
+unsigned int nextHigherPowerOfTwo(unsigned int k) {
 	int i;
 	k--;
 	for (i=1; i<sizeof(int)*8; i=i*2)
@@ -32,7 +28,7 @@ static int nextHigherPowerOfTwo(int k) {
 	return k+1;
 }
 
-static int sendTextureToCard(Lua_Image *img) {
+int sendTextureToCard(Lua_Image *img) {
 	GLuint texture;
 	/* generate texture object handle */
 	glGenTextures( 1, &texture );
@@ -123,7 +119,7 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 static int initSDL (lua_State *L, const char *appName, int width, int height, int bpp, int fullscreen, int resizable) {
 	Uint32 flags;
 	Lua_Image *node;
-	flags = SDL_OPENGL | SDL_GL_DOUBLEBUFFER;
+	flags = SDL_OPENGL;
 	if (fullscreen)
 		flags |= SDL_FULLSCREEN;
 	else if (resizable)
@@ -144,9 +140,9 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 	SDL_WM_SetCaption (appName, appName);
 	/* enable double buffering */
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_RED_SIZE,   8);
-	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,  8);
+	SDL_GL_SetAttribute(SDL_GL_RED_SIZE,   5);
+	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 5);
+	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,  5);
 	screen = SDL_SetVideoMode(width, height, bpp, flags);
 	if (screen == NULL)
 		return luaL_error(L, 	"Couldn't set %dx%dx%d video mode: %s",
@@ -257,6 +253,45 @@ static int Lua_Graphics_getTicks(lua_State *L) {
 	return 1;
 }
 
+static int Lua_Graphics_translateView(lua_State *L) {
+	GLdouble translateX = (GLdouble)luaL_checknumber(L, 1);
+	GLdouble translateY = (GLdouble)luaL_checknumber(L, 2);
+	glTranslated(translateX, translateY, 0);	
+	return 0;
+}
+
+static int Lua_Graphics_scaleView(lua_State *L) {
+	GLdouble scaleX = (GLdouble)luaL_checknumber(L, 1);
+	GLdouble scaleY = (GLdouble)luaL_checknumber(L, 2);
+	glScaled(scaleX, scaleY, 0);	
+	return 0;
+}
+
+static int Lua_Graphics_rotateView(lua_State *L) {
+	GLdouble rotate = (GLdouble)luaL_checknumber(L, 1);
+	glRotated(rotate, 0, 0, 1);
+	return 0;
+}
+
+static int Lua_Graphics_saveView(lua_State *L) {
+	glPushMatrix();
+	if (glGetError() == GL_STACK_OVERFLOW)
+		return luaL_error(L, "No more free slots to save the view.");
+	return 0;
+}
+
+static int Lua_Graphics_restoreView(lua_State *L) {
+	glPopMatrix();
+	if (glGetError() == GL_STACK_UNDERFLOW)
+		return luaL_error(L, "No saved view was found.");
+	return 0;
+}
+
+static int Lua_Graphics_resetView(lua_State *L) {
+	glLoadIdentity();
+	return 0;
+}
+
 static int Lua_Image_load(lua_State *L) {
 	const char* filename = luaL_checkstring(L, 1);
 	SDL_RWops *temp;
@@ -269,8 +304,31 @@ static int Lua_Image_load(lua_State *L) {
 	if (!temp)
 		return luaL_error(L, "Error loading file '%s': %s", filename, SDL_GetError());
 	surface = IMG_Load_RW(temp, 1);
-	if (!surface)
+	if (surface == NULL)
 		return luaL_error(L, "Error loading file '%s': %s", filename, IMG_GetError());
+	ptr = lua_newuserdata(L, sizeof(Lua_Image));
+	createTexture(surface, ptr, 255);
+	SDL_FreeSurface(surface);
+	luaL_getmetatable(L, "scrupp.image");
+	lua_setmetatable(L, -2);
+	return 1;
+}
+
+static int Lua_Image_loadFromString(lua_State *L) {
+	size_t len;
+	const char* string = luaL_checklstring(L, 1, &len);
+	SDL_RWops *rw;
+	SDL_Surface *surface;
+	Lua_Image *ptr;
+
+	if (SDL_GetVideoSurface() == NULL)
+		return luaL_error(L, "Run " NAMESPACE ".init() before loading images.");	
+	rw = SDL_RWFromConstMem(string, len);
+	if (rw == NULL)
+		return luaL_error(L, "Error reading string.");	
+	surface = IMG_Load_RW(rw, 1);
+	if (surface == NULL)
+		return luaL_error(L, "Error loading image from string: %s", IMG_GetError());
 	ptr = lua_newuserdata(L, sizeof(Lua_Image));
 	createTexture(surface, ptr, 255);
 	SDL_FreeSurface(surface);
@@ -315,7 +373,6 @@ static int Lua_Image_isTransparent(lua_State *L) {
 static int Lua_Image_setAlpha(lua_State *L) {
 	Lua_Image *image = checkimage(L);
 	int alpha = luaL_checkint(L, 2);
-	luaL_argcheck(L, (alpha>=0) && (alpha<=255), 2, "0 <= alpha <= 255");
 	image->alpha = (GLubyte) alpha;
 	return 0;
 }
@@ -334,11 +391,11 @@ static int Lua_Image_render(lua_State *L) {
 	GLrect texCoords = { 0, 0, image->xratio, image->yratio };
 	int width = image->w;
 	int height = image->h;
-	GLfloat translateX = 0.0f;
-	GLfloat translateY = 0.0f;
-	GLfloat scaleX = 1.0f;
-	GLfloat scaleY = 1.0f;
-	GLfloat rotate = 0.0f;
+	GLdouble translateX = 0.0;
+	GLdouble translateY = 0.0;
+	GLdouble scaleX = 1.0;
+	GLdouble scaleY = 1.0;
+	GLdouble rotate = 0.0;
 
 	if (lua_istable(L, 2)) {
 		/* x and y are array element 1 and 2 */
@@ -347,27 +404,27 @@ static int Lua_Image_render(lua_State *L) {
 		/* check for "centerX"-entry */
 		lua_getfield(L, -1, "centerX");
 		if (lua_isnumber(L, -1))
-			translateX = (GLfloat)lua_tonumber(L, -1);
+			translateX = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
 		/* check for "centerY"-entry */
 		lua_getfield(L, -1, "centerY");
 		if (lua_isnumber(L, -1))
-			translateY = (GLfloat)lua_tonumber(L, -1);
+			translateY = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
 		/* check for "scaleX"-entry */
 		lua_getfield(L, -1, "scaleX");
 		if (lua_isnumber(L, -1))
-			scaleX = (GLfloat)lua_tonumber(L, -1);
+			scaleX = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
 		/* check for "scaleY"-entry */
 		lua_getfield(L, -1, "scaleY");
 		if (lua_isnumber(L, -1))
-			scaleY = (GLfloat)lua_tonumber(L, -1);
+			scaleY = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
 		/* check for "rotate"-entry */
 		lua_getfield(L, -1, "rotate");
 		if (lua_isnumber(L, -1))
-			rotate = (GLfloat)lua_tonumber(L, -1);
+			rotate = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
 		/* check for "rect"-entry */
 		lua_getfield(L, -1, "rect");
@@ -409,9 +466,9 @@ static int Lua_Image_render(lua_State *L) {
 	/* save the modelview matrix */
 	glPushMatrix();
 	glTranslatef((GLfloat)x, (GLfloat)y, 0);
-	glScalef(scaleX, scaleY, 0);
-	glRotatef(rotate, 0, 0, 1);
-	glTranslatef(-translateX, -translateY, 0);
+	glScaled(scaleX, scaleY, 0);
+	glRotated(rotate, 0, 0, 1);
+	glTranslated(-translateX, -translateY, 0);
 
 	glColor4ub( (GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], image->alpha);
 
@@ -465,18 +522,18 @@ static int image_tostring(lua_State *L) {
 	return 1;
 }
 
-static int Lua_Graphics_draw(lua_State *L){
+static int Lua_Graphics_draw(lua_State *L) {
 	int i;
 	int n;
 	int *coords;
 	int relative;
-	GLfloat translateX = 0.0f;
-	GLfloat translateY = 0.0f;
-	GLfloat scaleX = 1.0f;
-	GLfloat scaleY = 1.0f;
-	GLfloat rotate = 0.0f;
-	GLfloat centerX = 0.0f;
-	GLfloat centerY = 0.0f;
+	GLdouble translateX = 0.0f;
+	GLdouble translateY = 0.0f;
+	GLdouble scaleX = 1.0f;
+	GLdouble scaleY = 1.0f;
+	GLdouble rotate = 0.0f;
+	GLdouble centerX = 0.0f;
+	GLdouble centerY = 0.0f;
 	int color[] = {255, 255, 255, 255};
 	GLfloat size = 1.0f;
 	int connect = 0;
@@ -504,34 +561,34 @@ static int Lua_Graphics_draw(lua_State *L){
 		n = n - 2;
 		if (n<0)
 			return luaL_argerror(L, 1, "'relative' needs at least one coordinate pair");
-		translateX = (GLfloat)coords[0];
-		translateY = (GLfloat)coords[1];
+		translateX = (GLdouble)coords[0];
+		translateY = (GLdouble)coords[1];
 	}
 	lua_pop(L, 1);
 	/* check for "centerX"-entry */
 	lua_getfield(L, -1, "centerX");
 	if (lua_isnumber(L, -1))
-		centerX = (GLfloat)lua_tonumber(L, -1);
+		centerX = (GLdouble)lua_tonumber(L, -1);
 	lua_pop(L, 1);
 	/* check for "centerY"-entry */
 	lua_getfield(L, -1, "centerY");
 	if (lua_isnumber(L, -1))
-		centerY = (GLfloat)lua_tonumber(L, -1);
+		centerY = (GLdouble)lua_tonumber(L, -1);
 	lua_pop(L, 1);
 	/* check for "scaleX"-entry */
 	lua_getfield(L, -1, "scaleX");
 	if (lua_isnumber(L, -1))
-		scaleX = (GLfloat)lua_tonumber(L, -1);
+		scaleX = (GLdouble)lua_tonumber(L, -1);
 	lua_pop(L, 1);
 	/* check for "scaleY"-entry */
 	lua_getfield(L, -1, "scaleY");
 	if (lua_isnumber(L, -1))
-		scaleY = (GLfloat)lua_tonumber(L, -1);
+		scaleY = (GLdouble)lua_tonumber(L, -1);
 	lua_pop(L, 1);
 	/* check for "rotate"-entry */
 	lua_getfield(L, -1, "rotate");
 	if (lua_isnumber(L, -1))
-		rotate = (GLfloat)lua_tonumber(L, -1);
+		rotate = (GLdouble)lua_tonumber(L, -1);
 	lua_pop(L, 1);
 	/* check for "color"-entry */
 	lua_getfield(L, -1, "color");
@@ -574,10 +631,10 @@ static int Lua_Graphics_draw(lua_State *L){
 	glDisable(GL_CULL_FACE);
 	/* save the modelview matrix */
 	glPushMatrix();
-	glTranslatef(translateX, translateY, 0);
-	glScalef(scaleX, scaleY, 0);
-	glRotatef(rotate, 0, 0, 1);
-	glTranslatef(-centerX, -centerY, 0);
+	glTranslated(translateX, translateY, 0);
+	glScaled(scaleX, scaleY, 0);
+	glRotated(rotate, 0, 0, 1);
+	glTranslated(-centerX, -centerY, 0);
 
 	glColor4ub((GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], (GLubyte)color[3]);
 	glPointSize(size);
@@ -595,11 +652,11 @@ static int Lua_Graphics_draw(lua_State *L){
 
 	glDisable(GL_TEXTURE_2D);
 	if (n == 2 || pixelList) {
-		glTranslatef(0.5f, 0.5f, 0.0f);
+		glTranslated(0.5, 0.5, 0.0);
 		glBegin(GL_POINTS);
 	} else if (fill) {
 		if (n == 4) {
-			glTranslatef(0.5f, 0.5f, 0.0f);
+			glTranslated(0.5, 0.5, 0.0);
 			glBegin(GL_LINE_STRIP);
 		}
 		else if (n == 6)
@@ -609,7 +666,7 @@ static int Lua_Graphics_draw(lua_State *L){
 		else if (n > 8)
 			glBegin(GL_POLYGON);
 	} else {
-		glTranslatef(0.5f, 0.5f, 0.0f);
+		glTranslated(0.5, 0.5, 0.0);
 		if (connect)
 			glBegin(GL_LINE_STRIP);
 		else
@@ -636,7 +693,14 @@ static const struct luaL_Reg graphicslib [] = {
 	{"getWindowSize",		Lua_Graphics_getWindowSize},
 	{"showCursor", 			Lua_Graphics_showCursor},
 	{"getTicks", 			Lua_Graphics_getTicks},
+	{"translateView",		Lua_Graphics_translateView},
+	{"scaleView",			Lua_Graphics_scaleView},
+	{"rotateView",			Lua_Graphics_rotateView},
+	{"saveView",			Lua_Graphics_saveView},
+	{"restoreView",			Lua_Graphics_restoreView},
+	{"resetView",			Lua_Graphics_resetView},
 	{"addImage", 			Lua_Image_load},
+	{"addImageFromString",	Lua_Image_loadFromString},
 	{"draw", 				Lua_Graphics_draw},
 	{NULL, NULL}
 };
