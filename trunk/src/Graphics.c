@@ -6,6 +6,7 @@
 
 #include <SDL_opengl.h>
 #include <SDL_image.h>
+#include <math.h>
 
 #include "Main.h"
 #include "Macros.h"
@@ -17,7 +18,7 @@
 
 SDL_Surface *screen;
 
-Lua_Image *firstImage = NULL;
+Lua_Image *first_image = NULL;
 
 /* calculates the next higher power of two */
 unsigned int nextHigherPowerOfTwo(unsigned int k) {
@@ -29,46 +30,78 @@ unsigned int nextHigherPowerOfTwo(unsigned int k) {
 }
 
 int sendTextureToCard(Lua_Image *img) {
-	GLuint texture;
-	/* generate texture object handle */
-	glGenTextures( 1, &texture );
-	/* bind the texture object */
-	glBindTexture( GL_TEXTURE_2D, texture );
-	/* set the texture's stretching properties */
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	/* edit the texture's image data using the information from the surface */
-	glTexImage2D( 	GL_TEXTURE_2D, 0, img->src->format->BytesPerPixel,
-					img->po2width, img->po2height, 0,
-					img->texture_format, GL_UNSIGNED_BYTE, img->src->pixels );
-	img->texture = texture;
+	SDL_Surface *tile_surface;
+	SDL_Rect src_rect;
+	GLuint *textures;
+	int x, y;
+	
+	if ((img->x_tiles == 1) && (img->y_tiles == 1)) {
+		/* generate texture object */
+		textures = (GLuint *)malloc(sizeof(GLuint));
+		glGenTextures(1, textures);
+		glBindTexture(GL_TEXTURE_2D, *textures);
+		/* set the texture's stretching properties */
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		/* edit the texture's image data using the information from the surface */
+		glTexImage2D( 	GL_TEXTURE_2D, 0, img->src->format->BytesPerPixel,
+						img->po2_width, img->po2_height, 0,
+						img->texture_format, GL_UNSIGNED_BYTE, img->src->pixels );
+	} else {
+		src_rect.w = img->tile_width;
+		src_rect.h = img->tile_height;
+		
+		tile_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, src_rect.w, src_rect.h, 32,
+											RMASK, GMASK, BMASK, AMASK);
+		if (tile_surface == NULL)
+			return luaL_error(L, "CreateRGBSurface failed: %s", SDL_GetError());
+				
+		SDL_SetAlpha(img->src, 0, SDL_ALPHA_TRANSPARENT);
+		textures = (GLuint *)malloc(sizeof(GLuint) * img->x_tiles * img->y_tiles);
+		glGenTextures(img->x_tiles * img->y_tiles, textures);
+		
+		for (y=0; y<img->y_tiles; y++) {
+			src_rect.y = y*img->tile_height;
+			for (x=0; x<img->x_tiles; x++) {
+				src_rect.x = x*img->tile_width;
+				SDL_BlitSurface(img->src, &src_rect, tile_surface, NULL);
+				glBindTexture(GL_TEXTURE_2D, textures[x+y*img->x_tiles]);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glTexImage2D( 	GL_TEXTURE_2D, 0, img->src->format->BytesPerPixel,
+								src_rect.w, src_rect.h, 0,
+								img->texture_format, GL_UNSIGNED_BYTE, tile_surface->pixels );
+			}
+		}
+		SDL_FreeSurface(tile_surface);
+	}
+
+	img->textures = textures;
 	return 0;
 }
 
 /* generate an OpenGL texture (wrapped in a Lua_Image) from a SDL_Surface */
 int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 	SDL_Surface *new_surface;
-	Uint32 rmask, gmask, bmask, amask;
 	GLint nrOfColors;
 	GLenum texture_format;
 	int old_width, old_height, new_width, new_height;
+	GLint dummy_width;
+	int tile_width, tile_height;
+	/* number of tiles in x and y direction */
+	char x_tiles, y_tiles;
+	/* orignal width and height of the image */
 	old_width = src->w;
 	old_height = src->h;
+	/* OpenGL only supports textures with a power of two as width and height */
 	new_width = nextHigherPowerOfTwo(old_width);
 	new_height = nextHigherPowerOfTwo(old_height);
-	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		rmask = 0xff000000;
-		gmask = 0x00ff0000;
-		bmask = 0x0000ff00;
-		amask = 0x000000ff;
-	#else
-		rmask = 0x000000ff;
-		gmask = 0x0000ff00;
-		bmask = 0x00ff0000;
-		amask = 0xff000000;
-	#endif
+	/* images that are bigger than what is supported by OpenGL need to be tiled */
+	tile_width = new_width;
+	tile_height = new_height;
+
 	new_surface = SDL_CreateRGBSurface( SDL_SWSURFACE, new_width, new_height, 32,
-										rmask, gmask, bmask, amask);
+										RMASK, GMASK, BMASK, AMASK);
 	if ( new_surface == NULL )
 		return luaL_error(L, "CreateRGBSurface failed: %s", SDL_GetError());
 
@@ -78,39 +111,61 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 	/* get the number of channels in the SDL surface */
 	nrOfColors = new_surface->format->BytesPerPixel;
 	if ( nrOfColors == 4 ) {		/* with alpha channel */
-		if ( new_surface->format->Rmask == rmask )
+		if ( new_surface->format->Rmask == RMASK )
 			texture_format = GL_RGBA;
 		else
 			texture_format = GL_BGRA;
 	} else if ( nrOfColors == 3 ) {	/* no alpha channel */
-		if ( new_surface->format->Rmask == rmask )
+		if ( new_surface->format->Rmask == RMASK )
 			texture_format = GL_RGB;
 		else
 			texture_format = GL_BGR;
 	} else {
 		return luaL_error( L, "Image is not truecolor!" );
 	}
-
+	
+	/* check if the graphics card can handle a texture with the chosen size */
+	glTexImage2D(	GL_PROXY_TEXTURE_2D, 0, new_surface->format->BytesPerPixel, 
+					new_width, new_height, 0,
+					GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &dummy_width);
+	while (dummy_width == 0) {
+		if (tile_width > tile_height) {
+			tile_width = tile_width / 2;
+		} else {
+			tile_height = tile_height / 2;
+		}
+		/* check if the smaller texture can be handled by the graphics card */
+		glTexImage2D(	GL_PROXY_TEXTURE_2D, 0, new_surface->format->BytesPerPixel, 
+						tile_width, tile_height, 0,
+						GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &dummy_width);		
+	}
+	x_tiles = (char) ceilf((float)old_width / tile_width);
+	y_tiles = (char) ceilf((float)old_height / tile_height);
+	
 	dest->src = new_surface;
 	dest->texture_format = texture_format;
 	dest->w = old_width;
 	dest->h = old_height;
-	dest->po2width = new_width;
-	dest->po2height = new_height;
-	/* ratio is needed for blitting the old size of the image, not the new one */
-	dest->xratio = (float) old_width / new_width;
-	dest->yratio = (float) old_height / new_height;
+	dest->po2_width = new_width;
+	dest->po2_height = new_height;
+	dest->tile_width = tile_width;
+	dest->tile_height = tile_height;
+	dest->x_tiles = x_tiles;
+	dest->y_tiles = y_tiles;
 	dest->alpha = alpha;
 	dest->next = NULL;
 	dest->prev = NULL;
-
+	
 	sendTextureToCard(dest);
-	if (firstImage == NULL) {
-		firstImage = dest;
+
+	if (first_image == NULL) {
+		first_image = dest;
 	} else {
-		firstImage->prev = dest;
-		dest->next = firstImage;
-		firstImage = dest;
+		first_image->prev = dest;
+		dest->next = first_image;
+		first_image = dest;
 	}
 	return 0;
 }
@@ -130,9 +185,9 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 		atexit(SDL_Quit);
 	} else {
 		/* delete all OpenGL textures */
-		node = firstImage;
+		node = first_image;
 		while (node != NULL) {
-			glDeleteTextures( 1, &node->texture );
+			glDeleteTextures(node->x_tiles*node->y_tiles, node->textures);
 			node = node->next;
 		}
 	}
@@ -165,7 +220,7 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();
 	/* reloading all images */
-	node = firstImage;
+	node = first_image;
 	while (node != NULL) {
 		sendTextureToCard(node);
 		node = node->next;
@@ -388,14 +443,13 @@ static int Lua_Image_render(lua_State *L) {
 	int x, y;
 	myRect clip_rect;
 	int color[] = {255, 255, 255, 255};
-	GLrect texCoords = { 0, 0, image->xratio, image->yratio };
-	int width = image->w;
-	int height = image->h;
-	GLdouble translateX = 0.0;
-	GLdouble translateY = 0.0;
-	GLdouble scaleX = 1.0;
-	GLdouble scaleY = 1.0;
+	GLdouble translate_x = 0.0;
+	GLdouble translate_y = 0.0;
+	GLdouble scale_x = 1.0;
+	GLdouble scale_y = 1.0;
 	GLdouble rotate = 0.0;
+	GLubyte x_tile, y_tile;
+	GLuint *textures = image->textures;
 
 	if (lua_istable(L, 2)) {
 		/* x and y are array element 1 and 2 */
@@ -404,22 +458,22 @@ static int Lua_Image_render(lua_State *L) {
 		/* check for "centerX"-entry */
 		lua_getfield(L, -1, "centerX");
 		if (lua_isnumber(L, -1))
-			translateX = (GLdouble)lua_tonumber(L, -1);
+			translate_x = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
 		/* check for "centerY"-entry */
 		lua_getfield(L, -1, "centerY");
 		if (lua_isnumber(L, -1))
-			translateY = (GLdouble)lua_tonumber(L, -1);
+			translate_y = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
 		/* check for "scaleX"-entry */
 		lua_getfield(L, -1, "scaleX");
 		if (lua_isnumber(L, -1))
-			scaleX = (GLdouble)lua_tonumber(L, -1);
+			scale_x = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
 		/* check for "scaleY"-entry */
 		lua_getfield(L, -1, "scaleY");
 		if (lua_isnumber(L, -1))
-			scaleY = (GLdouble)lua_tonumber(L, -1);
+			scale_y = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
 		/* check for "rotate"-entry */
 		lua_getfield(L, -1, "rotate");
@@ -432,13 +486,11 @@ static int Lua_Image_render(lua_State *L) {
 			if (!getint(L, &clip_rect.x, 1) || !getint(L, &clip_rect.y, 2) ||
 				!getint(L, &clip_rect.w, 3) || !getint(L, &clip_rect.h, 4))
 				return luaL_argerror(L, 2, "'rect' has invalid or missing elements");
-
-			texCoords.x1 = (GLfloat) clip_rect.x / image->po2width;
-			texCoords.y1 = (GLfloat) clip_rect.y / image->po2height;
-			texCoords.x2 = (GLfloat) (clip_rect.x + clip_rect.w) / image->po2width;
-			texCoords.y2 = (GLfloat) (clip_rect.y + clip_rect.h) / image->po2height;
-			width = clip_rect.w;
-			height = clip_rect.h;
+			
+			glEnable(GL_SCISSOR_TEST);
+			glScissor(x, screen->h - y - clip_rect.h, clip_rect.w, clip_rect.h);
+			x = x - clip_rect.x;
+			y = y - clip_rect.y;
 		} else if (!lua_isnil(L, -1))
 			return luaL_argerror(L, 2, "'rect' should be an array and nothing else");
 		lua_pop(L, 1);
@@ -458,55 +510,65 @@ static int Lua_Image_render(lua_State *L) {
 	}
 
 	/* blit the OpenGL texture (wrapped in a Lua_Image) */
-
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, image->texture);
 
 	/* save the modelview matrix */
 	glPushMatrix();
 	glTranslatef((GLfloat)x, (GLfloat)y, 0);
-	glScaled(scaleX, scaleY, 0);
+	glScaled(scale_x, scale_y, 0);
 	glRotated(rotate, 0, 0, 1);
-	glTranslated(-translateX, -translateY, 0);
+	glTranslated(-translate_x, -translate_y, 0);
 
 	glColor4ub( (GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], image->alpha);
-
-	glBegin(GL_QUADS);
-		if (scaleX*scaleY > 0) {
-			glTexCoord2f(texCoords.x1, texCoords.y1);
-			glVertex2i(0, 0);
-			glTexCoord2f(texCoords.x1, texCoords.y2);
-			glVertex2i(0, height);
-			glTexCoord2f( texCoords.x2, texCoords.y2);
-			glVertex2i(width, height);
-			glTexCoord2f(texCoords.x2, texCoords.y1);
-			glVertex2i(width, 0);
-		} else {
-			glTexCoord2f(texCoords.x1, texCoords.y1);
-			glVertex2i(0, 0);
-			glTexCoord2f(texCoords.x2, texCoords.y1);
-			glVertex2i(width, 0);
-			glTexCoord2f( texCoords.x2, texCoords.y2);
-			glVertex2i(width, height);
-			glTexCoord2f(texCoords.x1, texCoords.y2);
-			glVertex2i(0, height);
+	for (y_tile=0; y_tile<image->y_tiles; y_tile++) {
+		glPushMatrix();
+		for (x_tile=0; x_tile<image->x_tiles; x_tile++) {
+			glBindTexture(GL_TEXTURE_2D, *textures++);
+			glBegin(GL_QUADS);
+			if (scale_x*scale_y > 0) {
+				glTexCoord2f(0, 0);
+				glVertex2i(0, 0);
+				glTexCoord2f(0, 1);
+				glVertex2i(0, image->tile_height);
+				glTexCoord2f(1, 1);
+				glVertex2i(image->tile_width, image->tile_height);
+				glTexCoord2f(1, 0);
+				glVertex2i(image->tile_width, 0);
+			} else {
+				glTexCoord2f(0, 0);
+				glVertex2i(0, 0);
+				glTexCoord2f(1, 0);
+				glVertex2i(image->tile_width, 0);
+				glTexCoord2f(1, 1);
+				glVertex2i(image->tile_width, image->tile_height);
+				glTexCoord2f(0, 1);
+				glVertex2i(0, image->tile_height);
+			}
+			glEnd();
+			glTranslatef((GLfloat)image->tile_width-0.0f, 0.0f, 0.0f);
 		}
-	glEnd();
+		glPopMatrix();
+		glTranslatef(0.0f, (GLfloat)image->tile_height-0.0f, 0.0f);
 
+	}
+
+	glDisable(GL_SCISSOR_TEST);
 	/* restore the modelview matrix */
 	glPopMatrix();
+	
 
 	return 0;
 }
 
 static int image_gc(lua_State *L) {
 	Lua_Image *image = checkimage(L);
-	glDeleteTextures( 1, &image->texture );
+	glDeleteTextures( image->x_tiles*image->y_tiles, image->textures );
+	free(image->textures);
 	SDL_FreeSurface(image->src);
 	/* remove image from list */
 	if (image->prev == NULL) {
-		firstImage = image->next;
+		first_image = image->next;
 	} else {
 		image->prev->next = image->next;
 	}
@@ -527,18 +589,18 @@ static int Lua_Graphics_draw(lua_State *L) {
 	int n;
 	int *coords;
 	int relative;
-	GLdouble translateX = 0.0f;
-	GLdouble translateY = 0.0f;
-	GLdouble scaleX = 1.0f;
-	GLdouble scaleY = 1.0f;
+	GLdouble translate_x = 0.0f;
+	GLdouble translate_y = 0.0f;
+	GLdouble scale_x = 1.0f;
+	GLdouble scale_y = 1.0f;
 	GLdouble rotate = 0.0f;
-	GLdouble centerX = 0.0f;
-	GLdouble centerY = 0.0f;
+	GLdouble center_x = 0.0f;
+	GLdouble center_y = 0.0f;
 	int color[] = {255, 255, 255, 255};
 	GLfloat size = 1.0f;
 	int connect = 0;
 	int fill = 0;
-	int pixelList = 0;
+	int pixellist = 0;
 	int antialias = 0;
 
 	luaL_checktype(L, 1, LUA_TTABLE);
@@ -561,29 +623,29 @@ static int Lua_Graphics_draw(lua_State *L) {
 		n = n - 2;
 		if (n<0)
 			return luaL_argerror(L, 1, "'relative' needs at least one coordinate pair");
-		translateX = (GLdouble)coords[0];
-		translateY = (GLdouble)coords[1];
+		translate_x = (GLdouble)coords[0];
+		translate_y = (GLdouble)coords[1];
 	}
 	lua_pop(L, 1);
 	/* check for "centerX"-entry */
 	lua_getfield(L, -1, "centerX");
 	if (lua_isnumber(L, -1))
-		centerX = (GLdouble)lua_tonumber(L, -1);
+		center_x = (GLdouble)lua_tonumber(L, -1);
 	lua_pop(L, 1);
 	/* check for "centerY"-entry */
 	lua_getfield(L, -1, "centerY");
 	if (lua_isnumber(L, -1))
-		centerY = (GLdouble)lua_tonumber(L, -1);
+		center_y = (GLdouble)lua_tonumber(L, -1);
 	lua_pop(L, 1);
 	/* check for "scaleX"-entry */
 	lua_getfield(L, -1, "scaleX");
 	if (lua_isnumber(L, -1))
-		scaleX = (GLdouble)lua_tonumber(L, -1);
+		scale_x = (GLdouble)lua_tonumber(L, -1);
 	lua_pop(L, 1);
 	/* check for "scaleY"-entry */
 	lua_getfield(L, -1, "scaleY");
 	if (lua_isnumber(L, -1))
-		scaleY = (GLdouble)lua_tonumber(L, -1);
+		scale_y = (GLdouble)lua_tonumber(L, -1);
 	lua_pop(L, 1);
 	/* check for "rotate"-entry */
 	lua_getfield(L, -1, "rotate");
@@ -620,10 +682,10 @@ static int Lua_Graphics_draw(lua_State *L) {
 	lua_pop(L, 1);
 	/* check for "pixellist"-entry */
 	lua_getfield(L, -1, "pixellist");
-	pixelList = lua_toboolean(L, -1);
+	pixellist = lua_toboolean(L, -1);
 	lua_pop(L, 1);
 
-	if (!connect && !fill && !pixelList && (n % 4 != 0) && (n > 2)) {
+	if (!connect && !fill && !pixellist && (n % 4 != 0) && (n > 2)) {
 		free(coords);
 		luaL_argerror(L, 1, "unconnected lines need an even number of coordinate-pairs");
 	}
@@ -631,10 +693,10 @@ static int Lua_Graphics_draw(lua_State *L) {
 	glDisable(GL_CULL_FACE);
 	/* save the modelview matrix */
 	glPushMatrix();
-	glTranslated(translateX, translateY, 0);
-	glScaled(scaleX, scaleY, 0);
+	glTranslated(translate_x, translate_y, 0);
+	glScaled(scale_x, scale_y, 0);
 	glRotated(rotate, 0, 0, 1);
-	glTranslated(-centerX, -centerY, 0);
+	glTranslated(-center_x, -center_y, 0);
 
 	glColor4ub((GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], (GLubyte)color[3]);
 	glPointSize(size);
@@ -651,7 +713,7 @@ static int Lua_Graphics_draw(lua_State *L) {
 	}
 
 	glDisable(GL_TEXTURE_2D);
-	if (n == 2 || pixelList) {
+	if (n == 2 || pixellist) {
 		glTranslated(0.5, 0.5, 0.0);
 		glBegin(GL_POINTS);
 	} else if (fill) {

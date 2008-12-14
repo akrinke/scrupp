@@ -8,17 +8,40 @@
 #define __GRAPHICS_H__
 
 #include <SDL_opengl.h>
+
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	#define RMASK 0xFF000000
+	#define GMASK 0x00FF0000
+	#define BMASK 0x0000FF00
+	#define AMASK 0x000000FF
+#else
+	#define RMASK 0x000000FF
+	#define GMASK 0x0000FF00
+	#define BMASK 0x00FF0000
+	#define AMASK 0xFF000000
+#endif
+
 typedef struct Lua_Image {
-	GLuint texture;	/* OpenGL texture id */
+	/* OpenGL texture ids */
+	GLuint *textures;
 	GLenum texture_format;
-	SDL_Surface *src; /* surface with the source image; used for getpixel */
-	int w;			/* width of the texture */
-	int h;			/* height of the texture */
-	int po2width;	/* width of the texture after scaling it up to a power of two */
-	int po2height;	/* height of the texture after scaling it up to a power of two */
-	float xratio;
-	float yratio;
-	GLubyte alpha;	/* alpha value of the whole texture */
+	/* surface with the source image; used for getpixel */
+	SDL_Surface *src;
+	/* width and height of the original image */
+	int w;
+	int h;
+	/* width and height of the texture after scaling it up to a power of two */
+	int po2_width;
+	int po2_height;
+	/* if the texture needs to be subdivided in tiles, this is the size of one */
+	GLint tile_width;
+	GLint tile_height;
+	/* number of tiles in x- and y-direction */
+	GLubyte x_tiles;
+	GLubyte y_tiles;
+	/* alpha value of the whole texture */
+	GLubyte alpha;
+	/* all textures are stored in a double-linked-list for easy reloading */
 	struct Lua_Image *next;
 	struct Lua_Image *prev;
 } Lua_Image;
