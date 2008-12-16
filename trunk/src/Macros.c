@@ -6,13 +6,13 @@
 
 #include "Main.h"
 
-#ifdef WIN32
-#include <windows.h>
-#define vsnprintf _vsnprintf
-#endif
-
-#ifdef __APPLE__
-#include <Carbon/Carbon.h>
+#ifdef USE_GTK
+	#include <gtk/gtk.h>
+#elif __WIN32__
+	#include <windows.h>
+	#define vsnprintf _vsnprintf
+#elif __MACOSX__
+	#include <Carbon/Carbon.h>
 #endif
 
 void error (lua_State *L, const char *fmt, ...) {
@@ -29,11 +29,21 @@ void error (lua_State *L, const char *fmt, ...) {
 	msg = luaL_gsub(L, msg, "\"]", "'");
 	fprintf(stderr, msg);
 
-#ifdef WIN32
-	MessageBox(NULL, msg, PROG_NAME, MB_ICONERROR|MB_OK);
-#endif
+#ifdef USE_GTK
+	gtk_init(NULL, NULL);
+	GtkWidget *dialog = gtk_message_dialog_new(
+		NULL,
+		GTK_DIALOG_MODAL,
+		GTK_MESSAGE_ERROR,
+		GTK_BUTTONS_CLOSE,
+		msg
+	);
+	gtk_dialog_run(GTK_DIALOG (dialog));
 
-#ifdef __APPLE__
+#elif __WIN32__
+	MessageBox(NULL, msg, PROG_NAME, MB_ICONERROR|MB_OK);
+
+#elif __MACOSX__
 	CFUserNotificationDisplayAlert (
 		0, /* timeout */ 
 		kCFUserNotificationStopAlertLevel, /* alert level */
@@ -52,7 +62,7 @@ void error (lua_State *L, const char *fmt, ...) {
 		NULL /* response codes */
 	);
 #endif
-	
+
 	fprintf(stderr, "\n");
 	lua_close(L);
 	exit(1);

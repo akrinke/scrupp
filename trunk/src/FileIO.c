@@ -20,8 +20,9 @@ static void splitPath(const char *path, char **dirname, char **basename) {
 	*basename = (char *)path;
 	*dirname = ".";
 	dirsep = PHYSFS_getDirSeparator();
-	if (strlen(dirsep) == 1)  /* fast path. */
+	if (strlen(dirsep) == 1) { /* fast path. */
 		ptr = strrchr(path, *dirsep);
+	}
 	else {
 		ptr = strstr(path, dirsep);
 		if (ptr != NULL) {
@@ -47,7 +48,7 @@ static void FS_Quit(void) {
 }
 
 void FS_Init(int argc, char *argv[], char **pFilename) {
-	#ifdef __APPLE__
+	#ifdef __MACOSX__
 		char *ch = NULL;
 		const char *basedir;
 	#endif
@@ -55,10 +56,13 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 	char magic[4] = "000"; /* array for the magic bytes used to recognize a zip archive */
 	char *dir = NULL;
 	char *base = NULL;
-	char ** arr = NULL;
+	char **search_path = NULL;
+	char **copy;
+	
 	/* initialize PhysFS */
-	if ( !PHYSFS_init(argv[0]) ) 
-		error(L, "Error: Couldn't initialize PhysFS: %s.", PHYSFS_getLastError());
+	if (PHYSFS_init(argv[0]) ==0) {
+		error(L, "Error: Could not initialize PhysFS: %s.", PHYSFS_getLastError());
+	}
 	
 	/* allow symlinks */
 	PHYSFS_permitSymbolicLinks(1);
@@ -67,7 +71,7 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 		try to set the search path to this folder;
 		if a file is not found in the base dir (the dir containing the app bundle)
 		it is searched inside the bundle */
-	#ifdef __APPLE__
+	#ifdef __MACOSX__
 		ch = strstr(argv[0], "/Contents/MacOS");
 		if (ch != NULL) {
 			/* substite the 'C' of 'Contents/MacOS' with a string terminator */
@@ -77,26 +81,30 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 				chdir(argv[0]);
 			}
 			/* append app folder to search path */
-			if ( !PHYSFS_addToSearchPath(argv[0], 1) )
+			if (PHYSFS_addToSearchPath(argv[0], 1) == 0) {
 				error(L,	"Error: Could not add application folder" 
-							"to search path: %s.", PHYSFS_getLastError() );
+							"to search path: %s.", PHYSFS_getLastError());
+			}
 			*(ch+1) = 'C';
 		} else {
 			basedir = PHYSFS_getBaseDir();
-			if (*pFilename == NULL)
+			if (*pFilename == NULL) {
 				chdir(basedir);
-			if ( !PHYSFS_addToSearchPath(basedir, 1) )
+			}
+			if (PHYSFS_addToSearchPath(basedir, 1) == 0) {
 				error(L, "Error: Could not add base dir to search path: %s.", PHYSFS_getLastError());
+			}
 		}
 	#else
 		/* check whether we are on Linux or Unix */
-		#ifndef WIN32
+		#ifndef __WIN32__
 			/* on Linux or Unix: Try to append the share directory */
 			PHYSFS_addToSearchPath(SHARE_DIR, 1);
 		#endif
 		/* on every system but OS X, append base dir to search path */
-		if ( !PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1) )
+		if (PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1) == 0) {
 			error(L, "Error: Could not add base dir to search path: %s.", PHYSFS_getLastError());
+		}
 	#endif
 	
 	/* 
@@ -110,22 +118,25 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 			/* if default file not exists */
 			if (PHYSFS_exists(DEFAULT_ARCHIVE) != 0) { 
 				/* if default archive exists, prepend to search path */
-				if ( !PHYSFS_addToSearchPath(DEFAULT_ARCHIVE, 0) )
+				if (PHYSFS_addToSearchPath(DEFAULT_ARCHIVE, 0) == 0) {
 					error(L,	"Error: Could not add default archive '"
-								DEFAULT_ARCHIVE "' to search path: %s.", 
-								PHYSFS_getLastError());			
-			} else
+								DEFAULT_ARCHIVE "' to search path: %s", 
+								PHYSFS_getLastError());
+				}
+			} else {
 				error(L,	"Error: "
 							"Neither the default Lua file '" DEFAULT_FILE 
 							"' nor the default archive '" DEFAULT_ARCHIVE 
 							"' could be found.");
+			}
 		}				
 	} else {
 		/* try to change the working directory (only successful if directory is given) */
 		if (chdir(*pFilename) == 0) {
 			/* prepend the new working directory to the search path */
-			if (!PHYSFS_addToSearchPath(".", 0))
-				error(L, "Error: Could not add directory '%s' to search path: %s.", argv[1], PHYSFS_getLastError());
+			if (PHYSFS_addToSearchPath(".", 0) == 0) {
+				error(L, "Error: Could not add directory '%s' to search path: %s", argv[1], PHYSFS_getLastError());
+			}
 			*pFilename = DEFAULT_FILE;
 		} else {
 			/* chdir was unsuccessful -> archive or Lua file was probably given on command line */
@@ -134,21 +145,25 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 			chdir(dir);
 			/* check if it's an archive; only zip is supported, so we check for the magic numbers */
 			fh = fopen(base, "r");
-			if (fh == NULL)
+			if (fh == NULL) {
 				error(L, "Error: Could not open file '%s' for reading.", argv[1]);
+			}
 			fread(magic, 1, 4, fh);
 			fclose(fh);
 			/* look for the four signature bytes that every zip file has */
 			if (magic[0] == 0x50 && magic[1] == 0x4B && magic[2] == 0x03 && magic[3] == 0x04) {
 				fprintf(stdout, "Found zip archive: %s\n", base);
-				if (!PHYSFS_addToSearchPath(base, 0))
-					error(L, "Error: Could not add archive '%s' to search path: %s.", argv[1], PHYSFS_getLastError());
+				if (PHYSFS_addToSearchPath(base, 0) == 0) {
+					error(L, "Error: Could not add archive '%s' to search path: %s", argv[1], PHYSFS_getLastError());
+				}
 				*pFilename = DEFAULT_FILE;
 			} else {
 				fprintf(stdout, "Found Lua file: %s\n", base);
 				/* prepend the new working directory to the search path */
-				if (!PHYSFS_addToSearchPath(".", 0))
-					error(L, "Error: Could not add directory containing '%s' to search path: %s.", base, PHYSFS_getLastError());
+				if (PHYSFS_addToSearchPath(".", 0) == 0) {
+					error(L, 	"Error: Could not add directory containing '%s' to search path: %s", 
+								base, PHYSFS_getLastError());
+				}
 				/* change the filename to its basename -> later call to FS_runLuaFile will find it in the path */
 				*pFilename = base;
 			}
@@ -157,9 +172,12 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 	
 	atexit(FS_Quit);
 
-	arr = PHYSFS_getSearchPath();
-	while (*arr != NULL)
-		printf("search path: %s\n", *arr++);
+	search_path = PHYSFS_getSearchPath();
+	copy = search_path;
+	while (*copy != NULL) {
+		printf("search path: %s\n", *copy++);
+	}
+	PHYSFS_freeList(search_path);
 }
 
 int FS_runLuaFile(const char *filename, int narg, int *nres) {
@@ -210,15 +228,16 @@ int FS_runLuaFile(const char *filename, int narg, int *nres) {
 	/* skip #! if nescessary */
 	entryPoint = buffer;
 	if (buffer[0] == '#') {
-		while (*entryPoint != 0x0D && *entryPoint != 0x0A && *entryPoint != EOF) {
+		while ((*entryPoint != 0x0D) && (*entryPoint != 0x0A) && (*entryPoint != EOF)) {
 			entryPoint++;
 			fileLength--;
 		}
 	}
 	err = luaL_loadbuffer(L, entryPoint, (size_t)fileLength, filename);
 	free(buffer);
-	if (err != 0)
+	if (err != 0) {
 		return FILEIO_ERROR;
+	}
 	lua_insert(L, -(narg+1));
 	lua_pushcfunction(L, error_function);
 	lua_insert(L, -(narg+2));
@@ -228,23 +247,69 @@ int FS_runLuaFile(const char *filename, int narg, int *nres) {
 		fprintf(stdout, "Finished: \"%s\"\n", filename);		
 		*nres = lua_gettop(L) - (n - narg - 1);	/* calc number of results */
 		return FILEIO_SUCCESS;
-	} else
+	} else {
 		return FILEIO_ERROR;
+	}
 }
 
 static int Lua_FS_runLuaFile(lua_State *L) {
 	const char *filename = luaL_checkstring(L, 1);
 	int nres = 0;
 	int result = FS_runLuaFile(filename, 0, &nres);
-	if ((result == FILEIO_ERROR) && !check_for_exit())
+	if ((result == FILEIO_ERROR) && !check_for_exit()) {
 		return luaL_error(L, lua_tostring(L, -1));
-	
+	}	
 	return nres;
 }
 
+static int Lua_FS_getSearchPath(lua_State *L) {
+	char **search_path = PHYSFS_getSearchPath();
+	char **copy = search_path;
+	int n = 1;
+	lua_newtable(L);
+	while (*copy != NULL) {
+		lua_pushstring(L, *copy++);
+		lua_rawseti(L, -2, n++);
+	}
+	PHYSFS_freeList(search_path);
+	
+	return 1;
+}
+
+static int Lua_FS_setSearchPath(lua_State *L) {
+	const char *str;
+	char **search_path = PHYSFS_getSearchPath();
+	char **copy = search_path;
+	int n, maxn;
+
+	luaL_checktype(L, 1, LUA_TTABLE);
+
+	/* clear the search path */
+	while (*copy != NULL) {
+		PHYSFS_removeFromSearchPath(*copy++);
+	}
+	
+	PHYSFS_freeList(search_path);
+	maxn = lua_objlen(L, 1);
+	for (n = 1; n <= maxn; n++) {
+		lua_pushinteger(L, n);
+		lua_gettable(L, -2);
+		str = lua_tostring(L, -1);
+		if (PHYSFS_addToSearchPath(str, 1) == 0) {
+			return luaL_error(L,	"Error: Could not add directory or archive '%s' "
+									"to search path: %s", str, PHYSFS_getLastError());
+		}
+		/* remove the string */
+		lua_pop(L, 1);
+	}
+
+	return 0;
+}
 
 static const struct luaL_Reg fileiolib[] = {
 	{"addFile", Lua_FS_runLuaFile},
+	{"getSearchPath", Lua_FS_getSearchPath},
+	{"setSearchPath", Lua_FS_setSearchPath},
 	{NULL, NULL}
 };
 
