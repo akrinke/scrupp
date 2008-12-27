@@ -34,7 +34,7 @@ int sendTextureToCard(Lua_Image *img) {
 	SDL_Rect src_rect;
 	GLuint *textures;
 	int x, y;
-	
+
 	if ((img->x_tiles == 1) && (img->y_tiles == 1)) {
 		/* generate texture object */
 		textures = (GLuint *)malloc(sizeof(GLuint));
@@ -181,7 +181,7 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 		flags |= SDL_RESIZABLE;
 	if (screen == NULL) {
 		if ( SDL_Init ( SDL_INIT_VIDEO | SDL_INIT_AUDIO ) != 0 )
-			luaL_error(L, "Couldn't initialize SDL: %s", SDL_GetError ());
+			return luaL_error(L, "Couldn't initialize SDL: %s", SDL_GetError ());
 		atexit(SDL_Quit);
 	} else {
 		/* delete all OpenGL textures */

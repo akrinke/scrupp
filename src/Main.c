@@ -104,8 +104,19 @@ static const struct luaL_Reg mainlib [] = {
 
 static int luaopen_main(lua_State* L, const char *parent) {
 	luaL_register(L, parent, mainlib);	/* leaves table on top of stack */
-	lua_pushliteral(L, "_VERSION");
+	lua_pushliteral(L, "VERSION");
 	lua_pushliteral(L, VERSION);
+	lua_rawset(L, -3);
+	lua_pushliteral(L, "PLATFORM");
+#ifdef __WIN32__
+	lua_pushliteral(L, "Windows");
+#elif __MACOSX__
+	lua_pushliteral(L, "Mac OS X");
+#elif __LINUX__
+	lua_pushliteral(L, "Linux");
+#else
+	lua_pushliteral(L, "Unknown");
+#endif
 	lua_rawset(L, -3);
 	return 1;
 }
@@ -161,6 +172,9 @@ int main(int argc, char *argv[]) {
 	result = FS_runLuaFile(filename, narg, &nres);
 	if ((result == FILEIO_ERROR) && !check_for_exit())
 		error(L, "Error running '%s':\n\t%s", filename, lua_tostring(L, -1));
+	
+	if (SDL_GetVideoSurface() == NULL)
+		error(L, "Error: " PROG_NAME " was not initialized by " NAMESPACE ".init()!\n");
 
 	/* main loop */
 
