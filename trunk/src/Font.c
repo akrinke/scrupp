@@ -39,7 +39,7 @@ static int Lua_Font_getTextSize(lua_State *L) {
 	TTF_Font **font_ptr = checkfont(L);
 	const char *text = luaL_checkstring(L, 2);
 	int w, h;
-	TTF_SizeText(*font_ptr, text, &w, &h);
+	TTF_SizeUTF8(*font_ptr, text, &w, &h);
 	lua_pushinteger(L, w);
 	lua_pushinteger(L, h);
 	return 2;
@@ -88,7 +88,7 @@ static int Lua_Font_generateImage(lua_State *L) {
 	scolor.r = (Uint8)color[0];
 	scolor.g = (Uint8)color[1];
 	scolor.b = (Uint8)color[2];
-	if (!(text_surface = TTF_RenderText_Blended(*font_ptr, text, scolor)))
+	if (!(text_surface = TTF_RenderUTF8_Blended(*font_ptr, text, scolor)))
 		return luaL_error(L, "Error rendering text: %s", TTF_GetError());
 	ptr = lua_newuserdata(L, sizeof(Lua_Image));
 	createTexture(text_surface, ptr, (GLubyte)color[3]);
