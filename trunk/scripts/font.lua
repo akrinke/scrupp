@@ -6,13 +6,18 @@
 
 -- require"class"
 
-Font = class(function(a, font, size)
+Font = class(function(self, font, size)
 	font = scrupp.addFont(font, size)	
-	a.font = font
-	a.color = {255, 255, 255}
-	a.height = font:getHeight()
-	a.lineSkip = font:getLineSkip()	
-	a.chars = {}
+	self.font = font
+	self.color = {255, 255, 255}
+	self.height = font:getHeight()
+	self.lineSkip = font:getLineSkip()
+	-- table containing everything needed to render each glyph
+	self.chars = {}
+	-- used for kerning calculations
+	self.chars[""] = {width = 0}
+	-- table containing the (cached) kerning values
+	self.kerning = {}
 end)
 
 -- begin: wrapping the built-in functions for fonts
@@ -38,43 +43,87 @@ function Font:setColor(color)
 end
 
 function Font:cache(str)
-	local str = str or "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?()[]{}.,;:-_"
-	
+	local str = str
+	if type(str) == string then
+		str = {str}
+	else
+		str = {	"A B C D E F G H I J K L M N O P Q R S T U V W X Y Z",
+				"a b c d e f g h i j k l m n o p q r s t u v w x y z",
+				"0 1 2 3 4 5 6 7 8 9",
+				"! \" # $ % & ' ( ) * + , - . / : ; < = > ? @ [ \\ ] ^ _ ` { | } ~"}
+	end
+
 	local font = self.font
 	local x -- x-coordinate of the next inserted char
 	local char
 	local chars = self.chars
 	local width, height
-	local defaultImage = font:generateImage(str) 
-	
-	for i=1,str:len() do
-		char = str:sub(i,i)
-		width, height = font:getTextSize(char)
-		x = font:getTextSize(str:sub(1,i-1))		
-		chars[char] = {
-			0, 0, -- placeholders for the x- and y-coordinates used for rendering
-			image = defaultImage,
-			rect = {x, 0, width, height},
-			color = {255, 255, 255},
-			width = width
-		}
+	local image
+	local i, next_i, byte
+
+	for _,s in ipairs(str) do
+		image = font:generateImage(s)
+		i = 1
+		next_i = 1
+		while i <= s:len() do
+			byte = s:byte(i)
+			if byte < 128 then
+				-- nothing to do - it's ASCII
+			elseif byte < 224 then
+				next_i = i + 1
+			elseif byte < 240 then
+				next_i = i + 2
+			else
+				next_i = i + 3
+			end
+			char = s:sub(i, next_i)
+			x = font:getTextSize(s:sub(1,i-1))
+			next_i = next_i + 2
+			i = next_i
+
+			width, height = font:getTextSize(char)
+			chars[char] = {
+				0, 0, -- placeholders for the x- and y-coordinates used for rendering
+				image = image,
+				rect = {x, 0, width, height},
+				color = {255, 255, 255},
+				width = width
+			}
+		end
 	end
 end
 
 function Font:print(x, y, ...)
 	local chars = self.chars
+	local kerning = self.kerning
 	local char, charTable
 	local orig_x = x
 	local font = self.font
 	local text
-	
+	local i = 1
+	local next_i = 1
+	local last_char = ""
+
 	for n=1, select("#", ...) do
 		text = tostring(select(n, ...))
-		for i=1,text:len() do
-			char = text:sub(i,i)
+		while i <= text:len() do
+			byte = text:byte(i)
+			if byte < 128 then
+				-- nothing to do - it's ASCII
+			elseif byte < 224 then
+				next_i = i + 1
+			elseif byte < 240 then
+				next_i = i + 2
+			else
+				next_i = i + 3
+			end
+			char = text:sub(i, next_i)
+			next_i = next_i + 1
+			i = next_i
+
 			if char == "\n" then
 				x = orig_x
-				y = y + self.lineSkip			
+				y = y + self.lineSkip
 			else
 				if not chars[char] then
 					chars[char] = {
@@ -84,11 +133,21 @@ function Font:print(x, y, ...)
 					}
 				end
 				charTable = chars[char]
-				charTable[1] = x
+				if not kerning[last_char] then
+					kerning[last_char] = {}
+				end
+				if not kerning[last_char][char] then
+					kerning[last_char][char] = 
+						chars[last_char].width + chars[char].width
+						- font:getTextSize(last_char..char)
+					--print(last_char, char, kerning[last_char][char])
+				end				
+				charTable[1] = x - kerning[last_char][char]
 				charTable[2] = y
 				charTable.color = self.color
 				charTable.image:render(charTable)
-				x = x + charTable.width
+				x = charTable[1] + charTable.width
+				last_char = char
 			end
 		end
 	end
