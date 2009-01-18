@@ -4,7 +4,7 @@
 -- See Copyright Notice in COPYRIGHT
 --]]
 
--- require"class"
+require "class"
 
 Font = class(function(self, font, size)
 	font = scrupp.addFont(font, size)	

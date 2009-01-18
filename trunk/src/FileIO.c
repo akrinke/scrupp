@@ -8,10 +8,71 @@
 #include "Macros.h"
 #include "FileIO.h"
 
+#include <luaconf.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <physfs.h>
+
+/* copied from lua.c of the Lua distribution */
+static const char *pushnexttemplate (lua_State *L, const char *path) {
+	const char *l;
+	while (*path == *LUA_PATHSEP) path++;  /* skip separators */
+	if (*path == '\0') 
+		return NULL;  /* no more templates */
+	l = strchr(path, *LUA_PATHSEP);  /* find next separator */
+	if (l == NULL) 
+		l = path + strlen(path);
+	lua_pushlstring(L, path, l - path);  /* template */
+	return l;
+}
+
+/* based on code from lua.c of the Lua distribution */
+static const char *findfile (lua_State *L, const char *name) {
+	const char *path;
+	name = luaL_gsub(L, name, ".", "/");
+	lua_getglobal(L, "package");
+	lua_getfield(L, -1, "scrupppath");
+	path = lua_tostring(L, -1);
+	if (path == NULL)
+		luaL_error(L, LUA_QL("package.scrupppath") " must be a string");
+	lua_pushstring(L, "");  /* error accumulator */
+	while ((path = pushnexttemplate(L, path)) != NULL) {
+		const char *filename;
+		filename = luaL_gsub(L, lua_tostring(L, -1), LUA_PATH_MARK, name);
+		if (PHYSFS_exists(filename))  /* does file exist? */
+			return filename;  /* return that file name */
+		lua_pop(L, 2);  /* remove path template and file name */ 
+		lua_pushfstring(L, "\n\tno file " LUA_QL("searchpath://%s") , filename);
+		lua_concat(L, 2);
+	}
+	return NULL;  /* not found */
+}
+
+
+/* A loader which looks for modules in the physfs virtual filesystem */
+/* based on code from lua.c of the Lua distribution */
+static int loader_PhysFS(lua_State *L) {
+	const char *filename;
+	const char *name = luaL_checkstring(L, 1);
+	int result;
+	filename = findfile(L, name);
+	if (filename == NULL) {
+		return 1; /* library not found in this path */
+	}
+	result = FS_loadFile(L, filename);
+	if (result == FILEIO_ERROR) {
+		return luaL_error(L, 	"error loading module " LUA_QS " from file " 
+								LUA_QL("searchpath://%s") ":\n\t%s",
+								lua_tostring(L, 1), filename, lua_tostring(L, -1));
+	}
+	return 1; /* library loaded successfully */
+}
+	
+static void FS_Quit(void) {
+	fprintf(stdout,"Running FS_Quit.\n");
+	PHYSFS_deinit();
+}
 
 /* extracts the dirname and the basename from the path */
 static void splitPath(const char *path, char **dirname, char **basename) {
@@ -40,11 +101,6 @@ static void splitPath(const char *path, char **dirname, char **basename) {
 		(*dirname)[size] = '\0';
 		*basename = ptr + strlen(dirsep);
 	}
-}
-
-static void FS_Quit(void) {
-	fprintf(stdout,"Running FS_Quit.\n");
-	PHYSFS_deinit();
 }
 
 void FS_Init(int argc, char *argv[], char **pFilename) {
@@ -101,8 +157,8 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 			/* on Linux or Unix: Try to append the share directory */
 			PHYSFS_addToSearchPath(SHARE_DIR, 1);
 		#endif
-		/* on every system but OS X, append base dir to search path */
-		if (PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1) == 0) {
+		/* on every system but OS X, prepend base dir to search path */
+		if (PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 0) == 0) {
 			error(L, "Error: Could not add base dir to search path: %s.", PHYSFS_getLastError());
 		}
 	#endif
@@ -180,20 +236,18 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 	PHYSFS_freeList(search_path);
 }
 
-int FS_runLuaFile(const char *filename, int narg, int *nres) {
+int FS_loadFile(lua_State *L, const char *filename) {
 	char *buffer;		/* buffer for the file */
 	char *entryPoint;	/* entry point of file (differs from buffer, if "#!" in the first line is skipped */
-	int n;
 	int err;
 	PHYSFS_file *Hndfile = NULL;
 	PHYSFS_sint64 fileLength, size;
 	
 	if (PHYSFS_exists(filename) == 0) {
-		lua_pushfstring(L, "Error executing '%s': file not found.", filename);
+		lua_pushfstring(L, "Error loading '%s': file not found.", filename);
 		return FILEIO_ERROR;
 	}
 
-	fprintf(stdout, "Executing \"%s\"...\n", filename);
 	Hndfile = PHYSFS_openRead(filename); /* open file to read! */
 	if (Hndfile == NULL) {
 		lua_pushfstring(L, "Error while reading from '%s': %s", filename, PHYSFS_getLastError());
@@ -234,32 +288,49 @@ int FS_runLuaFile(const char *filename, int narg, int *nres) {
 		}
 	}
 	err = luaL_loadbuffer(L, entryPoint, (size_t)fileLength, filename);
-	free(buffer);
+	free(buffer);	
 	if (err != 0) {
+		/* error message is on the stack */
 		return FILEIO_ERROR;
 	}
-	lua_insert(L, -(narg+1));
-	lua_pushcfunction(L, error_function);
-	lua_insert(L, -(narg+2));
-	n = lua_gettop(L);
-	err = lua_pcall(L, narg, LUA_MULTRET, -(narg+2));
-	if (err == 0) {
-		fprintf(stdout, "Finished: \"%s\"\n", filename);		
-		*nres = lua_gettop(L) - (n - narg - 1);	/* calc number of results */
-		return FILEIO_SUCCESS;
-	} else {
-		return FILEIO_ERROR;
-	}
+	
+	return FILEIO_SUCCESS;
 }
 
-static int Lua_FS_runLuaFile(lua_State *L) {
+static int Lua_FS_dofile(lua_State *L) {
+	const char *filename = luaL_optstring(L, 1, NULL);
+	int n = lua_gettop(L);
+	int err;
+	if (PHYSFS_exists(filename)) {
+		if (FS_loadFile(L, filename) == FILEIO_ERROR) {
+			return lua_error(L);
+		}
+	} else if (luaL_loadfile(L, filename) != 0) {
+		return lua_error(L);
+	}
+	lua_call(L, 0, LUA_MULTRET);
+	return lua_gettop(L) - n;
+}
+
+static int Lua_FS_fileExists(lua_State *L) {
 	const char *filename = luaL_checkstring(L, 1);
-	int nres = 0;
-	int result = FS_runLuaFile(filename, 0, &nres);
-	if ((result == FILEIO_ERROR) && !check_for_exit()) {
-		return luaL_error(L, lua_tostring(L, -1));
-	}	
-	return nres;
+	lua_pushboolean(L, PHYSFS_exists(filename));
+	
+	return 1;
+}
+
+static int Lua_FS_isDirectory(lua_State *L) {
+	const char *filename = luaL_checkstring(L, 1);
+	lua_pushboolean(L, PHYSFS_isDirectory(filename));
+	
+	return 1;
+}
+
+static int Lua_FS_isSymbolicLink(lua_State *L) {
+	const char *filename = luaL_checkstring(L, 1);
+	lua_pushboolean(L, PHYSFS_isSymbolicLink(filename));
+	
+	return 1;
 }
 
 static int Lua_FS_getSearchPath(lua_State *L) {
@@ -306,8 +377,29 @@ static int Lua_FS_setSearchPath(lua_State *L) {
 	return 0;
 }
 
+/* auxiliary mark (for internal use) */
+#define AUXMARK         "\1"
+
+/* copied from lua.c of the Lua distribution */
+static void setpath (lua_State *L, const char *fieldname, const char *envname,
+                                   const char *def) {
+	const char *path = getenv(envname);
+	if (path == NULL)  /* no environment variable? */
+		lua_pushstring(L, def);  /* use default */
+	else {
+		/* replace ";;" by ";AUXMARK;" and then AUXMARK by default path */
+		path = luaL_gsub(L, path, 	LUA_PATHSEP LUA_PATHSEP,
+									LUA_PATHSEP AUXMARK LUA_PATHSEP);
+		luaL_gsub(L, path, AUXMARK, def);
+		lua_remove(L, -2);
+	}
+	lua_setfield(L, -2, fieldname);
+}
+
 static const struct luaL_Reg fileiolib[] = {
-	{"addFile", Lua_FS_runLuaFile},
+	{"fileExists", Lua_FS_fileExists},
+	{"isDirectory", Lua_FS_isDirectory},
+	{"isSymbolicLink", Lua_FS_isSymbolicLink},
 	{"getSearchPath", Lua_FS_getSearchPath},
 	{"setSearchPath", Lua_FS_setSearchPath},
 	{NULL, NULL}
@@ -315,5 +407,25 @@ static const struct luaL_Reg fileiolib[] = {
 
 int luaopen_fileio(lua_State *L, const char *parent) {
 	luaL_register(L, parent, fileiolib);
+	
+	lua_pushcfunction(L, Lua_FS_dofile);
+	lua_setglobal(L, "dofile");
+	
+	/* insert the custom PhysFS loader into the loaders table */
+	lua_getglobal(L, "table");
+	lua_getfield(L, -1, "insert");
+	lua_remove(L, -2);
+	lua_getglobal(L, "package");
+	lua_getfield(L, -1, "loaders");
+	lua_remove(L, -2);
+	lua_pushinteger(L, 2);
+	lua_pushcfunction(L, loader_PhysFS);
+	lua_call(L, 3, 0);
+	
+	/* set field `scrupppath' */
+	lua_getglobal(L, "package");	
+	setpath(L, "scrupppath", SCRUPP_PATH, SCRUPP_PATH_DEFAULT);
+	lua_remove(L, -1);
+	
 	return 1;
 }

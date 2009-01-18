@@ -4,14 +4,14 @@
 -- See Copyright Notice in COPYRIGHT
 --]]
 
--- require"class"
+require "class"
 
-Animation = class(function(a)
-	a.running = true
-	a.frames = {}
-	a.activeFrame = 1
-	a.time = 0
-	a.duration = 0
+Animation = class(function(self)
+	self.running = true
+	self.frames = {}
+	self.activeFrame = 1
+	self.time = 0
+	self.duration = 0
 end)
 
 function Animation:addFrame(image, x, y, width, height, delay)

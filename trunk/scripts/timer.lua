@@ -4,14 +4,14 @@
 -- See Copyright Notice in COPYRIGHT
 --]]
 
--- require"class"
+require "class"
 
-Timer = class(function(a, duration, callback)
-	a.duration = duration
-	a.startTicks = 0
-	a.elapsedTicks = 0
-	a.running = false
-	a.callback = callback
+Timer = class(function(self, duration, callback)
+	self.duration = duration
+	self.startTicks = 0
+	self.elapsedTicks = 0
+	self.running = false
+	self.callback = callback
 end)
 
 function Timer:start()

@@ -40,8 +40,9 @@ int check_for_exit() {
 		lua_close(L);
 		exit(0);
 		return 1;
-	} else
+	} else {
 		return 0;
+	}
 }
 /*
 static void usage(const char* exec_name) {
@@ -53,14 +54,14 @@ int error_function(lua_State *L) {
 	const char *err_msg;
 	char *pos;
 	size_t len;
-	
+
 	err_msg = lua_tolstring(L, -1, &len); /* get error message */
 	pos = strstr(err_msg, "scrupp.exit");
 	if (pos && (len-(pos-err_msg) == 11)) { /* ends the error message with "scrupp.exit"? */
 		lua_pushliteral(L, "scrupp.exit");
 		return 1;
 	}
-	
+
 	luaL_gsub(L, err_msg, ": ", ":\n\t");
 	lua_pushliteral(L, "\n");
 	lua_concat(L, 2);
@@ -76,7 +77,7 @@ int error_function(lua_State *L) {
 		return 1;
 	}
 	lua_pushvalue(L, -3); /* push error message */
-	
+
 	lua_pushinteger(L, 2); /* start at level 2 */
 	lua_call(L, 2, 1);
 
@@ -126,22 +127,23 @@ int main(int argc, char *argv[]) {
 	SDL_Event event;
 	Uint32 lastTick;	/* Last iteration's tick value */
 	Uint32 delta = 0;
-	int i, n, narg, nres, result;
+	int i, n, narg;
 	char *filename = NULL;
 
 	fprintf(stdout, "%s v%s\n", PROG_NAME, VERSION);
-	
+
 	if (argc > 1) {
 		n = 1;
 		if (strcmp(argv[1], "--") != 0)
 			filename = argv[1];			
-	} else
+	} else {
 		n = argc - 1;
-		
+	}
+
 	L = luaL_newstate();	/* initialize Lua */
 	luaL_openlibs(L);	/* load Lua base libraries */
-	
-	FS_Init(argc, argv, &filename);	/* initialize Filesystem */
+
+	FS_Init(argc, argv, &filename);	/* initialize virtual filesystem */
 
 	/* register Lua functions */
 	lua_newtable(L);
@@ -154,25 +156,37 @@ int main(int argc, char *argv[]) {
 	luaopen_keyboard(L, NULL);
 	luaopen_movie(L, NULL);
 	lua_setglobal(L, NAMESPACE);
-	
+
+	/* push the error function for the protected calls later on */
+	lua_pushcfunction(L, error_function);
+
+	/* load and compile main lua file */
+	if (FS_loadFile(L, filename) == FILEIO_ERROR) {
+		error(L, "Error loading '%s':\n\t%s", filename, lua_tostring(L, -1));
+	}
+
+	/* push all script arguments */
 	/* create arg-table for the command-line-arguments */
-	/* taken from lua.c of Lua */
+	/* copied from lua.c of the Lua distribution */
 	narg = argc - (n+1); /* number of arguments to the script */
-	luaL_checkstack(L, narg + 3, "too many arguments to script");
-	for (i=n+1; i<argc; i++)
+	luaL_checkstack(L, narg+2, "too many arguments to script");
+	for (i=n+1; i<argc; i++) {
 		lua_pushstring(L, argv[i]);
+	}
 	lua_createtable(L, narg, n+1);
-	for (i=0; i < argc; i++) {
+	for (i=0; i<argc; i++) {
 		lua_pushstring(L, argv[i]);
 		lua_rawseti(L, -2, i - n);
 	}
 	lua_setglobal(L, "arg");
-	
-	/* run main lua file */
-	result = FS_runLuaFile(filename, narg, &nres);
-	if ((result == FILEIO_ERROR) && !check_for_exit())
+
+	/* run the compiled chunk */
+	if ((lua_pcall(L, narg, 0, -(narg+2)) != 0) && !check_for_exit()) {
 		error(L, "Error running '%s':\n\t%s", filename, lua_tostring(L, -1));
-	
+	}
+
+	/* the error function stays on the stack */
+
 	if (SDL_GetVideoSurface() == NULL)
 		error(L, "Error: " PROG_NAME " was not initialized by " NAMESPACE ".init()!\n");
 
@@ -184,19 +198,23 @@ int main(int argc, char *argv[]) {
 
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-		lua_getglobal(L, "main");
+		/* maybe the 'main' table has changed
+		   so get a new reference in every cycle */
+		lua_getglobal(L, "main");		
 
-		if (lua_isnil(L, -1))
+		if (lua_isnil(L, -1)) {
 			error(L, "Error: Table 'main' not found!\n");
+		}
+
+		/* at this point, the stack always contains 
+		   the error function and the 'main' table */
 
 		/* main.render(delta) */
 		lua_getfield(L, -1, "render");
 		lua_pushinteger(L, delta);
-		lua_pushcfunction(L, error_function);
-		lua_insert(L, -3);
-		if ((lua_pcall(L, 1, 0, -3) != 0) && !check_for_exit())
+		if ((lua_pcall(L, 1, 0, -4) != 0) && !check_for_exit()) {
 			error(L, "Error running main.render:\n\t%s\n", lua_tostring(L, -1));
-		lua_pop(L, 1); /* remove error_function */
+		}
 
 		SDL_GL_SwapBuffers();
 
@@ -216,11 +234,9 @@ int main(int argc, char *argv[]) {
 				lua_rawget(L, LUA_REGISTRYINDEX);
 				lua_rawgeti(L, -1, event.key.keysym.sym);
 				lua_remove(L, -2); /* remove the key_table */
-				lua_pushcfunction(L, error_function);
-				lua_insert(L, -3);
-				if ((lua_pcall(L, 1, 0, -3) != 0) && !check_for_exit())
+				if ((lua_pcall(L, 1, 0, -4) != 0) && !check_for_exit()) {
 					error(L, "Error running main.keypressed:\n\t%s\n", lua_tostring(L, -1));
-				lua_pop(L, 1); /* remove error_function */
+				}
 				break;
 
 			case SDL_KEYUP:
@@ -233,11 +249,9 @@ int main(int argc, char *argv[]) {
 				lua_rawget(L, LUA_REGISTRYINDEX);
 				lua_rawgeti(L, -1, event.key.keysym.sym);
 				lua_remove(L, -2); /* remove the key_table */				
-				lua_pushcfunction(L, error_function);
-				lua_insert(L, -3);
-				if ((lua_pcall(L, 1, 0, -3) != 0) && !check_for_exit())
+				if ((lua_pcall(L, 1, 0, -4) != 0) && !check_for_exit()) {
 					error(L, "Error running main.keyreleased:\n\t%s\n", lua_tostring(L, -1));
-				lua_pop(L, 1); /* remove error_function */
+				}
 				break;
 
 			case SDL_MOUSEBUTTONDOWN:
@@ -249,11 +263,9 @@ int main(int argc, char *argv[]) {
 				lua_pushinteger(L, event.button.x);
 				lua_pushinteger(L, event.button.y);
 				lua_pushstring(L, buttonNames[event.button.button-1]);
-				lua_pushcfunction(L, error_function);
-				lua_insert(L, -5);
-				if ((lua_pcall(L, 3, 0, -5) != 0) && !check_for_exit())
+				if ((lua_pcall(L, 3, 0, -6) != 0) && !check_for_exit()) {
 					error(L, "Error running main.mousepressed:\n\t%s\n", lua_tostring(L, -1));
-				lua_pop(L, 1); /* remove error_function */
+				}
 				break;
 
 			case SDL_MOUSEBUTTONUP:
@@ -265,11 +277,9 @@ int main(int argc, char *argv[]) {
 				lua_pushinteger(L, event.button.x);
 				lua_pushinteger(L, event.button.y);
 				lua_pushstring(L, buttonNames[event.button.button-1]);
-				lua_pushcfunction(L, error_function);
-				lua_insert(L, -5);
-				if ((lua_pcall(L, 3, 0, -5) != 0) && !check_for_exit())
+				if ((lua_pcall(L, 3, 0, -6) != 0) && !check_for_exit()) {
 					error(L, "Error running main.mousereleased:\n\t%s\n", lua_tostring(L, -1));
-				lua_pop(L, 1); /* remove error_function */
+				}
 				break;
 				
 			case SDL_VIDEORESIZE:
@@ -280,11 +290,9 @@ int main(int argc, char *argv[]) {
 				}
 				lua_pushinteger(L, event.resize.w);
 				lua_pushinteger(L, event.resize.h);
-				lua_pushcfunction(L, error_function);
-				lua_insert(L, -4);
-				if ((lua_pcall(L, 2, 0, -4) != 0) && !check_for_exit())
+				if ((lua_pcall(L, 2, 0, -5) != 0) && !check_for_exit()) {
 					error(L, "Error running main.resized:\n\t%s\n", lua_tostring(L, -1));
-				lua_pop(L, 1); /* remove error_function */
+				}
 				break;
 			}
 		}
@@ -294,8 +302,9 @@ int main(int argc, char *argv[]) {
 		delta = SDL_GetTicks() - lastTick;
 
 		/*
-		if (delta>1)
+		if (delta>1) {
 			fprintf(stdout, "delta: %d\n", delta);
+		}
 		*/
 
 		while (delta < minimumDelta) {
