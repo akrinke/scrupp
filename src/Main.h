@@ -34,9 +34,11 @@
 #define DEFAULT_FILE	"main.slua"
 #define DEFAULT_ARCHIVE	"main.sar"
 
-#ifndef SHARE_DIR
 #define SHARE_DIR		"/usr/share/scrupp/"
-#endif
+
+#define SCRUPP_PATH				"SCRUPP_PATH"
+#define SCRUPP_PATH_DEFAULT		"?.lua;scripts/?.lua"
+
 
 #define CHANNELS	16	/* number of audio channels */
 
