@@ -27,13 +27,15 @@ static void channelDone(int channel) {
 
 static int initSound(lua_State *L) {
 	int i;
-	/* 	open 22.05KHz, signed 16bit, system byte order,
+	/* 	open 44.1KHz, signed 16bit, system byte order,
 		stereo audio, using 1024 byte chunks */
-	if(Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 1024)==-1)
+	if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024)==-1) {
 		return -1;
+	}
 	Mix_AllocateChannels(CHANNELS);
-	for (i=0; i<CHANNELS; i++)
+	for (i=0; i<CHANNELS; i++) {
 		channels[i] = NULL;
+	}
 	Mix_ChannelFinished(channelDone);
 	atexit(Mix_CloseAudio);
 	return 0;
@@ -49,11 +51,13 @@ static int Lua_Sound_load(lua_State *L) {
 	const char* filename = luaL_checkstring(L, 1);
 
 	src = PHYSFSRWOPS_openRead(filename);
-	if (!src)
+	if (!src) {
 		return luaL_error(L, "Error loading sound '%s': %s", filename, SDL_GetError());
+	}
 	sample = Mix_LoadWAV_RW(src, 1);
-	if (!sample)
+	if (!sample) {
 		return luaL_error(L, "Error loading sound '%s': %s", filename, Mix_GetError());
+	}
 	/* new userdata for pointer to sample */
 	ptr = lua_newuserdata(L, sizeof(Mix_Chunk*));
 	*ptr = sample;
@@ -73,10 +77,11 @@ static int Lua_Sound_play(lua_State *L) {
 	//luaL_argcheck(L, ms>=0, 3, "Fade-in time has to be positive");
 	//int channel = Mix_FadeInChannel(-1, *sample, loops-1, 100);
 	channel = Mix_PlayChannel(-1, *sample, loops-1);
-	if (channel == -1)
+	if (channel == -1) {
 		fprintf(stderr, "Error playing sound: %s\n", Mix_GetError());
-	else
+	} else {
 		channels[channel] = *sample;
+	}
 	return 0;
 }
 
@@ -98,8 +103,9 @@ static int Lua_Sound_pause (lua_State *L) {
 	Mix_Chunk **sample = checksound(L);
 	int i;
 	for (i=0; i<CHANNELS; i++) {
-		if (channels[i] == *sample)
+		if (channels[i] == *sample) {
 			Mix_Pause(i);
+		}
 	}
 	return 0;
 }
@@ -108,8 +114,9 @@ static int Lua_Sound_resume (lua_State *L) {
 	Mix_Chunk **sample = checksound(L);
 	int i;
 	for (i=0; i<CHANNELS; i++) {
-		if (channels[i] == *sample)
+		if (channels[i] == *sample) {
 			Mix_Resume(i);
+		}
 	}
 	return 0;
 }
@@ -122,9 +129,10 @@ static int Lua_Sound_stop (lua_State *L) {
 	//luaL_argcheck(L, ms>=0, 2, "Fade-out time has to be positive");
 	int i;
 	for (i=0; i<CHANNELS; i++) {
-		if (channels[i] == *sample)
+		if (channels[i] == *sample) {
 			Mix_HaltChannel(i);
 			//Mix_FadeOutChannel(i, ms);
+		}
 	}
 	return 0;
 }
@@ -134,8 +142,9 @@ static int Lua_Sound_isPlaying (lua_State *L) {
 	int playing = 0;
 	int i;
 	for (i=0; i<CHANNELS; i++) {
-		if ((channels[i] == *sample) && Mix_Playing(i))
+		if ((channels[i] == *sample) && Mix_Playing(i)) {
 			playing++;
+		}
 	}
 	lua_pushboolean(L, playing);
 	return 1;
@@ -146,8 +155,9 @@ static int Lua_Sound_isPaused (lua_State *L) {
 	int paused = 0;
 	int i;
 	for (i=0; i<CHANNELS; i++) {
-		if ((channels[i] == *sample) && Mix_Paused(i))
+		if ((channels[i] == *sample) && Mix_Paused(i)) {
 			paused++;
+		}
 	}
 	lua_pushboolean(L, paused);
 	return 1;
@@ -176,11 +186,13 @@ static int Lua_Music_load(lua_State *L) {
 	const char* filename = luaL_checkstring(L, 1);
 
 	src = PHYSFSRWOPS_openRead(filename);
-	if (!src)
+	if (!src) {
 		return luaL_error(L, "Error loading music '%s': %s", filename, SDL_GetError());
+	}
 	music = Mix_LoadMUS_RW(src);
-	if (!music)
+	if (!music) {
 		return luaL_error(L, "Error loading music '%s': %s", filename, Mix_GetError());
+	}
 	/* new userdata for pointer to music */
 	ptr = lua_newuserdata(L, sizeof(Mix_Music*));
 	*ptr = music;
@@ -196,8 +208,9 @@ static int Lua_Music_play(lua_State *L) {
 	luaL_argcheck(L, loops>=0, 2, "number of loops has to be positive");
 	luaL_argcheck(L, ms>=0, 3, "Fade-in time has to be positive");
 	Mix_HaltMusic();
-	if (Mix_FadeInMusic(*music, loops-1, ms) == -1)
+	if (Mix_FadeInMusic(*music, loops-1, ms) == -1) {
 		return luaL_error(L, "Error playing music: %s", Mix_GetError());
+	}
 	return 0;
 }
 

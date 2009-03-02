@@ -300,7 +300,6 @@ int FS_loadFile(lua_State *L, const char *filename) {
 static int Lua_FS_dofile(lua_State *L) {
 	const char *filename = luaL_optstring(L, 1, NULL);
 	int n = lua_gettop(L);
-	int err;
 	if (PHYSFS_exists(filename)) {
 		if (FS_loadFile(L, filename) == FILEIO_ERROR) {
 			return lua_error(L);
