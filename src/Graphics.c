@@ -443,6 +443,14 @@ static int Lua_Image_render(lua_State *L) {
 	int x, y;
 	myRect clip_rect;
 	int color[] = {255, 255, 255, 255};
+	GLrect texCoords = { 
+		0,
+		0,
+		(GLfloat) image->po2_width / image->tile_width,
+		(GLfloat) image->po2_height / image->tile_height
+	};
+	int width = image->tile_width;
+	int height = image->tile_height;
 	GLdouble translate_x = 0.0;
 	GLdouble translate_y = 0.0;
 	GLdouble scale_x = 1.0;
@@ -486,11 +494,13 @@ static int Lua_Image_render(lua_State *L) {
 			if (!getint(L, &clip_rect.x, 1) || !getint(L, &clip_rect.y, 2) ||
 				!getint(L, &clip_rect.w, 3) || !getint(L, &clip_rect.h, 4))
 				return luaL_argerror(L, 2, "'rect' has invalid or missing elements");
-			
-			glEnable(GL_SCISSOR_TEST);
-			glScissor(x, screen->h - y - clip_rect.h, clip_rect.w, clip_rect.h);
-			x = x - clip_rect.x;
-			y = y - clip_rect.y;
+
+			texCoords.x1 = (GLfloat) clip_rect.x / image->po2_width;
+			texCoords.y1 = (GLfloat) clip_rect.y / image->po2_height;
+			texCoords.x2 = (GLfloat) (clip_rect.x + clip_rect.w) / image->po2_width;
+			texCoords.y2 = (GLfloat) (clip_rect.y + clip_rect.h) / image->po2_height;
+			width = clip_rect.w;
+			height = clip_rect.h;
 		} else if (!lua_isnil(L, -1))
 			return luaL_argerror(L, 2, "'rect' should be an array and nothing else");
 		lua_pop(L, 1);
@@ -521,29 +531,30 @@ static int Lua_Image_render(lua_State *L) {
 	glTranslated(-translate_x, -translate_y, 0);
 
 	glColor4ub( (GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], image->alpha);
+	
 	for (y_tile=0; y_tile<image->y_tiles; y_tile++) {
 		glPushMatrix();
 		for (x_tile=0; x_tile<image->x_tiles; x_tile++) {
 			glBindTexture(GL_TEXTURE_2D, *textures++);
 			glBegin(GL_QUADS);
 			if (scale_x*scale_y > 0) {
-				glTexCoord2f(0, 0);
+				glTexCoord2f(texCoords.x1, texCoords.y1);
 				glVertex2i(0, 0);
-				glTexCoord2f(0, 1);
-				glVertex2i(0, image->tile_height);
-				glTexCoord2f(1, 1);
-				glVertex2i(image->tile_width, image->tile_height);
-				glTexCoord2f(1, 0);
-				glVertex2i(image->tile_width, 0);
+				glTexCoord2f(texCoords.x1, texCoords.y2);
+				glVertex2i(0, height);
+				glTexCoord2f(texCoords.x2, texCoords.y2);
+				glVertex2i(width, height);
+				glTexCoord2f(texCoords.x2, texCoords.y1);
+				glVertex2i(width, 0);
 			} else {
-				glTexCoord2f(0, 0);
+				glTexCoord2f(texCoords.x1, texCoords.y1);
 				glVertex2i(0, 0);
-				glTexCoord2f(1, 0);
-				glVertex2i(image->tile_width, 0);
-				glTexCoord2f(1, 1);
-				glVertex2i(image->tile_width, image->tile_height);
-				glTexCoord2f(0, 1);
-				glVertex2i(0, image->tile_height);
+				glTexCoord2f(texCoords.x2, texCoords.y1);
+				glVertex2i(width, 0);
+				glTexCoord2f(texCoords.x2, texCoords.y2);
+				glVertex2i(width, height);
+				glTexCoord2f(texCoords.x1, texCoords.y2);
+				glVertex2i(0, height);
 			}
 			glEnd();
 			glTranslatef((GLfloat)image->tile_width-0.0f, 0.0f, 0.0f);
@@ -553,10 +564,8 @@ static int Lua_Image_render(lua_State *L) {
 
 	}
 
-	glDisable(GL_SCISSOR_TEST);
 	/* restore the modelview matrix */
 	glPopMatrix();
-	
 
 	return 0;
 }

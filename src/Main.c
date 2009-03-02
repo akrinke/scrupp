@@ -297,7 +297,7 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		lua_pop(L, 1);	// pop 'main' table
+		lua_pop(L, 1);	/* pop 'main' table */
 
 		delta = SDL_GetTicks() - lastTick;
 

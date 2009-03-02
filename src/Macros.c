@@ -38,7 +38,7 @@ void error (lua_State *L, const char *fmt, ...) {
 		GTK_BUTTONS_CLOSE,
 		msg
 	);
-	gtk_window_set_title(GTK_DIALOG (dialog), PROG_NAME);
+	gtk_window_set_title(GTK_WINDOW (dialog), PROG_NAME);
 	gtk_dialog_run(GTK_DIALOG (dialog));
 
 #elif __WIN32__

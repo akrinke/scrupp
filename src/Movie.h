@@ -16,6 +16,7 @@ typedef struct Lua_Movie {
 	SMPEG *movie;
 	SDL_Surface *surface;
 	GLubyte alpha;
+	int music_hooked;
 } Lua_Movie;
 
 int luaopen_movie(lua_State *L, const char *parent);

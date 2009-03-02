@@ -18,8 +18,9 @@
 
 static Lua_Movie *tomovie(lua_State *L) {
 	Lua_Movie **movie = tomoviep(L);
-	if (*movie == NULL)
+	if (*movie == NULL) {
 		luaL_error(L, "attempt to use a removed movie");
+	}
 	return *movie;
 }
 
@@ -35,12 +36,14 @@ static int Lua_Movie_load(lua_State *L) {
 
 	movie_info = (SMPEG_Info *) malloc(sizeof(SMPEG_Info));
 	temp = PHYSFSRWOPS_openRead(filename);
-	if (!temp)
+	if (!temp) {
 		return luaL_error(L, "Error loading file '%s': %s", filename, SDL_GetError());
+	}
 	
 	movie = SMPEG_new_rwops(temp, movie_info, 0);
-	if (!movie)
+	if (!movie) {
 		return luaL_error(L, "Error loading file '%s': %s", filename, SMPEG_error(movie));
+	}
 	
 	new_width = nextHigherPowerOfTwo(movie_info->width);
 	new_height = nextHigherPowerOfTwo(movie_info->height);
@@ -60,8 +63,9 @@ static int Lua_Movie_load(lua_State *L) {
 #endif
 	);
 	
-	if (surface == NULL)
+	if (surface == NULL) {
 		return luaL_error(L, "Error loading file '%s': %s", filename, SDL_GetError());
+	}
 	
 	SMPEG_setdisplay(movie, surface, NULL, NULL);
 	SMPEG_enablevideo(movie, 1);
@@ -82,6 +86,7 @@ static int Lua_Movie_load(lua_State *L) {
 	(*ptr)->movie = movie;	
     (*ptr)->surface = surface;
 	(*ptr)->alpha = 255;
+	(*ptr)->music_hooked = 0;
 									
 	luaL_getmetatable(L, "scrupp.movie");
 	lua_setmetatable(L, -2);
@@ -93,8 +98,6 @@ static int Lua_Movie_load(lua_State *L) {
 static int Lua_Movie_play(lua_State *L) {
 	Lua_Movie *movie = tomovie(L);
 	int loop = lua_toboolean(L, 2);
-
-#ifdef UNCOMMENTED
 	SDL_AudioSpec audiofmt;
 	Uint16 format;
 	int freq, channels;
@@ -107,14 +110,14 @@ static int Lua_Movie_play(lua_State *L) {
 		audiofmt.freq = freq;
 		audiofmt.format = format;	
 		audiofmt.channels = channels;
-		printf("freq: %d format: %d channels: %d\n", freq, format, channels);
+		// printf("freq: %d format: %d channels: %d\n", freq, format, channels);
 		SMPEG_actualSpec(movie->movie, &audiofmt);
 
 		/* Hook in the MPEG music mixer */
 		Mix_HookMusic(SMPEG_playAudioSDL, movie->movie);
+		movie->music_hooked = 1;
 		SMPEG_enableaudio(movie->movie, 1);
 	}
-#endif
 
 	SMPEG_loop(movie->movie, loop);
 	SMPEG_play(movie->movie);
@@ -124,21 +127,31 @@ static int Lua_Movie_play(lua_State *L) {
 
 static int Lua_Movie_pause(lua_State *L) {
 	Lua_Movie *movie = tomovie(L);
-	if (SMPEG_status(movie->movie) == SMPEG_PLAYING)
+	if (SMPEG_status(movie->movie) == SMPEG_PLAYING) {
 		SMPEG_pause(movie->movie);
+	}
 	return 0;
 }
 
 static int Lua_Movie_resume(lua_State *L) {
 	Lua_Movie *movie = tomovie(L);
-	if (SMPEG_status(movie->movie) == SMPEG_STOPPED)
+	if (SMPEG_status(movie->movie) == SMPEG_STOPPED) {
 		SMPEG_pause(movie->movie);
+	}
 	return 0;
 }
 
 static int Lua_Movie_rewind(lua_State *L) {
 	Lua_Movie *movie = tomovie(L);
 	SMPEG_rewind(movie->movie);
+	return 0;
+}
+
+static int Lua_Movie_stop(lua_State *L) {
+	Lua_Movie *movie = tomovie(L);
+	SMPEG_stop(movie->movie);
+	Mix_HookMusic(NULL, NULL);
+	movie->music_hooked = 0;
 	return 0;
 }
 
@@ -277,8 +290,9 @@ static int Lua_Movie_render(lua_State *L) {
 		lua_getfield(L, -1, "rect");
 		if (lua_istable(L, -1)) {
 			if (!getint(L, &clip_rect.x, 1) || !getint(L, &clip_rect.y, 2) ||
-				!getint(L, &clip_rect.w, 3) || !getint(L, &clip_rect.h, 4))
+				!getint(L, &clip_rect.w, 3) || !getint(L, &clip_rect.h, 4)) {
 				return luaL_argerror(L, 2, "'rect' has invalid or missing elements");
+			}
 
 			texCoords.x1 = (GLfloat) clip_rect.x / movie->surface->w;
 			texCoords.y1 = (GLfloat) clip_rect.y / movie->surface->h;
@@ -286,19 +300,22 @@ static int Lua_Movie_render(lua_State *L) {
 			texCoords.y2 = (GLfloat) (clip_rect.y + clip_rect.h) / movie->surface->h;
 			width = clip_rect.w;
 			height = clip_rect.h;
-		} else if (!lua_isnil(L, -1))
+		} else if (!lua_isnil(L, -1)) {
 			return luaL_argerror(L, 2, "'rect' should be an array and nothing else");
+		}
 		lua_pop(L, 1);
 		/* check for "color"-entry */
 		lua_getfield(L, -1, "color");
 		if (lua_istable(L, -1)) {
-			if (!getint(L, &color[0], 1) || !getint(L, &color[1], 2) || !getint(L, &color[2], 3))
+			if (!getint(L, &color[0], 1) || !getint(L, &color[1], 2) || !getint(L, &color[2], 3)) {
 				return luaL_argerror(L, 1, "'color' has invalid or missing elements");
+			}
 			/* the alpha value of the color is optional */
 			getint(L, &color[3], 4);
 			movie->alpha = (GLubyte)color[3];
-		} else if (!lua_isnil(L, -1))
+		} else if (!lua_isnil(L, -1)) {
 			return luaL_argerror(L, 1, "'color' should be an array and nothing else");
+		}
 	} else {
 		x = luaL_checkint(L, 2);
 		y = luaL_checkint(L, 3);
@@ -320,9 +337,10 @@ static int Lua_Movie_render(lua_State *L) {
 	
 	glColor4ub( (GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], movie->alpha);
 	
-	if (status == SMPEG_PLAYING)
+	if (status == SMPEG_PLAYING) {
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, movie->surface->w, movie->surface->h,
 					GL_RGBA, GL_UNSIGNED_BYTE, movie->surface->pixels);
+	}
 	
 	glBegin(GL_QUADS);
 		if (scaleX*scaleY > 0) {			
@@ -356,6 +374,9 @@ static int movie_gc(lua_State *L) {
 	/* stack(-1): movie userdata to free */
 	Lua_Movie **movie = tomoviep(L);
 	if (*movie != NULL) {
+		if ((*movie)->music_hooked) {
+			Mix_HookMusic(NULL, NULL);
+		}
 		SMPEG_delete((*movie)->movie);
 		glDeleteTextures( 1, &(*movie)->texture );
 		SDL_FreeSurface((*movie)->surface);
@@ -369,10 +390,11 @@ static int movie_gc(lua_State *L) {
 
 static int movie_tostring(lua_State *L) {
 	Lua_Movie *movie = *tomoviep(L);
-	if (movie == NULL)
+	if (movie == NULL) {
 		lua_pushliteral(L, "Movie (removed)");
-	else
+	} else {
 		lua_pushfstring(L, "Movie (%p)", movie);
+	}
 	return 1;
 }
 
@@ -388,6 +410,7 @@ static const struct luaL_Reg movielib_m [] = {
 	{"pause", Lua_Movie_pause},
 	{"resume", Lua_Movie_resume},
 	{"rewind", Lua_Movie_rewind},
+	{"stop", Lua_Movie_stop},
 	{"skip", Lua_Movie_skip},
 	{"getInfo", Lua_Movie_getInfo},
 	{"isPlaying", Lua_Movie_isPlaying},
