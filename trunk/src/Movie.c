@@ -110,7 +110,7 @@ static int Lua_Movie_play(lua_State *L) {
 		audiofmt.freq = freq;
 		audiofmt.format = format;	
 		audiofmt.channels = channels;
-		// printf("freq: %d format: %d channels: %d\n", freq, format, channels);
+		/* printf("freq: %d format: %d channels: %d\n", freq, format, channels); */
 		SMPEG_actualSpec(movie->movie, &audiofmt);
 
 		/* Hook in the MPEG music mixer */

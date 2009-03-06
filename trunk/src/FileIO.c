@@ -75,11 +75,11 @@ static void FS_Quit(void) {
 }
 
 /* extracts the dirname and the basename from the path */
-static void splitPath(const char *path, char **dirname, char **basename) {
+static void splitPath(const char *path, char **dir, char **base) {
 	char *ptr;
 	const char *dirsep = NULL;
-	*basename = (char *)path;
-	*dirname = ".";
+	*base = (char *)path;
+	*dir = (char *)".";
 	dirsep = PHYSFS_getDirSeparator();
 	if (strlen(dirsep) == 1) { /* fast path. */
 		ptr = strrchr(path, *dirsep);
@@ -96,14 +96,14 @@ static void splitPath(const char *path, char **dirname, char **basename) {
 	}
 	if (ptr != NULL) {
 		size_t size = (size_t) (ptr - path);
-		*dirname = (char *) malloc(size + 1);
-		memcpy(*dirname, path, size);
-		(*dirname)[size] = '\0';
-		*basename = ptr + strlen(dirsep);
+		*dir = (char *) malloc(size + 1);
+		memcpy(*dir, path, size);
+		(*dir)[size] = '\0';
+		*base = ptr + strlen(dirsep);
 	}
 }
 
-void FS_Init(int argc, char *argv[], char **pFilename) {
+void FS_Init(lua_State *L, char *argv[], char **pFilename) {
 	#ifdef __MACOSX__
 		char *ch = NULL;
 		const char *basedir;
@@ -169,7 +169,7 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 	 * if an archive or directory is given, try to mount it 
 	 */
 	if (*pFilename == NULL) {
-		*pFilename = DEFAULT_FILE;
+		*pFilename = (char *)DEFAULT_FILE;
 		if (PHYSFS_exists(*pFilename) == 0) {
 			/* if default file not exists */
 			if (PHYSFS_exists(DEFAULT_ARCHIVE) != 0) { 
@@ -193,7 +193,7 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 			if (PHYSFS_addToSearchPath(".", 0) == 0) {
 				error(L, "Error: Could not add directory '%s' to search path: %s", argv[1], PHYSFS_getLastError());
 			}
-			*pFilename = DEFAULT_FILE;
+			*pFilename = (char *)DEFAULT_FILE;
 		} else {
 			/* chdir was unsuccessful -> archive or Lua file was probably given on command line */
 			splitPath(*pFilename, &dir, &base);
@@ -212,7 +212,7 @@ void FS_Init(int argc, char *argv[], char **pFilename) {
 				if (PHYSFS_addToSearchPath(base, 0) == 0) {
 					error(L, "Error: Could not add archive '%s' to search path: %s", argv[1], PHYSFS_getLastError());
 				}
-				*pFilename = DEFAULT_FILE;
+				*pFilename = (char *)DEFAULT_FILE;
 			} else {
 				fprintf(stdout, "Found Lua file: %s\n", base);
 				/* prepend the new working directory to the search path */

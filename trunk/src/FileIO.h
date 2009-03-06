@@ -10,7 +10,7 @@
 #define FILEIO_SUCCESS 0
 #define FILEIO_ERROR 1
 
-void FS_Init(int argc, char *argv[], char **filename);
+void FS_Init(lua_State *L, char *argv[], char **filename);
 int FS_loadFile(lua_State *L, const char *filename);
 
 int luaopen_fileio(lua_State *L, const char *parent);

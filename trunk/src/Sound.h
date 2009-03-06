@@ -14,6 +14,6 @@ typedef struct Lua_Sound {
 	int			channel;
 } Lua_Sound;
 
-int luaopen_sound();
+int luaopen_sound(lua_State *L, const char *parent);
 
 #endif /* __SOUND_H__ */
