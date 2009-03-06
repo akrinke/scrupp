@@ -5,6 +5,7 @@
 */
 
 #include "Main.h"
+#include "Macros.h"
 
 #ifdef USE_GTK
 	#include <gtk/gtk.h>
@@ -18,6 +19,9 @@
 void error (lua_State *L, const char *fmt, ...) {
 	char str[1024];
 	const char *msg;
+#ifdef USE_GTK
+	GtkWidget *dialog;
+#endif
 	
 	va_list argp;
 	va_start(argp, fmt);
@@ -31,7 +35,7 @@ void error (lua_State *L, const char *fmt, ...) {
 
 #ifdef USE_GTK
 	gtk_init(NULL, NULL);
-	GtkWidget *dialog = gtk_message_dialog_new(
+	dialog = gtk_message_dialog_new(
 		NULL,
 		GTK_DIALOG_MODAL,
 		GTK_MESSAGE_ERROR,

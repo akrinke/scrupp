@@ -1,17 +1,25 @@
 # == CHANGE THE SETTINGS BELOW TO SUIT YOUR ENVIRONMENT =======================
 
 # See OPTIONS for possible values.
-OPTION= none
+OPTION = none
 
-CC= gcc
-CFLAGS= -c $(shell sdl-config --cflags) -Wall $(MYCFLAGS)
-LIBS= -lGL -lSDL_image -lSDL_mixer -lSDL_ttf \
-	$(shell sdl-config --libs) $(shell pkg-config --libs lua) \
-	-lphysfs -lsmpeg $(MYLIBS)
+CAIRO_LIB = lua-oocairo
+CAIRO_LIB_VERSION = 1.2
 
-MYCFLAGS=
-MYLDFLAGS=
-MYLIBS=
+CC = gcc
+CFLAGS = -c $(shell sdl-config --cflags) $(shell pkg-config --cflags cairo) \
+		 -Isrc/$(CAIRO_LIB)-$(CAIRO_LIB_VERSION) \
+		 -ansi -pedantic -Wall -W -Wshadow -Wpointer-arith -Wcast-align \
+		 -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes \
+		 -Wnested-externs -Wno-long-long \
+		 $(MYCFLAGS)
+LIBS =  -lGL -lSDL_image -lSDL_mixer -lSDL_ttf \
+		$(shell sdl-config --libs) $(shell pkg-config --libs cairo lua) \
+		-lphysfs -lsmpeg $(MYLIBS)
+
+MYCFLAGS =
+MYLDFLAGS =
+MYLIBS =
 
 # == END OF USER SETTINGS. NO NEED TO CHANGE ANYTHING BELOW THIS LINE =========
 
@@ -28,9 +36,12 @@ Sound.c \
 Movie.c \
 physfsrwops.c
 
+# add lua-oocairo sources
+SOURCES += oocairo.c
+
 OBJECTS = $(SOURCES:.c=.o)
 EXECUTABLE = scrupp
-VPATH = src
+VPATH = src:src/$(CAIRO_LIB)-$(CAIRO_LIB_VERSION)
 
 default: $(OPTION)
 
@@ -49,6 +60,9 @@ with-gtk:
 
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(LIBS) $(OBJECTS) -o $@
+
+oocairo.o: oocairo.c
+	$(CC) $(CFLAGS) -DVERSION=\"$(CAIRO_LIB_VERSION)\" $< -o $@
 
 .c.o:
 	$(CC) $(CFLAGS) $< -o $@

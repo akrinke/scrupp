@@ -25,7 +25,7 @@ static void channelDone(int channel) {
 	channels[channel] = NULL;
 }
 
-static int initSound(lua_State *L) {
+static int initSound(void) {
 	int i;
 	/* 	open 44.1KHz, signed 16bit, system byte order,
 		stereo audio, using 1024 byte chunks */
@@ -72,10 +72,10 @@ static int Lua_Sound_play(lua_State *L) {
 	int loops = luaL_optint(L, 2, 1);	/* default: play sample one time */
 	
 	/* fade-in functionality has been disabled due to bugs in SDL-Mixer 1.2.8 */
-	//int ms = luaL_optint(L, 3, 0);		/* default: no fade-in */
+	/* int ms = luaL_optint(L, 3, 0); */	/* default: no fade-in */
 	luaL_argcheck(L, loops>=0, 2, "number of loops has to be positive");
-	//luaL_argcheck(L, ms>=0, 3, "Fade-in time has to be positive");
-	//int channel = Mix_FadeInChannel(-1, *sample, loops-1, 100);
+	/* luaL_argcheck(L, ms>=0, 3, "Fade-in time has to be positive"); */
+	/* int channel = Mix_FadeInChannel(-1, *sample, loops-1, 100); */
 	channel = Mix_PlayChannel(-1, *sample, loops-1);
 	if (channel == -1) {
 		fprintf(stderr, "Error playing sound: %s\n", Mix_GetError());
@@ -125,13 +125,13 @@ static int Lua_Sound_stop (lua_State *L) {
 	Mix_Chunk **sample = checksound(L);
 	
 	/* fade-out functionality has been disabled due to bugs in SDL-Mixer 1.2.8 */
-	//int ms = luaL_optint(L, 2, 0);	/* default: no fade-out */
-	//luaL_argcheck(L, ms>=0, 2, "Fade-out time has to be positive");
+	/* int ms = luaL_optint(L, 2, 0); */	/* default: no fade-out */
+	/*luaL_argcheck(L, ms>=0, 2, "Fade-out time has to be positive"); */
 	int i;
 	for (i=0; i<CHANNELS; i++) {
 		if (channels[i] == *sample) {
 			Mix_HaltChannel(i);
-			//Mix_FadeOutChannel(i, ms);
+			/* Mix_FadeOutChannel(i, ms); */
 		}
 	}
 	return 0;
@@ -227,16 +227,19 @@ static int Lua_Music_getVolume(lua_State *L) {
 }
 
 static int Lua_Music_pause (lua_State *L) {
+	UNUSED(L);
 	Mix_PauseMusic();
 	return 0;
 }
 
 static int Lua_Music_resume (lua_State *L) {
+	UNUSED(L);
 	Mix_ResumeMusic();
 	return 0;
 }
 
 static int Lua_Music_rewind (lua_State *L) {
+	UNUSED(L);
 	Mix_RewindMusic();
 	return 0;
 }
@@ -308,7 +311,7 @@ static const struct luaL_Reg musiclib_m [] = {
 
 
 int luaopen_sound(lua_State *L, const char *parent) {
-	if (initSound(L) == -1) {
+	if (initSound() == -1) {
 		fprintf(stderr,	"Error running Mix_OpenAudio: %s\n"
 						"\tSupport of sound and music has been disabled.\n", 
 						Mix_GetError());

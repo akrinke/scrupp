@@ -24,6 +24,8 @@
 #include "lualib.h"
 #include "lauxlib.h"
 
+#define UNUSED(x) ((void)(x)) /* to avoid warnings */
+
 #define PROG_NAME 	"Scrupp"
 #define VERSION 	"0.2"
 #define COPYRIGHT	"Copyright (C) 2005-2008 Andreas Krinke"
@@ -39,12 +41,9 @@
 #define SCRUPP_PATH				"SCRUPP_PATH"
 #define SCRUPP_PATH_DEFAULT		"?.lua;scripts/?.lua"
 
-
 #define CHANNELS	16	/* number of audio channels */
 
-extern lua_State* 		L;
-
-int check_for_exit();
+int check_for_exit(lua_State *L);
 int error_function(lua_State *L);
 
 #endif /*__MAIN_H__*/

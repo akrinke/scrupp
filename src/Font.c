@@ -91,7 +91,7 @@ static int Lua_Font_generateImage(lua_State *L) {
 	if (!(text_surface = TTF_RenderUTF8_Blended(*font_ptr, text, scolor)))
 		return luaL_error(L, "Error rendering text: %s", TTF_GetError());
 	ptr = lua_newuserdata(L, sizeof(Lua_Image));
-	createTexture(text_surface, ptr, (GLubyte)color[3]);
+	createTexture(L, text_surface, ptr, (GLubyte)color[3]);
 	SDL_FreeSurface(text_surface);
 	luaL_getmetatable(L, "scrupp.image");
 	lua_setmetatable(L, -2);

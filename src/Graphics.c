@@ -6,6 +6,7 @@
 
 #include <SDL_opengl.h>
 #include <SDL_image.h>
+#include <cairo.h>
 #include <math.h>
 
 #include "Main.h"
@@ -22,14 +23,14 @@ Lua_Image *first_image = NULL;
 
 /* calculates the next higher power of two */
 unsigned int nextHigherPowerOfTwo(unsigned int k) {
-	int i;
+	unsigned int i;
 	k--;
 	for (i=1; i<sizeof(int)*8; i=i*2)
 		k = k | k >> i;
 	return k+1;
 }
 
-int sendTextureToCard(Lua_Image *img) {
+static int sendTextureToCard(lua_State *L, Lua_Image *img) {
 	SDL_Surface *tile_surface;
 	SDL_Rect src_rect;
 	GLuint *textures;
@@ -81,7 +82,7 @@ int sendTextureToCard(Lua_Image *img) {
 }
 
 /* generate an OpenGL texture (wrapped in a Lua_Image) from a SDL_Surface */
-int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
+int createTexture(lua_State *L, SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 	SDL_Surface *new_surface;
 	GLint nrOfColors;
 	GLenum texture_format;
@@ -111,17 +112,19 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 	/* get the number of channels in the SDL surface */
 	nrOfColors = new_surface->format->BytesPerPixel;
 	if ( nrOfColors == 4 ) {		/* with alpha channel */
-		if ( new_surface->format->Rmask == RMASK )
+		if ( new_surface->format->Rmask == RMASK ) {
 			texture_format = GL_RGBA;
-		else
+		} else {
 			texture_format = GL_BGRA;
+		}
 	} else if ( nrOfColors == 3 ) {	/* no alpha channel */
-		if ( new_surface->format->Rmask == RMASK )
+		if (new_surface->format->Rmask == RMASK) {
 			texture_format = GL_RGB;
-		else
+		} else {
 			texture_format = GL_BGR;
+		}
 	} else {
-		return luaL_error( L, "Image is not truecolor!" );
+		return luaL_error(L, "Image is not truecolor!");
 	}
 	
 	/* check if the graphics card can handle a texture with the chosen size */
@@ -158,7 +161,7 @@ int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha) {
 	dest->next = NULL;
 	dest->prev = NULL;
 	
-	sendTextureToCard(dest);
+	sendTextureToCard(L, dest);
 
 	if (first_image == NULL) {
 		first_image = dest;
@@ -222,7 +225,7 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 	/* reloading all images */
 	node = first_image;
 	while (node != NULL) {
-		sendTextureToCard(node);
+		sendTextureToCard(L, node);
 		node = node->next;
 	}
 	return 0;
@@ -343,6 +346,7 @@ static int Lua_Graphics_restoreView(lua_State *L) {
 }
 
 static int Lua_Graphics_resetView(lua_State *L) {
+	UNUSED(L);
 	glLoadIdentity();
 	return 0;
 }
@@ -362,7 +366,7 @@ static int Lua_Image_load(lua_State *L) {
 	if (surface == NULL)
 		return luaL_error(L, "Error loading file '%s': %s", filename, IMG_GetError());
 	ptr = lua_newuserdata(L, sizeof(Lua_Image));
-	createTexture(surface, ptr, 255);
+	createTexture(L, surface, ptr, 255);
 	SDL_FreeSurface(surface);
 	luaL_getmetatable(L, "scrupp.image");
 	lua_setmetatable(L, -2);
@@ -385,8 +389,44 @@ static int Lua_Image_loadFromString(lua_State *L) {
 	if (surface == NULL)
 		return luaL_error(L, "Error loading image from string: %s", IMG_GetError());
 	ptr = lua_newuserdata(L, sizeof(Lua_Image));
-	createTexture(surface, ptr, 255);
+	createTexture(L, surface, ptr, 255);
 	SDL_FreeSurface(surface);
+	luaL_getmetatable(L, "scrupp.image");
+	lua_setmetatable(L, -2);
+	return 1;
+}
+
+static int Lua_Image_loadFromCairoSurface(lua_State *L) {
+	/* the name of the metatable is defined in the sources of Lua-OOCairo (oocairo.c) */
+	cairo_surface_t **cairo_surface = (cairo_surface_t **)luaL_checkudata(L, 1, "6d31a064-6711-11dd-bdd8-00e081225ce5");
+	unsigned char *cairo_data;
+	SDL_Surface *sdl_surface;
+	Lua_Image *ptr;	
+	int width = cairo_image_surface_get_width(*cairo_surface);
+	int height = cairo_image_surface_get_height(*cairo_surface);
+	int stride = cairo_image_surface_get_stride(*cairo_surface);
+	Uint32 rmask, gmask, bmask, amask;
+	
+	if (SDL_GetVideoSurface() == NULL) {
+		return luaL_error(L, "Run " NAMESPACE ".init() before loading images.");
+	}	
+	cairo_data = cairo_image_surface_get_data(*cairo_surface);	
+	if (cairo_data == NULL) {
+		return luaL_error(L, "Cairo surface is no image surface!");
+	}	
+	/* printf("width: %d\theight: %d\tstride: %d\n", width, height, stride); */
+	rmask = 0x00ff0000;
+	gmask = 0x0000ff00;
+	bmask = 0x000000ff;
+	amask = 0xff000000;	
+	sdl_surface = SDL_CreateRGBSurfaceFrom(	(void *) cairo_data, width, height, 32, stride,
+											rmask, gmask, bmask, amask);	
+	if (sdl_surface == NULL) {
+		return luaL_error(L, "Error creating SDL surface: %s", SDL_GetError());
+	}
+	ptr = lua_newuserdata(L, sizeof(Lua_Image));
+	createTexture(L, sdl_surface, ptr, 255);
+	SDL_FreeSurface(sdl_surface);
 	luaL_getmetatable(L, "scrupp.image");
 	lua_setmetatable(L, -2);
 	return 1;
@@ -443,12 +483,7 @@ static int Lua_Image_render(lua_State *L) {
 	int x, y;
 	myRect clip_rect;
 	int color[] = {255, 255, 255, 255};
-	GLrect texCoords = { 
-		0,
-		0,
-		(GLfloat) image->po2_width / image->tile_width,
-		(GLfloat) image->po2_height / image->tile_height
-	};
+	GLrect texCoords = {0, 0, 0, 0};
 	int width = image->tile_width;
 	int height = image->tile_height;
 	GLdouble translate_x = 0.0;
@@ -458,7 +493,10 @@ static int Lua_Image_render(lua_State *L) {
 	GLdouble rotate = 0.0;
 	GLubyte x_tile, y_tile;
 	GLuint *textures = image->textures;
-
+	
+	texCoords.x2 = (GLfloat) image->po2_width / image->tile_width;
+	texCoords.y2 = (GLfloat) image->po2_height / image->tile_height;
+	
 	if (lua_istable(L, 2)) {
 		/* x and y are array element 1 and 2 */
 		if (!getint(L, &x, 1) || !getint(L, &y, 2))
@@ -772,6 +810,7 @@ static const struct luaL_Reg graphicslib [] = {
 	{"resetView",			Lua_Graphics_resetView},
 	{"addImage", 			Lua_Image_load},
 	{"addImageFromString",	Lua_Image_loadFromString},
+	{"addImageFromCairo",	Lua_Image_loadFromCairoSurface},
 	{"draw", 				Lua_Graphics_draw},
 	{NULL, NULL}
 };

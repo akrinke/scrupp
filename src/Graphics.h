@@ -55,8 +55,7 @@ typedef struct GLrect {
 } GLrect;
 
 unsigned int nextHigherPowerOfTwo(unsigned int k);
-int sendTextureToCard(Lua_Image *img);
-int createTexture(SDL_Surface *src, Lua_Image *dest, GLubyte alpha);
+int createTexture(lua_State *L, SDL_Surface *src, Lua_Image *dest, GLubyte alpha);
 
 int luaopen_graphics(lua_State *L, const char *parent);
 
