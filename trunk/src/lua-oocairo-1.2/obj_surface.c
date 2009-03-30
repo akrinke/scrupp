@@ -92,21 +92,45 @@ read_chunk_from_fh (void *closure, unsigned char *buf, unsigned int lentoread)
     return CAIRO_STATUS_SUCCESS;
 }
 
+static cairo_status_t
+read_chunk_from_physfs_fh (void *closure, unsigned char *buf, unsigned int lentoread)
+{
+	PHYSFS_file *Hndfile = closure;
+	if (PHYSFS_read(Hndfile, buf, lentoread, 1) != 1) {
+		return CAIRO_STATUS_READ_ERROR;
+	}
+	return CAIRO_STATUS_SUCCESS;
+}
+
 #if CAIRO_HAS_PNG_FUNCTIONS
 static int
 image_surface_create_from_png (lua_State *L) {
+	PHYSFS_file *Hndfile = NULL;
     SurfaceUserdata *surface = create_surface_userdata(L);
 
     if (lua_isstring(L, 1)) {
         const char *filename = luaL_checkstring(L, 1);
-        surface->surface = cairo_image_surface_create_from_png(filename);
-        switch (cairo_surface_status(surface->surface)) {
-            case CAIRO_STATUS_FILE_NOT_FOUND:
-                return luaL_error(L, "PNG file '%s' not found", filename);
-            case CAIRO_STATUS_READ_ERROR:
-                return luaL_error(L, "error reading PNG file '%s'", filename);
-            default:;
-        }
+		if (PHYSFS_exists(filename)) {
+			Hndfile = PHYSFS_openRead(filename);
+			if (Hndfile == NULL) {
+				return luaL_error(L, "Error while reading from '%s': %s", 
+								  filename, PHYSFS_getLastError());
+			}
+			surface->surface = cairo_image_surface_create_from_png_stream(
+									read_chunk_from_physfs_fh, Hndfile);
+			if ((surface->surface == NULL) || (cairo_surface_status(surface->surface) != CAIRO_STATUS_SUCCESS)) {
+				return luaL_error(L, "Error reading PNG file '%s'", filename);
+			}
+		} else {
+			surface->surface = cairo_image_surface_create_from_png(filename);
+			switch (cairo_surface_status(surface->surface)) {
+				case CAIRO_STATUS_FILE_NOT_FOUND:
+					return luaL_error(L, "PNG file '%s' not found", filename);
+				case CAIRO_STATUS_READ_ERROR:
+					return luaL_error(L, "error reading PNG file '%s'", filename);
+				default:;
+			}
+		}
     }
     else {
         struct ReadInfoLuaStream info;
