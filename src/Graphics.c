@@ -405,20 +405,26 @@ static int Lua_Image_loadFromCairoSurface(lua_State *L) {
 	int width = cairo_image_surface_get_width(*cairo_surface);
 	int height = cairo_image_surface_get_height(*cairo_surface);
 	int stride = cairo_image_surface_get_stride(*cairo_surface);
-	Uint32 rmask, gmask, bmask, amask;
+	Uint32 rmask = 0x00FF0000;
+	Uint32 gmask = 0x0000FF00;
+	Uint32 bmask = 0x000000FF;
+	Uint32 amask = 0xFF000000;
 	
 	if (SDL_GetVideoSurface() == NULL) {
 		return luaL_error(L, "Run " NAMESPACE ".init() before loading images.");
-	}	
+	}
+
+	if (cairo_image_surface_get_format(*cairo_surface) == CAIRO_FORMAT_RGB24) {
+		amask = 0x00000000;
+	}
+
+			
 	cairo_data = cairo_image_surface_get_data(*cairo_surface);	
 	if (cairo_data == NULL) {
 		return luaL_error(L, "Cairo surface is no image surface!");
 	}	
 	/* printf("width: %d\theight: %d\tstride: %d\n", width, height, stride); */
-	rmask = 0x00ff0000;
-	gmask = 0x0000ff00;
-	bmask = 0x000000ff;
-	amask = 0xff000000;	
+
 	sdl_surface = SDL_CreateRGBSurfaceFrom(	(void *) cairo_data, width, height, 32, stride,
 											rmask, gmask, bmask, amask);	
 	if (sdl_surface == NULL) {

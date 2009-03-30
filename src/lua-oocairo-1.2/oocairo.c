@@ -1,4 +1,5 @@
 #include "oocairo.h"
+#include <physfs.h>
 #include <cairo.h>
 #include <string.h>
 #include <stdio.h>
@@ -783,7 +784,7 @@ luaopen_oocairo (lua_State *L) {
     lua_pushliteral(L, "cairo");
     lua_rawset(L, -3);
     lua_pushliteral(L, "_VERSION");
-    lua_pushliteral(L, VERSION);
+    lua_pushliteral(L, "1.2");
     lua_rawset(L, -3);
     lua_pushliteral(L, "_CAIRO_VERSION");
     lua_pushstring(L, cairo_version_string());
