@@ -1,5 +1,5 @@
 #include "oocairo.h"
-#include "physfsrwops.h"
+#include "../physfsrwops.h"
 #include <SDL_image.h>
 #include <physfs.h>
 #include <cairo.h>
