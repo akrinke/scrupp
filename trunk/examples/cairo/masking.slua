@@ -2,47 +2,11 @@
 -- using it to composite photographs onto a background.  Two of them have
 -- a linear and radial gradient as their masks, making the pictures fade
 -- out, and the third uses a mask shape created by filling a path.
---
--- This also demonstrates how to load JPEG images, which Cairo doesn't
--- support directly.  It's a bit of a hack, but it works: the JPEGs are
--- loaded with GD, and then saved into a PNG file in a string (to avoid
--- the need for a temporary file) and then loaded back into Cairo from
--- the string.
 
 local Cairo = require "oocairo"
 
--- This module is required for loading images from data stored in a string.
-
 local IMG_WD, IMG_HT = 400, 300
 local PI = 2 * math.asin(1)
-
--- This requires the 'memoryfile' Lua module, the GD library, and the Lua
--- module for GD.  We need them for loading the JPEG images.  These modules
--- are both available from LuaForge:
---     http://luaforge.net/projects/memoryfile/
---     http://luaforge.net/projects/lua-gd/
-local MemFile
-do
-    local ok = pcall(require, "gd")
-    if not ok then
-        print("The Lua 'gd' module is required for this example.")
-        os.exit(1)
-    end
-    ok, MemFile = pcall(require, "memoryfile")
-    if not ok then
-        print("The Lua 'memoryfile' module is required for this example.")
-        os.exit(1)
-    end
-end
-
-local function load_jpeg (filename)
-    local img = assert(gd.createFromJpeg(filename),
-                       "error loading JPEG: " .. filename)
-    local fh = MemFile.open(img:pngStr())
-    local surface = Cairo.image_surface_create_from_png(fh)
-    fh:close()      -- not strictly necessary, but frees memory earlier
-    return surface
-end
 
 local function make_snow_gradient ()
     -- Fade from full opacity at the bottom of to full transparency at the top.
@@ -91,9 +55,9 @@ end
 local surface = Cairo.image_surface_create("rgb24", IMG_WD, IMG_HT)
 local cr = Cairo.context_create(surface)
 
-local bronzepic = load_jpeg("images/bronze.jpg")
-local flowerpic = load_jpeg("images/flowers.jpg")
-local snowpic   = load_jpeg("images/snow.jpg")
+local bronzepic = Cairo.image_surface_create_from_file("images/bronze.jpg")
+local flowerpic = Cairo.image_surface_create_from_file("images/flowers.jpg")
+local snowpic   = Cairo.image_surface_create_from_file("images/snow.jpg")
 
 -- Show the snowy scene at the bottom of the picture, faded out at the top,
 -- using a linear gradient as the mask.

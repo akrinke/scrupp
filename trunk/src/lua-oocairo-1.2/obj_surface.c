@@ -53,6 +53,50 @@ image_surface_create_from_data (lua_State *L) {
     return 1;
 }
 
+static int
+image_surface_create_from_file (lua_State *L) {
+	const char* filename = luaL_checkstring(L, 1);
+	SDL_RWops *temp;
+	SDL_Surface *img_surface;
+	SDL_Surface *new_surface;
+	size_t data_len;
+	SurfaceUserdata *surface;
+	
+	temp = PHYSFSRWOPS_openRead(filename);
+	if (temp == NULL) {
+		return luaL_error(L, "Error loading file '%s': %s", filename, SDL_GetError());
+	}
+	img_surface = IMG_Load_RW(temp, 1);
+	if (img_surface == NULL) {
+		return luaL_error(L, "Error loading file '%s': %s", filename, IMG_GetError());
+	}
+	if (img_surface->format->BytesPerPixel == 4) {
+		SDL_FreeSurface(img_surface);
+		return luaL_error(L,	"Error loading file '%s': Alpha channel is not supported. "
+								"Use image_surface_create_from_png().", filename);
+	}
+	
+	new_surface = SDL_CreateRGBSurface(	SDL_SWSURFACE, img_surface->w, img_surface->h, 32,
+										0x00FF0000,0x0000FF00,0x000000FF,0);
+	if ( new_surface == NULL ) {
+		SDL_FreeSurface(img_surface);
+		return luaL_error(L, "CreateRGBSurface failed: %s", SDL_GetError());
+	}
+
+	SDL_BlitSurface(img_surface, NULL, new_surface, NULL);
+	SDL_FreeSurface(img_surface);
+	
+	data_len = (size_t) new_surface->pitch * new_surface->h;
+    surface = create_surface_userdata(L);
+    surface->image_buffer = malloc(data_len);
+	memcpy(surface->image_buffer, new_surface->pixels, data_len);
+    surface->surface = cairo_image_surface_create_for_data(
+                            surface->image_buffer, CAIRO_FORMAT_RGB24,
+							new_surface->w, new_surface->h, new_surface->pitch);
+	SDL_FreeSurface(new_surface);
+    return 1;
+}
+
 struct ReadInfoLuaStream {
     lua_State *L;
     int fhpos;
