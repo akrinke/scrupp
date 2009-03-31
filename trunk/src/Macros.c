@@ -31,7 +31,7 @@ void error (lua_State *L, const char *fmt, ...) {
 	msg = luaL_gsub(L, str, "[\"", "'");
 	msg = luaL_gsub(L, msg, "[string \"", "'");
 	msg = luaL_gsub(L, msg, "\"]", "'");
-	fprintf(stderr, msg);
+	fputs(msg, stderr);
 
 #ifdef USE_GTK
 	gtk_init(NULL, NULL);
@@ -40,7 +40,7 @@ void error (lua_State *L, const char *fmt, ...) {
 		GTK_DIALOG_MODAL,
 		GTK_MESSAGE_ERROR,
 		GTK_BUTTONS_CLOSE,
-		msg
+		"%s", msg
 	);
 	gtk_window_set_title(GTK_WINDOW (dialog), PROG_NAME);
 	gtk_dialog_run(GTK_DIALOG (dialog));
@@ -68,7 +68,7 @@ void error (lua_State *L, const char *fmt, ...) {
 	);
 #endif
 
-	fprintf(stderr, "\n");
+	fputs("\n", stderr);
 	lua_close(L);
 	exit(1);
 }
@@ -78,7 +78,7 @@ void stackDump (lua_State *L) {
 	int i, t;
 	int top = lua_gettop(L);
 	
-	printf("stackDump: ");
+	puts("stackDump: ");
 	for (i = 1; i <= top; i++) {  /* repeat for each level */
 	t = lua_type(L, i);
 	switch (t) {
@@ -87,7 +87,11 @@ void stackDump (lua_State *L) {
 			break;
 
 		case LUA_TBOOLEAN:  /* booleans */
-			printf(lua_toboolean(L, i) ? "true" : "false");
+			if (lua_toboolean(L, i)) {
+				puts("true");
+			} else {
+				puts("false");
+			}
 			break;
 
 		case LUA_TNUMBER:  /* numbers */
@@ -95,12 +99,12 @@ void stackDump (lua_State *L) {
 			break;
 
 		default:  /* other values */
-			printf("%s", lua_typename(L, t));
+			puts(lua_typename(L, t));
 			break;
 		}
-		printf("  ");  /* put a separator */
+		puts("  ");  /* put a separator */
 	}
-	printf("\n");  /* end the listing */
+	puts("\n");  /* end the listing */
 }
 
 int getint(lua_State *L, int *result, int key) {
