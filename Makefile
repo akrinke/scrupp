@@ -8,7 +8,7 @@ CAIRO_LIB_VERSION = 1.2
 
 CC = gcc
 CFLAGS = -c $(shell sdl-config --cflags) $(shell pkg-config --cflags cairo) \
-		 -Isrc/$(CAIRO_LIB)-$(CAIRO_LIB_VERSION) \
+		 -Isrc/$(CAIRO_LIB) \
 		 -ansi -pedantic -Wall -W -Wshadow -Wpointer-arith -Wcast-align \
 		 -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes \
 		 -Wnested-externs -Wno-long-long \
@@ -41,7 +41,7 @@ SOURCES += oocairo.c
 
 OBJECTS = $(SOURCES:.c=.o)
 EXECUTABLE = scrupp
-VPATH = src:src/$(CAIRO_LIB)-$(CAIRO_LIB_VERSION)
+VPATH = src:src/$(CAIRO_LIB)
 
 default: $(OPTION)
 

@@ -140,7 +140,7 @@ user_font_unicode_to_glyph (cairo_scaled_font_t *font, unsigned long unicode,
     if (!lua_isnumber(info->L, -1))
         luaL_error(info->L, "bad glyph index returned from 'unicode_to_glyph'"
                    " callback, should be number");
-    *glyph_index = lua_tonumber(info->L, -1);
+    *glyph_index = (unsigned long) lua_tointeger(info->L, -1);
     lua_pop(info->L, 1);
     return CAIRO_STATUS_SUCCESS;
 }

@@ -144,8 +144,8 @@ int createTexture(lua_State *L, SDL_Surface *src, Lua_Image *dest, GLubyte alpha
 						GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &dummy_width);		
 	}
-	x_tiles = (char) ceilf((float)old_width / tile_width);
-	y_tiles = (char) ceilf((float)old_height / tile_height);
+	x_tiles = (char) ceil((double)old_width / tile_width);
+	y_tiles = (char) ceil((double)old_height / tile_height);
 	
 	dest->src = new_surface;
 	dest->texture_format = texture_format;

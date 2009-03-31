@@ -16,7 +16,7 @@
 #include "Movie.h"
 
 /* cairo binding lua-oocairo */
-#include "oocairo.h"
+#include "lua-oocairo/oocairo.h"
 
 #include <string.h>
 #include <SDL_opengl.h>

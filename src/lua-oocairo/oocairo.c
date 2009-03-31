@@ -495,7 +495,7 @@ from_lua_clusters_table (lua_State *L, cairo_text_cluster_t **clusters,
             luaL_error(L, "number of bytes of text cluster %d should be a"
                        " number", i + 1);
         }
-        n = lua_tonumber(L, -1);
+        n = (int) lua_tointeger(L, -1);
         if (n < 0) {
             free(*clusters);
             luaL_error(L, "number of bytes of text cluster %d is negative",
@@ -510,7 +510,7 @@ from_lua_clusters_table (lua_State *L, cairo_text_cluster_t **clusters,
             luaL_error(L, "number of glyphs of text cluster %d should be a"
                        " number", i + 1);
         }
-        n = lua_tonumber(L, -1);
+        n = (int) lua_tointeger(L, -1);
         if (n < 0) {
             free(*clusters);
             luaL_error(L, "number of glyphs of text cluster %d is negative",
@@ -689,7 +689,7 @@ get_gtk_module_function (lua_State *L, const char *name) {
 static int
 format_stride_for_width (lua_State *L) {
     cairo_format_t fmt = format_from_lua(L, 1);
-    int width = luaL_checknumber(L, 2);
+    int width = luaL_checkint(L, 2);
     lua_pushnumber(L, cairo_format_stride_for_width(fmt, width));
     return 1;
 }

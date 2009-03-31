@@ -53,7 +53,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 OpenGL32.lib glu32.lib glaux.lib physfs.lib lua5.1.lib SDL.lib SDL_image.lib SDL_mixer.lib SDL_ttf.lib smpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /libpath:"lib"
+# ADD LINK32 OpenGL32.lib glu32.lib glaux.lib physfs.lib lua5.1.lib SDL.lib SDL_image.lib SDL_mixer.lib SDL_ttf.lib smpeg.lib cairo.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /libpath:"lib"
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "scrupp - Win32 Debug"
 
@@ -90,6 +91,14 @@ LINK32=link.exe
 # Begin Group "Quellcodedateien"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+# Begin Group "lua-oocairo"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE="..\..\src\lua-oocairo\oocairo.c"
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE="..\..\src\FileIO.c"
