@@ -1,4 +1,6 @@
 #include "oocairo.h"
+#include "physfsrwops.h"
+#include <SDL_image.h>
 #include <physfs.h>
 #include <cairo.h>
 #include <string.h>
@@ -700,6 +702,7 @@ constructor_funcs[] = {
     { "format_stride_for_width", format_stride_for_width },
     { "image_surface_create", image_surface_create },
     { "image_surface_create_from_data", image_surface_create_from_data },
+	{ "image_surface_create_from_file", image_surface_create_from_file },
 #if CAIRO_HAS_PNG_FUNCTIONS
     { "image_surface_create_from_png", image_surface_create_from_png },
 #endif
