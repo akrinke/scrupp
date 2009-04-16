@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title></title>
+  <link rel="stylesheet" type="text/css" href="site.css">
+
+  
+
+ </head>
+ <body>
+  <div id="header"><h1><a href="http://www.daizucms.org/" rel="home">Daizu CMS</a></h1>
+</div>
+
+<div id="all-cols">
+
+<div id="content-col">
+<div class="hentry">
+ <h2 class="entry-title"></h2>
+ <div class="entry-meta">
+ 
+
+</div>
+
+ 
+ <div class="entry-content" id="entry-content">
+  <h3>Name</h3><p>lua-oocairo-scaledfont - Scaled font face object</p><h3>Introduction</h3><p>Scaled font objects represent Cairo font faces which have been scaled to
+a particular point size.  They can be created from a font face object with
+the <code>scaled_font_create</code> function in the main module table (see
+<a href="index.html">lua-oocairo(3)</a>), or the <code>get_scaled_font</code> method on context objects
+(see <a href="context.html">lua-oocairo-context(3)</a>).</p><p>Scaled font objects can be compared with the <code>==</code> operator.  This will compare
+the identity of the objects, so different Lua objects which refer to the
+same <code>cairo_font_face_t</code> will compare as equal.</p><h3>Methods</h3><p>Scaled font objects provide the following methods.</p><dl><dt><a id="item_extents"></a>font:extents ()</dt><dd><p>Returns a table containing metrics information about the font.  The return
+value is in the same format as that of the <code>font_extents</code> method on context
+objects (see <a href="context.html">lua-oocairo-context(3)</a>).</p></dd><dt><a id="item_get_ctm"></a>font:get_ctm ()</dt><dd><p>Returns the coordinate transformation matrix (CTM) associated with the
+font.  This maps user coordinates into device coordinates on the surface
+with which the font is used.
+See <a href="matrix.html">lua-oocairo-matrix(3)</a> for details of the return value type.</p></dd><dt><a id="item_get_font_face"></a>font:get_font_face ()</dt><dd><p>Returns an object representing the unscaled font face used to create this
+font.  See <a href="fontface.html">lua-oocairo-fontface(3)</a> for details of its methods.</p></dd><dt><a id="item_get_font_matrix"></a>font:get_font_matrix ()</dt><dd><p>Returns the matrix representing the scaling of the font into user coordinates.
+See <a href="matrix.html">lua-oocairo-matrix(3)</a> for details of the return value type.</p></dd><dt><a id="item_get_font_options"></a>cr:get_font_options ()</dt><dd><p>Returns a font options object (see <a href="fontopt.html">lua-oocairo-fontopt(3)</a>) containing
+the rendering options that were supplied when creating this font.</p></dd><dt><a id="item_get_scale_matrix"></a>font:get_scale_matrix ()</dt><dd><p>Returns a matrix table representing the scaling of the font to the coordinate
+space of the surface it is used on.  This is the matrix obtained by
+multiplying the font matrix by the surface CTM.  See <a href="matrix.html">lua-oocairo-matrix(3)</a>
+for details of the return value type.
+Only available with Cairo 1.8 or better.</p></dd><dt><a id="item_get_type"></a>font:get_type ()</dt><dd><p>Returns a string indicating which back-end library provides the font face
+information.  The return value will be one of the same strings returned
+by the <code>get_type</code> method on a font face object
+(see <a href="fontface.html">lua-oocairo-fontface(3)</a>).</p></dd><dt><a id="item_glyph_extents"></a>font:glyph_extents (glyphs)</dt><dd><p>Same as <code>font:text_extents()</code>, but instead of a string, the <i>glyphs</i> value
+should be table in the format accepted by the <code>show_glyphs()</code> method
+on context objects (see <a href="context.html">lua-oocairo-context(3)</a>).</p></dd><dt><a id="item_text_extents"></a>font:text_extents (text)</dt><dd><p>Returns a table containing measurements of the given UTF-8 text as it would
+be rendered in this font.  The return value is in the same format as that
+of the <code>text_extents</code> method on context objects (see
+<a href="context.html">lua-oocairo-context(3)</a>).</p></dd><dt><a id="item_text_to_glyphs"></a>font:text_to_glyphs (x, y, text)</dt><dd><p>Given some UTF-8 text in the string <i>text</i>, and starting coordinates of
+<i>x</i> and <i>y</i>, this works out which glyphs need to be drawn to represent
+the text, and which glyphs correspond to the bytes in <i>text</i>.  The method
+returns two tables, the first an array of glyphs suitable for supplying to
+methods like <code>show_glyphs</code> and <code>glyph_extents</code>, and the second is a table
+of text clusters suitable for supplying to the <code>show_text_glyphs</code> method
+on a context object.</p><p>Only available with Cairo 1.8 or better.</p></dd></dl>
+ </div>
+ 
+
+
+ 
+
+</div>
+
+<div id="footer">&copy; Copyright 2008 Geoff Richards
+&lt;geoff&nbsp;at&nbsp;laxan.com&gt;<br>
+Published with Daizu CMS
+</div>
+</div>
+
+
+
+
+<div id="navigation-col"><h2 class="no-css">Navigation</h2>
+<ul>
+  <li><a href="http://www.daizucms.org/lua/">Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/">Libraries for Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/oocairo/" title="Lua binding for Cairo">Cairo</a>
+    <ul>
+  <li><a href="index.html" title="Lua binding for Cairo vector graphics library">Docs</a>
+    <ul>
+  <li><a href="context.html" title="Drawing context objects">Context</a>  </li>
+ 
+  <li><a href="fontface.html" title="Unscaled font face object">Font face</a>  </li>
+ 
+  <li><a href="fontopt.html">Font options</a>  </li>
+ 
+  <li><a href="matrix.html" title="Transformation matrix table">Matrix</a>  </li>
+ 
+  <li><a href="path.html" title="Path object">Path</a>  </li>
+ 
+  <li><a href="pattern.html" title="Cairo pattern objects">Pattern</a>  </li>
+ 
+  <li class="current">Scaled font  </li>
+ 
+  <li><a href="surface.html" title="Cairo surface objects">Surface</a>  </li>
+ 
+  <li><a href="userfont.html">User font</a>  </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+
+</div>
+
+</div>
+
+  
+ </body>
+</html>

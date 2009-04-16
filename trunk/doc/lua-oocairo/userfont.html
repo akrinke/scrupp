@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title></title>
+  <link rel="stylesheet" type="text/css" href="site.css">
+
+  
+
+ </head>
+ <body>
+  <div id="header"><h1><a href="http://www.daizucms.org/" rel="home">Daizu CMS</a></h1>
+</div>
+
+<div id="all-cols">
+
+<div id="content-col">
+<div class="hentry">
+ <h2 class="entry-title"></h2>
+ <div class="entry-meta">
+ 
+
+</div>
+
+ 
+ <div class="entry-content" id="entry-content">
+  <h3>Name</h3><p>lua-oocairo - Lua API for the Cairo vector graphics library</p><h3>Introduction</h3><p>User fonts are created by calling the <code>user_font_face_create</code> function
+in the main module hash, and passing in a table of callbacks which Cairo
+will call when necessary.  The <code>render_glyph</code> callback function must be
+supplied, but all the others are optional.</p><p>A user font can be created and set to be used like this:</p><pre class="syntax-highlight"><span class="syn-statement">local</span> <span class="syn-identifier">function</span> render_glyph (...) <span class="syn-identifier">end</span>
+
+<span class="syn-statement">local</span> font = Cairo.user_font_face_create(<span class="syn-type">{</span>
+    init = <span class="syn-identifier">function</span> () <span class="syn-identifier">print</span>(<span class="syn-constant">"initializing"</span>) <span class="syn-identifier">end</span>,
+    render_glyph = render_glyph,
+<span class="syn-type">}</span>)
+cr:set_font_face(font)
+cr:set_font_size(<span class="syn-constant">12</span>)</pre><h3>Callbacks</h3><p>The following callbacks can be supplied (the names here being the keys
+you should use in the table when creating the font).  The <i>font</i>
+value is always the scaled font object representing the user font at
+the size it's being used at.</p><dl><dt><a id="item_init"></a>init (font, cr, extents)</dt><dd><p>This is called once, and can be used to set up the font and provide Cairo
+with metrics information, by filling in the font <i>extents</i> table supplied.
+The extents information is in the same format as that returned by the
+<code>font_extents</code> method on context objects (see <a href="context.html">lua-oocairo-context(3)</a>),
+except that all measurements are in font units, which will be scaled
+according to the font size.</p><p>The <i>font</i> value isn't fully created when this function is called, and
+using it is likely to break things.</p><p>Return values are ignored.</p></dd><dt><a id="item_render_glyph"></a>render_glyph (font, glyph, cr, extents)</dt><dd><p>This callback is required, and will be called for each glyph which needs
+to be displayed.  It should draw the glyph using <i>cr</i>, which is a special
+Cairo context object which will be scaled to font coordinates.  The
+callback must not change the source on <i>cr</i> (so multi-coloured fonts are
+out of the question, and rendering bitmap images from another surface needs
+to be done with the <code>mask</code> method).</p><p>The value of the <i>glyph</i> parameter will be the glyph index number of
+the glyph which Cairo wants drawn.  This will be whatever is determined
+to be appropriate by the other callbacks, or the Unicode codepoint number
+as a default.</p><p>Glyph images are cached, so you can't have a font where each occurrence
+of the letter âeâ is slightly different, for example.</p><p>The callback should set the <code>x_advance</code> value in the <i>extents</i>
+table to an appropriate value (measured in font coordinates).
+Return values are ignored.</p><p>This example draws all glyphs as a simple triangle shape, except
+for the space character (assuming that doesn't end up with some
+other glyph index):</p><pre class="syntax-highlight"><span class="syn-statement">local</span> <span class="syn-identifier">function</span> render_glyph (font, glyph, cr, extents)
+    extents.x_advance = <span class="syn-constant">1</span>   <span class="syn-comment">-- distance to move to next glyph</span>
+
+    <span class="syn-statement">if</span> glyph == <span class="syn-constant">32</span> <span class="syn-statement">then</span> <span class="syn-statement">return</span> <span class="syn-statement">end</span>  <span class="syn-comment">-- space, draw nothing</span>
+
+    cr:move_to(<span class="syn-constant">0</span>, <span class="syn-constant">0</span>)
+    cr:line_to(<span class="syn-constant">1</span>, <span class="syn-constant">0</span>)
+    cr:line_to(<span class="syn-constant">0</span>, <span class="syn-constant">1</span>)
+    cr:fill()
+<span class="syn-identifier">end</span></pre></dd><dt><a id="item_text_to_glyphs"></a>text_to_glyphs (font, text, want_clusters)</dt><dd><p>Called to translate text into glyphs.  The <i>text</i> parameter is UTF-8
+encoded text.  The callback should return a table of glyphs which would
+be appropriate for rendering it, including appropriate <i>x</i> and <i>y</i>
+coordinates for each one, in the same format as accepted by the
+<code>show_glyphs</code> and <code>show_text_glyphs</code> methods on context objects.
+The coordinates should be in font coordinates.</p><p>If the <i>want_clusters</i> parameter is true then the font is being used on
+a surface which can make use of text cluster information (mapping bytes
+in <i>text</i> to glyphs returned).  In this case the callback can optionally
+return a second value, an array of pairs in the same format as accepted
+by the <code>show_text_glyphs</code> method on context objects.  If <i>want_clusters</i>
+is false then any text clusters information returned will just be
+ignored.</p></dd><dt><a id="item_unicode_to_glyph"></a>unicode_to_glyph (font, unicode)</dt><dd><p>Called when there is no <code>text_to_glyphs</code> callback, or it doesn't provide
+any glyphs.  The <i>unicode</i> parameter is a Unicode codepoint for a character
+being drawn, and the callback should return the glyph index appropriate
+for rendering it.  With this simpler callback each Unicode character has to
+map to exactly one glyph.</p></dd></dl>
+ </div>
+ 
+
+
+ 
+
+</div>
+
+<div id="footer">&copy; Copyright 2008 Geoff Richards
+&lt;geoff&nbsp;at&nbsp;laxan.com&gt;<br>
+Published with Daizu CMS
+</div>
+</div>
+
+
+
+
+<div id="navigation-col"><h2 class="no-css">Navigation</h2>
+<ul>
+  <li><a href="http://www.daizucms.org/lua/">Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/">Libraries for Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/oocairo/" title="Lua binding for Cairo">Cairo</a>
+    <ul>
+  <li><a href="index.html" title="Lua binding for Cairo vector graphics library">Docs</a>
+    <ul>
+  <li><a href="context.html" title="Drawing context objects">Context</a>  </li>
+ 
+  <li><a href="fontface.html" title="Unscaled font face object">Font face</a>  </li>
+ 
+  <li><a href="fontopt.html">Font options</a>  </li>
+ 
+  <li><a href="matrix.html" title="Transformation matrix table">Matrix</a>  </li>
+ 
+  <li><a href="path.html" title="Path object">Path</a>  </li>
+ 
+  <li><a href="pattern.html" title="Cairo pattern objects">Pattern</a>  </li>
+ 
+  <li><a href="scaledfont.html">Scaled font</a>  </li>
+ 
+  <li><a href="surface.html" title="Cairo surface objects">Surface</a>  </li>
+ 
+  <li class="current">User font  </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+
+</div>
+
+</div>
+
+  
+ </body>
+</html>

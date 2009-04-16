@@ -39,7 +39,7 @@
 #define SHARE_DIR		"/usr/share/scrupp/"
 
 #define SCRUPP_PATH				"SCRUPP_PATH"
-#define SCRUPP_PATH_DEFAULT		"?.lua;scripts/?.lua"
+#define SCRUPP_PATH_DEFAULT		"?.lua;scripts/?.lua;scripts/?/init.lua;scripts/luasocket/?.lua"
 
 #define CHANNELS	16	/* number of audio channels */
 

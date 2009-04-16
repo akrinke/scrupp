@@ -18,6 +18,11 @@
 /* cairo binding lua-oocairo */
 #include "lua-oocairo/oocairo.h"
 
+/* luasocket */
+#include "luasocket/luasocket.h"
+#include "luasocket/mime.h"
+
+
 #include <string.h>
 #include <SDL_opengl.h>
 
@@ -161,7 +166,16 @@ int main(int argc, char *argv[]) {
 	lua_getfield(L, -1, "preload");
 	lua_pushcfunction(L, luaopen_oocairo);
 	lua_setfield(L, -2, "oocairo");
-	lua_pop(L, 2);
+	
+	/* put luaopen_socket_core in package.preload["socket.core"] */
+	lua_pushcfunction(L, luaopen_socket_core);
+	lua_setfield(L, -2, "socket.core");
+	
+	/* put luaopen_mime_core in package.preload["mime.core"] */
+	lua_pushcfunction(L, luaopen_mime_core);
+	lua_setfield(L, -2, "mime.core");
+	
+	lua_pop(L, 2);	
 	
 	/* push the error function for the protected calls later on */
 	lua_pushcfunction(L, error_function);

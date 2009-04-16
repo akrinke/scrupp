@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Transformation matrix table</title>
+  <link rel="stylesheet" type="text/css" href="site.css">
+
+  
+
+ </head>
+ <body>
+  <div id="header"><h1><a href="http://www.daizucms.org/" rel="home">Daizu CMS</a></h1>
+</div>
+
+<div id="all-cols">
+
+<div id="content-col">
+<div class="hentry">
+ <h2 class="entry-title">Transformation matrix table</h2>
+ <div class="entry-meta">
+ 
+
+</div>
+
+ 
+ <div class="entry-content" id="entry-content">
+  <h3>Name</h3><p>lua-oocairo-matrix - Transformation matrix table</p><h3>Introduction</h3><p>Matrix objects are used in Cairo to represent affine transformations
+like rotation and scaling.  They are used for transforming both fonts
+and paths drawn on surfaces.</p><p>This binding uses normal Lua tables for matrices, with each matrix
+being an array of six numbers.  You can use any such table when supplying
+a matrix to a method, but the ones returned by this module have a metatable
+set so that the methods listed below can be called on it.</p><p>The <code>matrix_create</code> function in the module table can be used to create
+a new identity matrix.</p><h3>Methods</h3><p>The following methods can be called on a matrix object.  Unless otherwise
+stated they do not return any values.  The transformations alter the matrix
+you supply by adjusting the numbers in the table, rather than creating a
+new table.</p><dl><dt><a id="item_invert"></a>mat:invert ()</dt><dd><p>Set <i>mat</i> to its inverse, which will result in a transformation which
+reverses what it did originally.  Not all matrices have an inverse, and if
+none can be found then an exception will be thrown.</p></dd><dt><a id="item_multiply"></a>mat1:multiply (mat2)</dt><dd><p>Multiply <i>mat1</i> by <i>mat2</i>, leaving <i>mat2</i> unchanged.  This has the effect
+of combining the transformations represented by the two matrices.</p></dd><dt><a id="item_rotate"></a>mat:rotate (ang)</dt><dd><p>Apply a rotation by <i>ang</i> radians to <i>mat</i>.</p></dd><dt><a id="item_scale"></a>mat:scale (sx, sy)</dt><dd><p>Apply a scaling transformation to <i>mat</i>.</p></dd><dt><a id="item_transform_distance"></a>mat:transform_distance (x, y)</dt><dd><p>Transform the distance given, using <i>mat</i>, and return two numbers
+giving the resulting distance.  This will have the same effect as
+<code>mat:transform_point()</code> but without any translation taking place.</p></dd><dt><a id="item_transform_point"></a>mat:transform_point (x, y)</dt><dd><p>Transform the position of the coordinates, which must be numbers, to the
+matrix, and return two numbers giving the resulting position.</p></dd><dt><a id="item_translate"></a>mat:translate (x, y)</dt><dd><p>Apply a translation to <i>mat</i>.</p></dd></dl>
+ </div>
+ 
+
+
+ 
+
+</div>
+
+<div id="footer">&copy; Copyright 2008 Geoff Richards
+&lt;geoff&nbsp;at&nbsp;laxan.com&gt;<br>
+Published with Daizu CMS
+</div>
+</div>
+
+
+
+
+<div id="navigation-col"><h2 class="no-css">Navigation</h2>
+<ul>
+  <li><a href="http://www.daizucms.org/lua/">Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/">Libraries for Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/oocairo/" title="Lua binding for Cairo">Cairo</a>
+    <ul>
+  <li><a href="index.html" title="Lua binding for Cairo vector graphics library">Docs</a>
+    <ul>
+  <li><a href="context.html" title="Drawing context objects">Context</a>  </li>
+ 
+  <li><a href="fontface.html" title="Unscaled font face object">Font face</a>  </li>
+ 
+  <li><a href="fontopt.html">Font options</a>  </li>
+ 
+  <li class="current" title="Transformation matrix table">Matrix  </li>
+ 
+  <li><a href="path.html" title="Path object">Path</a>  </li>
+ 
+  <li><a href="pattern.html" title="Cairo pattern objects">Pattern</a>  </li>
+ 
+  <li><a href="scaledfont.html">Scaled font</a>  </li>
+ 
+  <li><a href="surface.html" title="Cairo surface objects">Surface</a>  </li>
+ 
+  <li><a href="userfont.html">User font</a>  </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+
+</div>
+
+</div>
+
+  
+ </body>
+</html>

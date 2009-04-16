@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Unscaled font face object</title>
+  <link rel="stylesheet" type="text/css" href="site.css">
+
+  
+
+ </head>
+ <body>
+  <div id="header"><h1><a href="http://www.daizucms.org/" rel="home">Daizu CMS</a></h1>
+</div>
+
+<div id="all-cols">
+
+<div id="content-col">
+<div class="hentry">
+ <h2 class="entry-title">Unscaled font face object</h2>
+ <div class="entry-meta">
+ 
+
+</div>
+
+ 
+ <div class="entry-content" id="entry-content">
+  <h3>Name</h3><p>lua-oocairo-fontface - Unscaled font face object</p><h3>Introduction</h3><p>Cairo font face objects are returned by the <code>get_font_face</code> method
+on context objects (see <a href="context.html">lua-oocairo-context(3)</a>).  They represent
+a font selection, but not including the scaling used to create a
+font of a particular size.  See <a href="scaledfont.html">lua-oocairo-scaledfont(3)</a> for details
+about fonts at a particular size, which can be created by scaling one of
+these font face objects.</p><p>Font face objects can be compared with the <code>==</code> operator.  This will compare
+the identity of the objects, so different Lua objects which refer to the
+same <code>cairo_font_face_t</code> will compare as equal.</p><h3>Methods</h3><p>Font face objects provide the following methods.  Some of these will not
+be defined if the module was compiled against a version of Cairo too old
+to support them.</p><dl><dt><a id="item_get_family"></a>fontface:get_family ()</dt><dd><p>Returns a string containing the name of the family selected with the
+<code>select_font_face</code> method.  Throws an exception if called on a font face
+which wasn't created with the âtoyâ API.
+Only available with Cairo 1.8 or better.</p></dd><dt><a id="item_get_slant"></a>fontface:get_slant ()</dt><dd><p>Returns the slant style of the font face created with the toy API, or
+throws an exception for other font faces.  The return value will be a string,
+with one of the values accepted by the <code>select_font_face</code> method.
+Only available with Cairo 1.8 or better.</p></dd><dt><a id="item_get_type"></a>fontface:get_type ()</dt><dd><p>Returns a string indicating what backend library handles this font.
+The return value will be one of the following:</p><dl><dt><a id="item_toy"></a>toy</dt><dd><p>Created using Cairo's âtoyâ font API, probably selected with
+the <code>select_font_face</code> method.</p></dd><dt><a id="item_ft"></a>ft</dt><dd><p>Created with the FreeType API.</p></dd><dt><a id="item_win32"></a>win32</dt><dd><p>A Windows native font.</p></dd><dt><a id="item_quartz"></a>quartz</dt><dd><p>A MacOS X native font.</p></dd><dt><a id="item_user"></a>user</dt><dd><p>A font created with custom code.</p></dd></dl></dd><dt><a id="item_get_weight"></a>fontface:get_weight ()</dt><dd><p>Returns the weight of the font face created with the toy API, or
+throws an exception for other font faces.  The return value will be a string,
+with one of the values accepted by the <code>select_font_face</code> method.
+Only available with Cairo 1.8 or better.</p></dd></dl>
+ </div>
+ 
+
+
+ 
+
+</div>
+
+<div id="footer">&copy; Copyright 2008 Geoff Richards
+&lt;geoff&nbsp;at&nbsp;laxan.com&gt;<br>
+Published with Daizu CMS
+</div>
+</div>
+
+
+
+
+<div id="navigation-col"><h2 class="no-css">Navigation</h2>
+<ul>
+  <li><a href="http://www.daizucms.org/lua/">Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/">Libraries for Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/oocairo/" title="Lua binding for Cairo">Cairo</a>
+    <ul>
+  <li><a href="index.html" title="Lua binding for Cairo vector graphics library">Docs</a>
+    <ul>
+  <li><a href="context.html" title="Drawing context objects">Context</a>  </li>
+ 
+  <li class="current" title="Unscaled font face object">Font face  </li>
+ 
+  <li><a href="fontopt.html">Font options</a>  </li>
+ 
+  <li><a href="matrix.html" title="Transformation matrix table">Matrix</a>  </li>
+ 
+  <li><a href="path.html" title="Path object">Path</a>  </li>
+ 
+  <li><a href="pattern.html" title="Cairo pattern objects">Pattern</a>  </li>
+ 
+  <li><a href="scaledfont.html">Scaled font</a>  </li>
+ 
+  <li><a href="surface.html" title="Cairo surface objects">Surface</a>  </li>
+ 
+  <li><a href="userfont.html">User font</a>  </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+
+</div>
+
+</div>
+
+  
+ </body>
+</html>
