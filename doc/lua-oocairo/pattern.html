@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Cairo pattern objects</title>
+  <link rel="stylesheet" type="text/css" href="site.css">
+
+  
+
+ </head>
+ <body>
+  <div id="header"><h1><a href="http://www.daizucms.org/" rel="home">Daizu CMS</a></h1>
+</div>
+
+<div id="all-cols">
+
+<div id="content-col">
+<div class="hentry">
+ <h2 class="entry-title">Cairo pattern objects</h2>
+ <div class="entry-meta">
+ 
+
+</div>
+
+ 
+ <div class="entry-content" id="entry-content">
+  <h3>Name</h3><p>lua-oocairo-pattern - Cairo pattern objects</p><h3>Introduction</h3><p>A pattern object is any one of several things that can be used as the
+<b>source</b> for a Cairo context, defining what colours and transparencies
+will be used for drawing.  These objects can be created explicitly with
+the various <code>pattern_create_*</code> functions in the module table (see
+<a href="index.html">lua-oocairo(3)</a> for details), or implicitly by calling methods like
+<code>cr:set_source_rgb()</code> on a context object (see <a href="context.html">lua-oocairo-context(3)</a>).</p><p>Pattern objects can be compared with the <code>==</code> operator.  This will compare
+the identity of the objects, so different Lua objects which refer to the
+same <code>cairo_pattern_t</code> will compare as equal.</p><h3>Methods</h3><dl><dt><a id="item_add_color_stop_rgb"></a>pat:add_color_stop_rgb (offset, r, g, b)</dt><dd><p>Add a new colour stop to a gradient (either linear or radial, it doesn't
+matter).  The offset is a number from zero (the start of the line or the
+first circle of the gradient) to one (the end of the line or the second
+circle).  The colour values must also be numbers from zero to one.
+The alpha level is set to fully transparent.</p><p>This will throw an exception if called on a pattern which isn't a gradient.</p></dd><dt><a id="item_add_color_stop_rgba"></a>pat:add_color_stop_rgba (offset, r, g, b, a)</dt><dd><p>Same as <code>pat:add_color_stop_rgb()</code> above, but the alpha value can be
+set to less than one to give some transparency to the gradient.  This
+can be used for gradients which fade away into nothing for example.</p></dd><dt><a id="item_get_color_stops"></a>pat:get_color_stops ()</dt><dd><p>Returns the color stops defined on a linear or radial gradient.
+Throws an exception if called on any other type of pattern.</p><p>The return value will be a table, an array with one entry per color stop.
+Each entry will be a table containing five numbers, in the following
+order: offset, red, green, blue, alpha.</p></dd><dt><a id="item_get_extend"></a>pat:get_extend ()</dt><dd><p>Return the current method of extending the pattern beyond its limits.
+The return value will be one of the strings accepted by the
+<code>pat:set_extend()</code> method.</p></dd><dt><a id="item_get_filter"></a>pat:get_filter ()</dt><dd><p>Return the current filter method, which will be one of the strings
+accepted by the <code>pat:set_filter()</code> method.</p></dd><dt><a id="item_get_linear_points"></a>pat:get_linear_points ()</dt><dd><p>Return the start and end points of a linear gradient as four numbers.
+Throws an exception if called on any other type of pattern.</p></dd><dt><a id="item_get_matrix"></a>pat:get_matrix ()</dt><dd><p>Return the current transformation matrix used for the pattern.
+See <a href="matrix.html">lua-oocairo-matrix(3)</a>.</p></dd><dt><a id="item_get_radial_circles"></a>pat:get_radial_circles ()</dt><dd><p>Return the start and end circles of a radial gradient as six numbers.
+Throws an exception if called on any other type of pattern.</p></dd><dt><a id="item_get_rgba"></a>pat:get_rgba ()</dt><dd><p>Return the colour value and alpha level for a solid colour pattern.
+Throws an exception for any other type of pattern.  The return values
+will be four numbers, in the following order: red, green, blue, alpha.</p></dd><dt><a id="item_get_surface"></a>pat:get_surface ()</dt><dd><p>Return the surface object (see <a href="surface.html">lua-oocairo-surface(3)</a>) used for a
+surface pattern.  Throws an exception for any other kind of pattern.</p></dd><dt><a id="item_get_type"></a>pat:get_type ()</dt><dd><p>Returns a string indicating what kind of pattern object this is.
+The return value will be one of the following:</p><dl><dt><a id="item_linear"></a>linear</dt><dt><a id="item_radial"></a>radial</dt><dt><a id="item_solid"></a>solid</dt><dt><a id="item_surface"></a>surface</dt></dl></dd><dt><a id="item_set_extend"></a>pat:set_extend (extendtype)</dt><dd><p>Set the way in which the pattern should be extended beyond its defined
+limits.  The argument must be one of the following strings:</p><dl><dt><a id="item_none"></a>none</dt><dd><p>Everything outside the area defined by the pattern is fully transparent.</p></dd><dt><a id="item_repeat"></a>repeat</dt><dd><p>Pattern tiled by endlessly repeating it.</p></dd><dt><a id="item_reflect"></a>reflect</dt><dd><p>Pattern tiled by reflecting it at its edges.</p></dd><dt><a id="item_pad"></a>pad</dt><dd><p>Whatever is at the edge of the pattern is extended outwards.</p></dd></dl></dd><dt><a id="item_set_filter"></a>pat:set_filter (filtertype)</dt><dd><p>Set the filter method used for picking colours from the pattern when
+it is being used to render something.  The argument must be one of the
+following strings:</p><dl><dt><a id="item_fast"></a>fast</dt><dd><p>Fast interpolation that is likely to be low quality in some cases (but
+probably OK for a smooth gradient).</p></dd><dt><a id="item_good"></a>good</dt><dd><p>Reasonably good quality interpolation.</p></dd><dt><a id="item_best"></a>best</dt><dd><p>The highest quality interpolation available, but likely very slow.</p></dd><dt><a id="item_nearest"></a>nearest</dt><dd><p>Pick colour of nearest pixel.</p></dd><dt><a id="item_bilinear"></a>bilinear</dt><dd><p>Interpolate between pixels.</p></dd><dt><a id="item_gaussian"></a>gaussian</dt><dd><p>Gaussian blur, but this isn't implemented yet.</p></dd></dl></dd><dt><a id="item_set_matrix"></a>pat:set_matrix (matrix)</dt><dd><p>Set the transformation matrix used for the pattern, as a table of six
+numbers.  See <a href="matrix.html">lua-oocairo-matrix(3)</a>.</p></dd></dl>
+ </div>
+ 
+
+
+ 
+
+</div>
+
+<div id="footer">&copy; Copyright 2008 Geoff Richards
+&lt;geoff&nbsp;at&nbsp;laxan.com&gt;<br>
+Published with Daizu CMS
+</div>
+</div>
+
+
+
+
+<div id="navigation-col"><h2 class="no-css">Navigation</h2>
+<ul>
+  <li><a href="http://www.daizucms.org/lua/">Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/">Libraries for Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/oocairo/" title="Lua binding for Cairo">Cairo</a>
+    <ul>
+  <li><a href="index.html" title="Lua binding for Cairo vector graphics library">Docs</a>
+    <ul>
+  <li><a href="context.html" title="Drawing context objects">Context</a>  </li>
+ 
+  <li><a href="fontface.html" title="Unscaled font face object">Font face</a>  </li>
+ 
+  <li><a href="fontopt.html">Font options</a>  </li>
+ 
+  <li><a href="matrix.html" title="Transformation matrix table">Matrix</a>  </li>
+ 
+  <li><a href="path.html" title="Path object">Path</a>  </li>
+ 
+  <li class="current" title="Cairo pattern objects">Pattern  </li>
+ 
+  <li><a href="scaledfont.html">Scaled font</a>  </li>
+ 
+  <li><a href="surface.html" title="Cairo surface objects">Surface</a>  </li>
+ 
+  <li><a href="userfont.html">User font</a>  </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+
+</div>
+
+</div>
+
+  
+ </body>
+</html>

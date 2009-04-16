@@ -25,23 +25,41 @@ MYLIBS =
 
 OPTIONS= with-gtk without-gtk
 
-SOURCES = FileIO.c \
-Font.c \
-Graphics.c \
-Keyboard.c \
-Macros.c \
-Main.c \
-Mouse.c \
-Sound.c \
-Movie.c \
-physfsrwops.c
+SOURCES = \
+	FileIO.c \
+	Font.c \
+	Graphics.c \
+	Keyboard.c \
+	Macros.c \
+	Main.c \
+	Mouse.c \
+	Sound.c \
+	Movie.c \
+	physfsrwops.c
 
 # add lua-oocairo sources
-SOURCES += oocairo.c
+SOURCES += \
+	oocairo.c
+
+# add luasocket sources
+SOURCES += \
+	luasocket.o \
+	timeout.o \
+	buffer.o \
+	io.o \
+	auxiliar.o \
+	options.o \
+	inet.o \
+	tcp.o \
+	udp.o \
+	except.o \
+	select.o \
+	usocket.o \
+	mime.o
 
 OBJECTS = $(SOURCES:.c=.o)
 EXECUTABLE = scrupp
-VPATH = src:src/$(CAIRO_LIB)
+VPATH = src:src/$(CAIRO_LIB):src/luasocket
 
 default: $(OPTION)
 

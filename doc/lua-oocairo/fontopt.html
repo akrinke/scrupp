@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title></title>
+  <link rel="stylesheet" type="text/css" href="site.css">
+
+  
+
+ </head>
+ <body>
+  <div id="header"><h1><a href="http://www.daizucms.org/" rel="home">Daizu CMS</a></h1>
+</div>
+
+<div id="all-cols">
+
+<div id="content-col">
+<div class="hentry">
+ <h2 class="entry-title"></h2>
+ <div class="entry-meta">
+ 
+
+</div>
+
+ 
+ <div class="entry-content" id="entry-content">
+  <h3>Name</h3><p>lua-oocairo-fontopt - options controlling text rendering</p><h3>Introduction</h3><p>A font options object contains options that tell Cairo how to render
+text on surfaces.  They can be created with the <code>font_options_create</code>
+function in the main oocairo module (see <a href="index.html">lua-oocairo(3)</a>), and
+retrieved from scaled fonts or context objects with <code>get_font_options</code>
+methods.</p><p>Font options objects can be compared with the <code>==</code> operator.  Two different
+objects with the same options set will be considered equal.</p><h3>Methods</h3><p>The following methods are available on font options objects:</p><dl><dt><a id="item_copy"></a>opt:copy ()</dt><dd><p>Returns a new font options object, with identical options to <i>opt</i>.
+The two objects will be completely independent, so you can set them to
+have different options.</p></dd><dt><a id="item_get_antialias"></a>opt:get_antialias ()</dt><dd><p>Get the current antialiasing mode, which will be one of the strings accepted
+by the <code>opt:set_antialias()</code> method.</p></dd><dt><a id="item_get_hint_metrics"></a>opt:get_hint_metrics ()</dt><dd><p>Returns the current hint metrics option, which will be one of the same strings
+accepted by the <code>opt:set_hint_metrics()</code> method.</p></dd><dt><a id="item_get_hint_style"></a>opt:get_hint_style ()</dt><dd><p>Get the kind of font hinting done when rendering text.  Returns one of
+the strings accepted by the <code>opt:set_hint_style()</code> method.</p></dd><dt><a id="item_get_subpixel_order"></a>opt:get_subpixel_order ()</dt><dd><p>Returns the current ordering of colour components in pixels used for
+subpixel rendering, which will be one of the same strings
+accepted by the <code>opt:set_subpixel_order()</code> method.</p></dd><dt><a id="item_hash"></a>opt:hash ()</dt><dd><p>Return a number which can be used as a hash key identifying the particular
+options in <i>opt</i>.  That is, if you wanted to cache fonts according to
+the options set on them, you could store them in a table with this hash
+value as the key.  Two font options objects with the same options will
+have the same hash value.</p></dd><dt><a id="item_merge"></a>opt:merge (srcopt)</dt><dd><p>Add any options which are set to a non-default value in <i>srcopt</i> to <i>opt</i>
+if that still has the default value from them.  The options in <i>srcopt</i>
+will be unchanged.  Nothing is returned.</p></dd><dt><a id="item_set_antialias"></a>opt:set_antialias (antialiastype)</dt><dd><p>Set the antialiasing mode used for drawing.  The argument must be a string
+or boolean value accepted by the <code>set_antialias</code> method on context objects
+(see <a href="context.html">lua-oocairo-context(3)</a>).</p></dd><dt><a id="item_set_hint_metrics"></a>opt:set_hint_metrics (hintmetrics)</dt><dd><p>Set the kind of hinting to be applied to the metrics, as opposed to outlines,
+of the glyphs in a font.  The <i>hintmetrics</i> value must be one of the
+following strings:</p><dl><dt><a id="item_default"></a>default</dt><dt><a id="item_off"></a>off</dt><dt><a id="item_on"></a>on</dt></dl></dd><dt><a id="item_set_hint_style"></a>opt:set_hint_style (hintstyle)</dt><dd><p>Set the kind of font hinting done when rendering text.  The <i>hintstyle</i>
+value must be one of the following strings:</p><dl><dt><a id="item_default"></a>default</dt><dt><a id="item_none"></a>none</dt><dt><a id="item_slight"></a>slight</dt><dt><a id="item_medium"></a>medium</dt><dt><a id="item_full"></a>full</dt></dl></dd><dt><a id="item_set_subpixel_order"></a>opt:set_subpixel_order (order)</dt><dd><p>Used to inform Cairo of the arrangement of colour components in the pixels
+of a display device like a monitor.  Only applies if subpixel antialiasing
+is used.  The <i>order</i> value must be one of the following strings:</p><dl><dt><a id="item_default"></a>default</dt><dt><a id="item_rgb"></a>rgb</dt><dt><a id="item_bgr"></a>bgr</dt><dt><a id="item_vrgb"></a>vrgb</dt><dt><a id="item_vbgr"></a>vbgr</dt></dl><p>The last two options refer to vertical arrangements of colours.</p></dd></dl>
+ </div>
+ 
+
+
+ 
+
+</div>
+
+<div id="footer">&copy; Copyright 2008 Geoff Richards
+&lt;geoff&nbsp;at&nbsp;laxan.com&gt;<br>
+Published with Daizu CMS
+</div>
+</div>
+
+
+
+
+<div id="navigation-col"><h2 class="no-css">Navigation</h2>
+<ul>
+  <li><a href="http://www.daizucms.org/lua/">Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/">Libraries for Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/oocairo/" title="Lua binding for Cairo">Cairo</a>
+    <ul>
+  <li><a href="index.html" title="Lua binding for Cairo vector graphics library">Docs</a>
+    <ul>
+  <li><a href="context.html" title="Drawing context objects">Context</a>  </li>
+ 
+  <li><a href="fontface.html" title="Unscaled font face object">Font face</a>  </li>
+ 
+  <li class="current">Font options  </li>
+ 
+  <li><a href="matrix.html" title="Transformation matrix table">Matrix</a>  </li>
+ 
+  <li><a href="path.html" title="Path object">Path</a>  </li>
+ 
+  <li><a href="pattern.html" title="Cairo pattern objects">Pattern</a>  </li>
+ 
+  <li><a href="scaledfont.html">Scaled font</a>  </li>
+ 
+  <li><a href="surface.html" title="Cairo surface objects">Surface</a>  </li>
+ 
+  <li><a href="userfont.html">User font</a>  </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+
+</div>
+
+</div>
+
+  
+ </body>
+</html>

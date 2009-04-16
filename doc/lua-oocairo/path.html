@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Path object</title>
+  <link rel="stylesheet" type="text/css" href="site.css">
+
+  
+
+ </head>
+ <body>
+  <div id="header"><h1><a href="http://www.daizucms.org/" rel="home">Daizu CMS</a></h1>
+</div>
+
+<div id="all-cols">
+
+<div id="content-col">
+<div class="hentry">
+ <h2 class="entry-title">Path object</h2>
+ <div class="entry-meta">
+ 
+
+</div>
+
+ 
+ <div class="entry-content" id="entry-content">
+  <h3>Name</h3><p>lua-oocairo-path - Path object</p><h3>Introduction</h3><p>A path object represents a series of path instructions like <code>move_to</code>
+and <code>line_to</code>, as supplied to a context object when defining shapes for
+drawing.  They can be created by issuing instructions on a context object
+and then calling <code>cr:copy_path()</code> or <code>cr:copy_path_flat()</code> (see
+<a href="context.html">lua-oocairo-context(3)</a>).  A path can then be added back to the
+current path by calling <code>cr:append_path()</code>.</p><h3>Methods</h3><p>Currently only the following method can be called on a path object:</p><dl><dt><a id="item_each"></a>path:each ()</dt><dd><p>Returns an iterator function and initial values needed to iterate over
+the instructions in the path using a Lua <code>for</code> loop.  This can be used
+to translate the Cairo path piece by piece, perhaps to encode it in some
+unusual vector graphics format, or to translate it into calls to another
+API like OpenGL.</p><p>The iterator function will return three values each time it is called.
+The first is a number, which should be ignored (but is needed to keep track
+of the current position in the list of instructions).  The second value is
+a string naming the instruction to be performed, and the last value is either
+nil or a table (array) of numbers which are the arguments of the instruction.</p><p>This example simply prints out the instructions in the order they were
+issued on the context object <i>cr</i>:</p><pre class="syntax-highlight"><span class="syn-statement">for</span> _, instr, args <span class="syn-statement">in</span> cr:copy_path():each() <span class="syn-statement">do</span>
+    <span class="syn-statement">if</span> args <span class="syn-statement">then</span>
+        <span class="syn-identifier">print</span>(instr, <span class="syn-identifier">unpack</span>(args))
+    <span class="syn-statement">else</span>
+        <span class="syn-identifier">print</span>(instr)
+    <span class="syn-statement">end</span>
+<span class="syn-statement">end</span></pre><p>The following instructions can be included:</p><dl><dt><a id="item_move_2dto"></a>move-to</dt><dd><p>Set current point.  Comes with a table of two numbers.</p></dd><dt><a id="item_line_2dto"></a>line-to</dt><dd><p>Draw straight line.  Comes with a table of two numbers.</p></dd><dt><a id="item_curve_2dto"></a>curve-to</dt><dd><p>Draw curved line.  Comes with a table of two numbers, the two
+control points first and then the destination point.</p></dd><dt><a id="item_close_2dpath"></a>close-path</dt><dd><p>Draw line back to start point.  The extra arguments value will be nil.</p></dd></dl></dd></dl>
+ </div>
+ 
+
+
+ 
+
+</div>
+
+<div id="footer">&copy; Copyright 2008 Geoff Richards
+&lt;geoff&nbsp;at&nbsp;laxan.com&gt;<br>
+Published with Daizu CMS
+</div>
+</div>
+
+
+
+
+<div id="navigation-col"><h2 class="no-css">Navigation</h2>
+<ul>
+  <li><a href="http://www.daizucms.org/lua/">Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/">Libraries for Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/oocairo/" title="Lua binding for Cairo">Cairo</a>
+    <ul>
+  <li><a href="index.html" title="Lua binding for Cairo vector graphics library">Docs</a>
+    <ul>
+  <li><a href="context.html" title="Drawing context objects">Context</a>  </li>
+ 
+  <li><a href="fontface.html" title="Unscaled font face object">Font face</a>  </li>
+ 
+  <li><a href="fontopt.html">Font options</a>  </li>
+ 
+  <li><a href="matrix.html" title="Transformation matrix table">Matrix</a>  </li>
+ 
+  <li class="current" title="Path object">Path  </li>
+ 
+  <li><a href="pattern.html" title="Cairo pattern objects">Pattern</a>  </li>
+ 
+  <li><a href="scaledfont.html">Scaled font</a>  </li>
+ 
+  <li><a href="surface.html" title="Cairo surface objects">Surface</a>  </li>
+ 
+  <li><a href="userfont.html">User font</a>  </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+
+</div>
+
+</div>
+
+  
+ </body>
+</html>
