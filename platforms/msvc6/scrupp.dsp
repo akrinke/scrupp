@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 OpenGL32.lib glu32.lib glaux.lib physfs.lib lua5.1.lib SDL.lib SDL_image.lib SDL_mixer.lib SDL_ttf.lib smpeg.lib cairo.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /libpath:"lib"
+# ADD LINK32 OpenGL32.lib glu32.lib glaux.lib physfs.lib lua5.1.lib SDL.lib SDL_image.lib SDL_mixer.lib SDL_ttf.lib smpeg.lib cairo.lib kernel32.lib user32.lib gdi32.lib winspool.lib ws2_32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /libpath:"lib"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "scrupp - Win32 Debug"
@@ -80,7 +80,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 OpenGL32.lib glu32.lib glaux.lib physfs.lib lua5.1.lib SDL.lib SDLmain.lib SDL_image.lib SDL_mixer.lib SDL_ttf.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept /libpath:"lib"
+# ADD LINK32 OpenGL32.lib glu32.lib glaux.lib physfs.lib lua5.1.lib SDL.lib SDL_image.lib SDL_mixer.lib SDL_ttf.lib smpeg.lib cairo.lib kernel32.lib user32.lib gdi32.lib winspool.lib ws2_32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept /libpath:"lib"
+# SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
 
@@ -97,6 +98,62 @@ LINK32=link.exe
 # Begin Source File
 
 SOURCE="..\..\src\lua-oocairo\oocairo.c"
+# End Source File
+# End Group
+# Begin Group "luasocket"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\src\luasocket\auxiliar.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\luasocket\buffer.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\luasocket\except.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\luasocket\inet.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\luasocket\io.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\luasocket\luasocket.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\luasocket\mime.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\luasocket\options.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\luasocket\select.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\luasocket\tcp.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\luasocket\timeout.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\luasocket\udp.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\luasocket\wsocket.c
 # End Source File
 # End Group
 # Begin Source File

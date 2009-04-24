@@ -2,3 +2,7 @@ This directory contains the original examples of LuaSocket.
 They DO NOT use Scrupp but the command line for interaction.
 
 Just open them with Scrupp on a command line.
+
+On Windows, these examples won't work as expected, because 
+there is no possibility to interact with scrupp on the 
+command line (e.g. send input to scrupp).

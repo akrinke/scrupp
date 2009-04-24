@@ -2,7 +2,6 @@
 #include <lauxlib.h>
 
 #include "luasocket.h"
-#include "/home/ak/downloads/luasocketscripts.h"
 #include "fullluasocket.h"
 
 LUAPRELOAD_API int luapreload_fullluasocket(lua_State *L) {
