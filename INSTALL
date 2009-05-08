@@ -1,0 +1,71 @@
+This file describes the nescessary steps to compile and install Scrupp on 
+Linux, especially Debian and Ubuntu.
+
+1. Requirements
+===============
+
+The process to compile Scrupp from source has the following requirements:
+
+ Name       | Debian/Ubuntu package name
+-----------------------------------------------
+ pkgconfig  | pkg-config
+-----------------------------------------------
+ PhysicsFS  | libphysfs-dev
+-----------------------------------------------
+ OpenGL     | provided by graphic card drivers
+-----------------------------------------------
+ Cairo      | libcairo2-dev
+-----------------------------------------------
+ SDL        | libsdl1.2-dev
+-----------------------------------------------
+ SDL_image  | libsdl-image1.2-dev
+-----------------------------------------------
+ SDL_mixer  | libsdl-mixer1.2-dev
+-----------------------------------------------
+ SDL_ttf    | libsdl-ttf2.0-dev
+-----------------------------------------------
+ SMPEG      | libsmpeg-dev
+-----------------------------------------------
+ GTK+2.0    | libgtk2.0-dev
+-----------------------------------------------
+
+GTK is optional and can be disabled by running 
+./configure with --disable-gtk specified.
+
+To install all dependencies on Debian/Ubuntu run:
+$ sudo apt-get install pkg-config libphysfs-dev libcairo2-dev libsdl1.2-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsmpeg-dev libgtk2.0-dev
+
+2. Installation
+================
+
+If you have downloaded the official release, you can install Scrupp by typing 
+
+$ ./configure
+$ make
+$ sudo make install
+
+This will install Scrupp using /usr/local as the root directory.
+That means, the binary will be copied to /usr/local/bin, the examples, fonts 
+and scripts to /usr/local/share/scrupp and the documentation to 
+/usr/local/doc/scrupp. If you want to change this, use the --prefix option 
+of the configure script (see ./configure --help for all of the options).
+
+If you just want to give it a try, stop after running make and copy the 
+scrupp binary from src/ to the top directory:
+
+$ cp src/scrupp .
+
+Then you can execute it by typing
+
+$ ./scrupp
+
+This will load the default file main.slua in the top directory.
+
+If you have the development version of Scrupp (checkout via SVN) then the 
+first thing is to generate the configure script. You will need autoconf and 
+automake (on Debian/Ubuntu: sudo apt-get install autoconf automake).
+To generate the files, run:
+
+$ ./autogen.sh
+
+After that, you can follow the steps above.

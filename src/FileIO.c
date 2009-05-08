@@ -155,6 +155,9 @@ void FS_Init(lua_State *L, char *argv[], char **pFilename) {
 		/* check whether we are on Linux or Unix */
 		#ifndef __WIN32__
 			/* on Linux or Unix: Try to append the share directory */
+			#ifndef SHARE_DIR
+			# error SHARE_DIR needs to be defined.
+			#endif
 			PHYSFS_addToSearchPath(SHARE_DIR, 1);
 		#endif
 		/* on every system but OS X, prepend base dir to search path */
