@@ -27,16 +27,16 @@
 #define UNUSED(x) ((void)(x)) /* to avoid warnings */
 
 #define PROG_NAME 	"Scrupp"
-#define VERSION 	"0.2"
-#define COPYRIGHT	"Copyright (C) 2005-2008 Andreas Krinke"
+#ifndef VERSION
+# define VERSION "0.2"
+#endif
+#define COPYRIGHT	"Copyright (C) 2005-2009 Andreas Krinke"
 #define AUTHOR		"Andreas Krinke"
 
 #define NAMESPACE	"scrupp"
 
 #define DEFAULT_FILE	"main.slua"
 #define DEFAULT_ARCHIVE	"main.sar"
-
-#define SHARE_DIR		"/usr/share/scrupp/"
 
 #define SCRUPP_PATH				"SCRUPP_PATH"
 #define SCRUPP_PATH_DEFAULT		"?.lua;scripts/?.lua;scripts/?/init.lua;scripts/socket/?.lua"

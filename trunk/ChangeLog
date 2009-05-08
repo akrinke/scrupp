@@ -1,0 +1,21 @@
+Scrupp v0.2
+
+	- full support for Mac OS X
+	- nice message boxes for errors + traceback 
+	  on Mac OS X (with Carbon) and Windows
+	- resizable windows
+	- scaling and rotation of images and graphics
+	- images can be colorized
+	- all keys are represented by simple strings	
+	- changed namespace from 'game' to 'scrupp'
+	- removed the mouse and key table;
+	  all functions moved to 'scrupp' namespace
+	- added scrupp.setDelta(delta) 
+	  to set the minimum delta between two frames
+	- new plugins: font, timer
+	+ many more
+
+
+Scrupp v0.1
+
+	- first release
