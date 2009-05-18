@@ -16,6 +16,9 @@
 #define tomoviep(L) \
 	(Lua_Movie **)luaL_checkudata(L, 1, "scrupp.movie")
 
+Lua_Movie *first_movie = NULL;
+SDL_mutex *movie_mutex;
+
 static Lua_Movie *tomovie(lua_State *L) {
 	Lua_Movie **movie = tomoviep(L);
 	if (*movie == NULL) {
@@ -24,15 +27,30 @@ static Lua_Movie *tomovie(lua_State *L) {
 	return *movie;
 }
 
+static void update_callback(SDL_Surface *dst, int x, int y, unsigned int w, unsigned int h) {
+	Lua_Movie *node = first_movie;
+	while (node != NULL) {
+		if (node->surface == dst) {
+			node->changed = 1;
+			break;
+		}
+	}
+}
+
 static int Lua_Movie_load(lua_State *L) {
 	const char* filename = luaL_checkstring(L, 1);
 	GLuint texture;
 	SDL_RWops *temp;
 	SMPEG *movie;
 	SMPEG_Info *movie_info;
-	int new_width, new_height;
-	SDL_Surface *surface;
+	int po2_width, po2_height;
+	SDL_Surface *movie_surface;
+	SDL_Surface *po2_surface;
 	Lua_Movie **ptr;
+
+	if (SDL_GetVideoSurface() == NULL) {
+		return luaL_error(L, "Run " NAMESPACE ".init() before loading movies.");
+	}
 
 	movie_info = (SMPEG_Info *) malloc(sizeof(SMPEG_Info));
 	temp = PHYSFSRWOPS_openRead(filename);
@@ -44,30 +62,25 @@ static int Lua_Movie_load(lua_State *L) {
 	if (!movie) {
 		return luaL_error(L, "Error loading file '%s': %s", filename, SMPEG_error(movie));
 	}
+
+	po2_width = nextHigherPowerOfTwo(movie_info->width);
+	po2_height = nextHigherPowerOfTwo(movie_info->height);
 	
-	new_width = nextHigherPowerOfTwo(movie_info->width);
-	new_height = nextHigherPowerOfTwo(movie_info->height);
+	/* the movie surface has to have the same size as the movie (?) */
+	movie_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, 
+		movie_info->width, movie_info->height, 32,
+		RMASK, GMASK, BMASK, AMASK);
 	
-	surface = SDL_CreateRGBSurface(SDL_SWSURFACE, 
-		new_width, new_height, 32,
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		0xff000000,
-		0x00ff0000,
-		0x0000ff00,
-		0x000000ff
-#else
-		0x000000ff,
-		0x0000ff00,
-		0x00ff0000,
-		0xff000000
-#endif
-	);
+	/* the texture surface needs a power of 2 as width and height */
+	po2_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, 
+		po2_width, po2_height, 32,
+		RMASK, GMASK, BMASK, AMASK);
 	
-	if (surface == NULL) {
+	if ((movie_surface == NULL) || (po2_surface == NULL)) {
 		return luaL_error(L, "Error loading file '%s': %s", filename, SDL_GetError());
 	}
 	
-	SMPEG_setdisplay(movie, surface, NULL, NULL);
+	SMPEG_setdisplay(movie, movie_surface, movie_mutex, update_callback);
 	SMPEG_enablevideo(movie, 1);
 	SMPEG_enableaudio(movie, 0);
 	
@@ -75,25 +88,39 @@ static int Lua_Movie_load(lua_State *L) {
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D(	GL_TEXTURE_2D, 0, GL_RGB, surface->w, surface->h, 0, 
-					GL_RGB, GL_UNSIGNED_BYTE, surface->pixels );
+	glTexImage2D(	GL_TEXTURE_2D, 0, GL_RGB, po2_width, po2_height, 0, 
+					GL_RGBA, GL_UNSIGNED_BYTE, po2_surface->pixels );
+	
+	SDL_FreeSurface(po2_surface);
 	
 	ptr = (Lua_Movie **)lua_newuserdata(L, sizeof(Lua_Movie *));
 	*ptr = NULL;
 	*ptr = (Lua_Movie *)malloc(sizeof(Lua_Movie));
 	(*ptr)->texture = texture;
+	(*ptr)->po2_width = po2_width;
+	(*ptr)->po2_height = po2_height;
 	(*ptr)->info = movie_info;
 	(*ptr)->movie = movie;	
-    (*ptr)->surface = surface;
+    (*ptr)->surface = movie_surface;
 	(*ptr)->alpha = 255;
 	(*ptr)->music_hooked = 0;
-									
+	(*ptr)->changed = 1;
+	(*ptr)->next = NULL;
+	(*ptr)->prev = NULL;
+	
+	if (first_movie == NULL) {
+		first_movie = *ptr;
+	} else {
+		first_movie->prev = *ptr;
+		(*ptr)->next = first_movie;
+		first_movie = *ptr;
+	}
+	
 	luaL_getmetatable(L, "scrupp.movie");
 	lua_setmetatable(L, -2);
 	
 	return 1;
 }
-
 
 static int Lua_Movie_play(lua_State *L) {
 	Lua_Movie *movie = tomovie(L);
@@ -121,7 +148,7 @@ static int Lua_Movie_play(lua_State *L) {
 
 	SMPEG_loop(movie->movie, loop);
 	SMPEG_play(movie->movie);
-	
+
 	return 0;
 }
 
@@ -162,6 +189,24 @@ static int Lua_Movie_skip(lua_State *L) {
 	return 0;
 }
 
+static int Lua_Movie_getWidth(lua_State *L) {
+	Lua_Movie *movie = tomovie(L);
+	lua_pushinteger(L, movie->info->width);
+	return 1;
+}
+
+static int Lua_Movie_getHeight(lua_State *L) {
+	Lua_Movie *movie = tomovie(L);
+	lua_pushinteger(L, movie->info->height);
+	return 1;
+}
+
+static int Lua_Movie_getSize(lua_State *L) {
+	Lua_Movie *movie = tomovie(L);
+	lua_pushinteger(L, movie->info->width);
+	lua_pushinteger(L, movie->info->height);
+	return 2;
+}
 
 static int Lua_Movie_getInfo(lua_State *L) {
 	Lua_Movie *movie = tomovie(L);
@@ -173,43 +218,43 @@ static int Lua_Movie_getInfo(lua_State *L) {
 	lua_pushliteral(L, "hasAudio");
 	lua_pushboolean(L, info.has_audio);
 	lua_rawset(L, -3);
-	
+
 	lua_pushliteral(L, "hasVideo");
 	lua_pushboolean(L, info.has_video);
 	lua_rawset(L, -3);
-	
+
 	lua_pushliteral(L, "currentFrame");
 	lua_pushinteger(L, info.current_frame);
 	lua_rawset(L, -3);
-	
+
 	lua_pushliteral(L, "currentFPS");
 	lua_pushnumber(L, info.current_fps);
 	lua_rawset(L, -3);
-	
+
 	lua_pushliteral(L, "audioString");
 	lua_pushstring(L, info.audio_string);
 	lua_rawset(L, -3);
-	
+
 	lua_pushliteral(L, "currentAudioFrame");
 	lua_pushinteger(L, info.audio_current_frame);
 	lua_rawset(L, -3);
-	
+
 	lua_pushliteral(L, "currentOffset");
 	lua_pushinteger(L, info.current_offset);
 	lua_rawset(L, -3);
-	
+
 	lua_pushliteral(L, "totalSize");
 	lua_pushinteger(L, info.total_size);
 	lua_rawset(L, -3);
-	
+
 	lua_pushliteral(L, "currentTime");
 	lua_pushnumber(L, info.current_time);
 	lua_rawset(L, -3);
-	
+
 	lua_pushliteral(L, "totalTime");
 	lua_pushnumber(L, info.total_time);
 	lua_rawset(L, -3);
-	
+
 	return 1;
 }
 
@@ -243,11 +288,10 @@ static int Lua_Movie_renderFrame(lua_State *L) {
 
 static int Lua_Movie_render(lua_State *L) {
 	Lua_Movie *movie = tomovie(L);
-
 	int x, y;
 	myRect clip_rect;
 	int color[] = {255, 255, 255, 255};
-	GLrect texCoords = { 0, 0, 1, 1};
+	GLrect texCoords = {0.0, 0.0, 0.0, 0.0};
 	int width = movie->info->width;
 	int height = movie->info->height;
 	GLdouble translateX = 0.0;
@@ -257,14 +301,19 @@ static int Lua_Movie_render(lua_State *L) {
 	GLdouble rotate = 0.0;
 	SMPEGstatus status;
 
+	texCoords.x2 = (GLfloat) width / movie->po2_width;
+	texCoords.y2 = (GLfloat) height / movie->po2_height;
+	
 	if (lua_istable(L, 2)) {
 		/* x and y are array element 1 and 2 */
-		if (!getint(L, &x, 1) || !getint(L, &y, 2))
+		if (!getint(L, &x, 1) || !getint(L, &y, 2)) {
 			return luaL_argerror(L, 2, "invalid x or y component in array");
+		}
 		/* check for "centerX"-entry */
 		lua_getfield(L, -1, "centerX");
-		if (lua_isnumber(L, -1))
+		if (lua_isnumber(L, -1)) {
 			translateX = (GLdouble)lua_tonumber(L, -1);
+		}
 		lua_pop(L, 1);
 		/* check for "centerY"-entry */
 		lua_getfield(L, -1, "centerY");
@@ -273,18 +322,21 @@ static int Lua_Movie_render(lua_State *L) {
 		lua_pop(L, 1);
 		/* check for "scaleX"-entry */
 		lua_getfield(L, -1, "scaleX");
-		if (lua_isnumber(L, -1))
+		if (lua_isnumber(L, -1)) {
 			scaleX = (GLdouble)lua_tonumber(L, -1);
+		}
 		lua_pop(L, 1);
 		/* check for "scaleY"-entry */
 		lua_getfield(L, -1, "scaleY");
-		if (lua_isnumber(L, -1))
+		if (lua_isnumber(L, -1)) {
 			scaleY = (GLdouble)lua_tonumber(L, -1);
+		}
 		lua_pop(L, 1);
 		/* check for "rotate"-entry */
 		lua_getfield(L, -1, "rotate");
-		if (lua_isnumber(L, -1))
+		if (lua_isnumber(L, -1)) {
 			rotate = (GLdouble)lua_tonumber(L, -1);
+		}
 		lua_pop(L, 1);
 		/* check for "rect"-entry */
 		lua_getfield(L, -1, "rect");
@@ -323,7 +375,7 @@ static int Lua_Movie_render(lua_State *L) {
 
 	/* needed to restart the video if it should loop */
 	status = SMPEG_status(movie->movie);
-	
+
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, movie->texture);
@@ -334,14 +386,15 @@ static int Lua_Movie_render(lua_State *L) {
 	glScaled(scaleX, scaleY, 0);
 	glRotated(rotate, 0, 0, 1);
 	glTranslated(-translateX, -translateY, 0);
-	
+
 	glColor4ub( (GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], movie->alpha);
-	
-	if (status == SMPEG_PLAYING) {
+
+	if ((status == SMPEG_PLAYING) && (movie->changed == 1)) {
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, movie->surface->w, movie->surface->h,
-					GL_RGBA, GL_UNSIGNED_BYTE, movie->surface->pixels);
+						GL_RGBA, GL_UNSIGNED_BYTE, movie->surface->pixels);
+		movie->changed = 0;
 	}
-	
+
 	glBegin(GL_QUADS);
 		if (scaleX*scaleY > 0) {			
 			glTexCoord2f(texCoords.x1, texCoords.y1);
@@ -381,10 +434,21 @@ static int movie_gc(lua_State *L) {
 		glDeleteTextures( 1, &(*movie)->texture );
 		SDL_FreeSurface((*movie)->surface);
 		free((*movie)->info);
+
+		/* remove movie from list */
+		if ((*movie)->prev == NULL) {
+			first_movie = (*movie)->next;
+		} else {
+			(*movie)->prev->next = (*movie)->next;
+		}
+		if ((*movie)->next != NULL) {
+			(*movie)->next->prev = (*movie)->prev;
+		}
+		
 		free(*movie);
 		*movie = NULL;
+		/* fprintf(stdout, "Freed movie.\n"); */
 	}
-	/* fprintf(stdout, "Freed movie.\n"); */
 	return 0;
 }
 
@@ -412,6 +476,9 @@ static const struct luaL_Reg movielib_m [] = {
 	{"rewind", Lua_Movie_rewind},
 	{"stop", Lua_Movie_stop},
 	{"skip", Lua_Movie_skip},
+	{"getWidth", Lua_Movie_getWidth},
+	{"getHeight", Lua_Movie_getHeight},
+	{"getSize", Lua_Movie_getSize},
 	{"getInfo", Lua_Movie_getInfo},
 	{"isPlaying", Lua_Movie_isPlaying},
 	{"setAlpha", Lua_Movie_setAlpha},
@@ -430,6 +497,7 @@ int luaopen_movie(lua_State *L, const char *parent) {
 	luaL_register(L, NULL, movielib_m);
 	lua_pop(L, 1);	/* pop the metatable */
 	luaL_register(L, parent, movielib);
+	movie_mutex = SDL_CreateMutex();
 	return 1;
 }
 
