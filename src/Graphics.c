@@ -12,6 +12,7 @@
 #include "Main.h"
 #include "Macros.h"
 #include "Graphics.h"
+#include "Movie.h"
 #include "physfsrwops.h"
 
 #define checkimage(L) \
@@ -176,22 +177,33 @@ int createTexture(lua_State *L, SDL_Surface *src, Lua_Image *dest, GLubyte alpha
 /* initialize SDL */
 static int initSDL (lua_State *L, const char *appName, int width, int height, int bpp, int fullscreen, int resizable) {
 	Uint32 flags;
-	Lua_Image *node;
+	Lua_Image *image_node;
+	Lua_Movie *movie_node;
+	SDL_Surface *movie_po2_surface;
 	flags = SDL_OPENGL;
-	if (fullscreen)
+	
+	SDL_LockMutex(movie_mutex);
+	
+	if (fullscreen) {
 		flags |= SDL_FULLSCREEN;
-	else if (resizable)
+	} else if (resizable) {
 		flags |= SDL_RESIZABLE;
+	}
 	if (screen == NULL) {
 		if ( SDL_Init ( SDL_INIT_VIDEO | SDL_INIT_AUDIO ) != 0 )
 			return luaL_error(L, "Couldn't initialize SDL: %s", SDL_GetError ());
 		atexit(SDL_Quit);
 	} else {
 		/* delete all OpenGL textures */
-		node = first_image;
-		while (node != NULL) {
-			glDeleteTextures(node->x_tiles*node->y_tiles, node->textures);
-			node = node->next;
+		image_node = first_image;
+		while (image_node != NULL) {
+			glDeleteTextures(image_node->x_tiles*image_node->y_tiles, image_node->textures);
+			image_node = image_node->next;
+		}
+		movie_node = first_movie;
+		while (movie_node != NULL) {
+			glDeleteTextures(1, &movie_node->texture);
+			movie_node = movie_node->next;
 		}
 	}
 	/* set window caption */
@@ -223,11 +235,28 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();
 	/* reloading all images */
-	node = first_image;
-	while (node != NULL) {
-		sendTextureToCard(L, node);
-		node = node->next;
+	image_node = first_image;
+	while (image_node != NULL) {
+		sendTextureToCard(L, image_node);
+		image_node = image_node->next;
 	}
+	/* reloading all movies */
+	movie_node = first_movie;
+	while (movie_node != NULL) {
+		movie_po2_surface = SDL_CreateRGBSurface(SDL_SWSURFACE,
+			movie_node->po2_width, movie_node->po2_height, 32,
+			RMASK, GMASK, BMASK, AMASK);
+		glGenTextures(1, &movie_node->texture);
+		glBindTexture(GL_TEXTURE_2D, movie_node->texture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(	GL_TEXTURE_2D, 0, GL_RGB, 
+						movie_node->po2_width, movie_node->po2_height, 0, 
+						GL_RGBA, GL_UNSIGNED_BYTE, movie_po2_surface->pixels );
+		SDL_FreeSurface(movie_po2_surface);
+		movie_node = movie_node->next;
+	}
+	SDL_UnlockMutex(movie_mutex);
 	return 0;
 }
 
@@ -500,8 +529,8 @@ static int Lua_Image_render(lua_State *L) {
 	GLubyte x_tile, y_tile;
 	GLuint *textures = image->textures;
 	
-	texCoords.x2 = (GLfloat) image->po2_width / image->tile_width;
-	texCoords.y2 = (GLfloat) image->po2_height / image->tile_height;
+	texCoords.x2 = (GLfloat) image->po2_width / width;
+	texCoords.y2 = (GLfloat) image->po2_height / height;
 	
 	if (lua_istable(L, 2)) {
 		/* x and y are array element 1 and 2 */
