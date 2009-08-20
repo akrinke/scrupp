@@ -9,10 +9,32 @@ AC_PROG_LIBTOOL
 
 # Checks for libraries:
 
+# Check for pkg-config
+PKG_PROG_PKG_CONFIG
+
 # Check for Lua
-AX_LUA_HEADERS
-AX_LUA_LIBS
-AX_LUA_LIB_VERSION(501)
+AC_ARG_WITH([lua-pkg],
+ AC_HELP_STRING([--with-lua-pkg=ARG],[name of Lua pkg-config script [[default=lua5.1]]]),
+ [LUA_PKG_NAME=${withval%.pc}],
+[
+LUA_PKG_NAME=lua5.1
+
+for L in lua5.1 lua51 lua-5.1 lua
+do
+  AC_MSG_CHECKING([for $L.pc])
+  if ${PKG_CONFIG} --exists ${L}
+  then
+    AC_MSG_RESULT([yes])
+    LUA_PKG_NAME=${L}
+    break
+  else
+    AC_MSG_RESULT([no])
+  fi
+done
+]
+)
+
+PKG_CHECK_MODULES(LUA, [${LUA_PKG_NAME} >= 5.1])
 
 # Check for PhysFS
 AC_CHECK_LIB(	physfs, PHYSFS_init, ,
@@ -85,8 +107,8 @@ fi
 
 #AC_DEFINE([SHARE_DIR], "$(pkgdatadir)")
 
-CFLAGS="$CFLAGS $LUA_INCLUDE $GL_CFLAGS $CAIRO_CFLAGS $SDL_CFLAGS $SMPEG_CFLAGS $GTK_CFLAGS"
-LIBS="$LIBS $LUA_LIB $GL_LIBS $CAIRO_LIBS $SDL_LIBS $SMPEG_LIBS $GTK_LIBS"
+CFLAGS="$CFLAGS $LUA_CFLAGS $GL_CFLAGS $CAIRO_CFLAGS $SDL_CFLAGS $SMPEG_CFLAGS $GTK_CFLAGS"
+LIBS="$LIBS $LUA_LIBS $GL_LIBS $CAIRO_LIBS $SDL_LIBS $SMPEG_LIBS $GTK_LIBS"
 AC_OUTPUT([Makefile
 		   src/Makefile
 		   src/lua-oocairo/Makefile
