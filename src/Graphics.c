@@ -43,8 +43,8 @@ static int sendTextureToCard(lua_State *L, Lua_Image *img) {
 		glGenTextures(1, textures);
 		glBindTexture(GL_TEXTURE_2D, *textures);
 		/* set the texture's stretching properties */
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		/* edit the texture's image data using the information from the surface */
 		glTexImage2D( 	GL_TEXTURE_2D, 0, img->src->format->BytesPerPixel,
 						img->po2_width, img->po2_height, 0,
@@ -68,8 +68,8 @@ static int sendTextureToCard(lua_State *L, Lua_Image *img) {
 				src_rect.x = x*img->tile_width;
 				SDL_BlitSurface(img->src, &src_rect, tile_surface, NULL);
 				glBindTexture(GL_TEXTURE_2D, textures[x+y*img->x_tiles]);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				glTexImage2D( 	GL_TEXTURE_2D, 0, img->src->format->BytesPerPixel,
 								src_rect.w, src_rect.h, 0,
 								img->texture_format, GL_UNSIGNED_BYTE, tile_surface->pixels );
@@ -159,6 +159,11 @@ int createTexture(lua_State *L, SDL_Surface *src, Lua_Image *dest, GLubyte alpha
 	dest->x_tiles = x_tiles;
 	dest->y_tiles = y_tiles;
 	dest->alpha = alpha;
+	dest->center_x = 0.0;
+	dest->center_y = 0.0;
+	dest->scale_x = 1.0;
+	dest->scale_y = 1.0;
+	dest->rotation = 0.0;
 	dest->next = NULL;
 	dest->prev = NULL;
 	
@@ -502,8 +507,7 @@ static int Lua_Image_isTransparent(lua_State *L) {
 
 static int Lua_Image_setAlpha(lua_State *L) {
 	Lua_Image *image = checkimage(L);
-	int alpha = luaL_checkint(L, 2);
-	image->alpha = (GLubyte) alpha;
+	image->alpha = (GLubyte)luaL_checkint(L, 2);
 	return 0;
 }
 
@@ -511,6 +515,94 @@ static int Lua_Image_getAlpha(lua_State *L) {
 	Lua_Image *image = checkimage(L);
 	lua_pushinteger(L, image->alpha);
 	return 1;
+}
+
+static int Lua_Image_setCenterX(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	image->center_x = (GLdouble)luaL_checknumber(L, 2);
+	return 0;
+}
+
+static int Lua_Image_getCenterX(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	lua_pushnumber(L, image->center_x);
+	return 1;
+}
+
+static int Lua_Image_setCenterY(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	image->center_y = luaL_checknumber(L, 2);
+	return 0;
+}
+
+static int Lua_Image_getCenterY(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	lua_pushnumber(L, image->center_y);
+	return 1;
+}
+
+static int Lua_Image_getCenter(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	lua_pushnumber(L, image->center_x);
+	lua_pushnumber(L, image->center_y);
+	return 2;
+}
+
+static int Lua_Image_setCenter(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	image->center_x = luaL_checknumber(L, 2);
+	image->center_y = luaL_checknumber(L, 3);
+	return 0;
+}
+
+static int Lua_Image_setScaleX(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	image->scale_x = luaL_checknumber(L, 2);
+	return 0;
+}
+
+static int Lua_Image_getScaleX(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	lua_pushnumber(L, image->scale_x);
+	return 1;
+}
+
+static int Lua_Image_setScaleY(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	image->scale_y = luaL_checknumber(L, 2);
+	return 0;
+}
+
+static int Lua_Image_getScaleY(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	lua_pushnumber(L, image->scale_y);
+	return 1;
+}
+
+static int Lua_Image_getScale(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	lua_pushnumber(L, image->scale_x);
+	lua_pushnumber(L, image->scale_y);
+	return 2;
+}
+
+static int Lua_Image_setScale(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	image->scale_x = luaL_checknumber(L, 2);
+	image->scale_y = luaL_checknumber(L, 3);
+	return 0;
+}
+
+static int Lua_Image_getRotation(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	lua_pushnumber(L, image->rotation);
+	return 1;
+}
+
+static int Lua_Image_setRotation(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	image->rotation = luaL_checknumber(L, 2);
+	return 0;
 }
 
 static int Lua_Image_render(lua_State *L) {
@@ -521,11 +613,11 @@ static int Lua_Image_render(lua_State *L) {
 	GLrect texCoords = {0, 0, 0, 0};
 	int width = image->tile_width;
 	int height = image->tile_height;
-	GLdouble translate_x = 0.0;
-	GLdouble translate_y = 0.0;
-	GLdouble scale_x = 1.0;
-	GLdouble scale_y = 1.0;
-	GLdouble rotate = 0.0;
+	GLdouble translate_x = image->center_x;
+	GLdouble translate_y = image->center_y;
+	GLdouble scale_x = image->scale_x;
+	GLdouble scale_y = image->scale_y;
+	GLdouble rotation = image->rotation;
 	GLubyte x_tile, y_tile;
 	GLuint *textures = image->textures;
 	
@@ -559,7 +651,7 @@ static int Lua_Image_render(lua_State *L) {
 		/* check for "rotate"-entry */
 		lua_getfield(L, -1, "rotate");
 		if (lua_isnumber(L, -1))
-			rotate = (GLdouble)lua_tonumber(L, -1);
+			rotation = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
 		/* check for "rect"-entry */
 		lua_getfield(L, -1, "rect");
@@ -600,7 +692,7 @@ static int Lua_Image_render(lua_State *L) {
 	glPushMatrix();
 	glTranslatef((GLfloat)x, (GLfloat)y, 0);
 	glScaled(scale_x, scale_y, 0);
-	glRotated(rotate, 0, 0, 1);
+	glRotated(rotation, 0, 0, 1);
 	glTranslated(-translate_x, -translate_y, 0);
 
 	glColor4ub( (GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], image->alpha);
@@ -859,6 +951,20 @@ static const struct luaL_Reg imagelib_m [] = {
 	{"isTransparent", 		Lua_Image_isTransparent},
 	{"setAlpha", 			Lua_Image_setAlpha},
 	{"getAlpha", 			Lua_Image_getAlpha},
+	{"setCenterX",			Lua_Image_setCenterX},
+	{"getCenterX",			Lua_Image_getCenterX},
+	{"setCenterY",			Lua_Image_setCenterY},
+	{"getCenterY",			Lua_Image_getCenterY},
+	{"setCenter",			Lua_Image_setCenter},
+	{"getCenter",			Lua_Image_getCenter},
+	{"setScaleX",			Lua_Image_setScaleX},
+	{"getScaleX",			Lua_Image_getScaleX},
+	{"setScaleY",			Lua_Image_setScaleY},
+	{"getScaleY",			Lua_Image_getScaleY},
+	{"setScale",			Lua_Image_setScale},
+	{"getScale",			Lua_Image_getScale},
+	{"setRotation",			Lua_Image_setRotation},
+	{"getRotation",			Lua_Image_getRotation},
 	{"render", 				Lua_Image_render},
 	{NULL, NULL}
 };
