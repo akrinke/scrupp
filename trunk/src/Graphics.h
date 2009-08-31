@@ -41,6 +41,14 @@ typedef struct Lua_Image {
 	GLubyte y_tiles;
 	/* alpha value of the whole texture */
 	GLubyte alpha;
+	/* center of the image */
+	GLdouble center_x;
+	GLdouble center_y;
+	/* scaling of the image */
+	GLdouble scale_x;
+	GLdouble scale_y;
+	/* rotation of the image */
+	GLdouble rotation;
 	/* all textures are stored in a double-linked-list for easy reloading */
 	struct Lua_Image *next;
 	struct Lua_Image *prev;
