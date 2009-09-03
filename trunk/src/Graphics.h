@@ -21,6 +21,14 @@
 	#define AMASK 0xFF000000
 #endif
 
+typedef struct myRect {
+	int x, y, w, h;
+} myRect;
+
+typedef struct GLrect {
+	GLfloat x1, y1, x2, y2;
+} GLrect;
+
 typedef struct Lua_Image {
 	/* OpenGL texture ids */
 	GLuint *textures;
@@ -41,6 +49,8 @@ typedef struct Lua_Image {
 	GLubyte y_tiles;
 	/* alpha value of the whole texture */
 	GLubyte alpha;
+	/* color (rgb)*/
+	GLubyte* color;
 	/* center of the image */
 	GLdouble center_x;
 	GLdouble center_y;
@@ -49,18 +59,12 @@ typedef struct Lua_Image {
 	GLdouble scale_y;
 	/* rotation of the image */
 	GLdouble rotation;
+	/* rectangular cutout */
+	myRect* rect;
 	/* all textures are stored in a double-linked-list for easy reloading */
 	struct Lua_Image *next;
 	struct Lua_Image *prev;
 } Lua_Image;
-
-typedef struct myRect {
-	int x, y, w, h;
-} myRect;
-
-typedef struct GLrect {
-	GLfloat x1, y1, x2, y2;
-} GLrect;
 
 unsigned int nextHigherPowerOfTwo(unsigned int k);
 int createTexture(lua_State *L, SDL_Surface *src, Lua_Image *dest, GLubyte alpha);
