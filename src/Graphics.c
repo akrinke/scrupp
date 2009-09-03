@@ -45,6 +45,9 @@ static int sendTextureToCard(lua_State *L, Lua_Image *img) {
 		/* set the texture's stretching properties */
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		// the texture does not wrap over at the edges (no repeat)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 		/* edit the texture's image data using the information from the surface */
 		glTexImage2D( 	GL_TEXTURE_2D, 0, img->src->format->BytesPerPixel,
 						img->po2_width, img->po2_height, 0,
@@ -159,11 +162,13 @@ int createTexture(lua_State *L, SDL_Surface *src, Lua_Image *dest, GLubyte alpha
 	dest->x_tiles = x_tiles;
 	dest->y_tiles = y_tiles;
 	dest->alpha = alpha;
+	dest->color = NULL;
 	dest->center_x = 0.0;
 	dest->center_y = 0.0;
 	dest->scale_x = 1.0;
 	dest->scale_y = 1.0;
 	dest->rotation = 0.0;
+	dest->rect = NULL;
 	dest->next = NULL;
 	dest->prev = NULL;
 	
@@ -517,6 +522,42 @@ static int Lua_Image_getAlpha(lua_State *L) {
 	return 1;
 }
 
+static int Lua_Image_setColor(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	GLubyte r = (GLubyte)luaL_checkint(L, 2);
+	GLubyte g = (GLubyte)luaL_checkint(L, 3);
+	GLubyte b = (GLubyte)luaL_checkint(L, 4);
+	if (image->color == NULL) {
+		image->color = (GLubyte *)malloc(3*sizeof(GLubyte));
+	}
+	image->color[0] = r;
+	image->color[1] = g;
+	image->color[2] = b;
+	return 0;
+}
+
+static int Lua_Image_getColor(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	if (image->color == NULL) {
+		lua_pushinteger(L, 255);
+		lua_pushinteger(L, 255);
+		lua_pushinteger(L, 255);
+	} else {
+		lua_pushinteger(L, image->color[0]);
+		lua_pushinteger(L, image->color[1]);
+		lua_pushinteger(L, image->color[2]);
+	}
+	return 3;
+}
+
+static int Lua_Image_clearColor(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	/* if image->color is NULL, no operation is performed */
+	free(image->color);
+	image->color = NULL;
+	return 0;
+}
+
 static int Lua_Image_setCenterX(lua_State *L) {
 	Lua_Image *image = checkimage(L);
 	image->center_x = (GLdouble)luaL_checknumber(L, 2);
@@ -531,7 +572,7 @@ static int Lua_Image_getCenterX(lua_State *L) {
 
 static int Lua_Image_setCenterY(lua_State *L) {
 	Lua_Image *image = checkimage(L);
-	image->center_y = luaL_checknumber(L, 2);
+	image->center_y = (GLdouble)luaL_checknumber(L, 2);
 	return 0;
 }
 
@@ -541,6 +582,13 @@ static int Lua_Image_getCenterY(lua_State *L) {
 	return 1;
 }
 
+static int Lua_Image_setCenter(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	image->center_x = (GLdouble)luaL_checknumber(L, 2);
+	image->center_y = (GLdouble)luaL_checknumber(L, 3);
+	return 0;
+}
+
 static int Lua_Image_getCenter(lua_State *L) {
 	Lua_Image *image = checkimage(L);
 	lua_pushnumber(L, image->center_x);
@@ -548,16 +596,9 @@ static int Lua_Image_getCenter(lua_State *L) {
 	return 2;
 }
 
-static int Lua_Image_setCenter(lua_State *L) {
-	Lua_Image *image = checkimage(L);
-	image->center_x = luaL_checknumber(L, 2);
-	image->center_y = luaL_checknumber(L, 3);
-	return 0;
-}
-
 static int Lua_Image_setScaleX(lua_State *L) {
 	Lua_Image *image = checkimage(L);
-	image->scale_x = luaL_checknumber(L, 2);
+	image->scale_x = (GLdouble)luaL_checknumber(L, 2);
 	return 0;
 }
 
@@ -569,7 +610,7 @@ static int Lua_Image_getScaleX(lua_State *L) {
 
 static int Lua_Image_setScaleY(lua_State *L) {
 	Lua_Image *image = checkimage(L);
-	image->scale_y = luaL_checknumber(L, 2);
+	image->scale_y = (GLdouble)luaL_checknumber(L, 2);
 	return 0;
 }
 
@@ -579,6 +620,13 @@ static int Lua_Image_getScaleY(lua_State *L) {
 	return 1;
 }
 
+static int Lua_Image_setScale(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	image->scale_x = (GLdouble)luaL_checknumber(L, 2);
+	image->scale_y = (GLdouble)luaL_checknumber(L, 3);
+	return 0;
+}
+
 static int Lua_Image_getScale(lua_State *L) {
 	Lua_Image *image = checkimage(L);
 	lua_pushnumber(L, image->scale_x);
@@ -586,10 +634,9 @@ static int Lua_Image_getScale(lua_State *L) {
 	return 2;
 }
 
-static int Lua_Image_setScale(lua_State *L) {
+static int Lua_Image_setRotation(lua_State *L) {
 	Lua_Image *image = checkimage(L);
-	image->scale_x = luaL_checknumber(L, 2);
-	image->scale_y = luaL_checknumber(L, 3);
+	image->rotation = (GLdouble)luaL_checknumber(L, 2);
 	return 0;
 }
 
@@ -599,17 +646,51 @@ static int Lua_Image_getRotation(lua_State *L) {
 	return 1;
 }
 
-static int Lua_Image_setRotation(lua_State *L) {
+static int Lua_Image_setRect(lua_State *L) {
 	Lua_Image *image = checkimage(L);
-	image->rotation = luaL_checknumber(L, 2);
+	int x = luaL_checkint(L, 2);
+	int y = luaL_checkint(L, 3);
+	int w = luaL_checkint(L, 4);
+	int h = luaL_checkint(L, 5);
+	if (image->rect == NULL) {
+		image->rect = (myRect *)malloc(sizeof(myRect));
+	}
+	image->rect->x = x;
+	image->rect->y = y;
+	image->rect->w = w;
+	image->rect->h = h;
 	return 0;
 }
+
+static int Lua_Image_getRect(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	if (image->rect == NULL) {
+		lua_pushinteger(L, 0);
+		lua_pushinteger(L, 0);
+		lua_pushinteger(L, image->w);
+		lua_pushinteger(L, image->h);
+	} else {
+		lua_pushinteger(L, image->rect->x);
+		lua_pushinteger(L, image->rect->y);
+		lua_pushinteger(L, image->rect->w);
+		lua_pushinteger(L, image->rect->h);
+	}
+	return 4;
+}
+
+static int Lua_Image_clearRect(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	/* if image->rect is NULL, no operation is performed */
+	free(image->rect);
+	image->rect = NULL;
+	return 0;
+}	
 
 static int Lua_Image_render(lua_State *L) {
 	Lua_Image *image = checkimage(L);
 	int x, y;
 	myRect clip_rect;
-	int color[] = {255, 255, 255, 255};
+	int color[] = {255, 255, 255, image->alpha};
 	GLrect texCoords = {0, 0, 0, 0};
 	int width = image->tile_width;
 	int height = image->tile_height;
@@ -623,6 +704,21 @@ static int Lua_Image_render(lua_State *L) {
 	
 	texCoords.x2 = (GLfloat) image->po2_width / width;
 	texCoords.y2 = (GLfloat) image->po2_height / height;
+
+	if (image->color != NULL) {
+		color[0] = image->color[0];
+		color[1] = image->color[1];
+		color[2] = image->color[2];
+	}
+	
+	if (image->rect != NULL) {
+		texCoords.x1 = (GLfloat) image->rect->x / image->po2_width;
+		texCoords.y1 = (GLfloat) image->rect->y / image->po2_height;
+		texCoords.x2 = (GLfloat) (image->rect->x + image->rect->w) / image->po2_width;
+		texCoords.y2 = (GLfloat) (image->rect->y + image->rect->h) / image->po2_height;
+		width = image->rect->w;
+		height = image->rect->h;
+	}
 	
 	if (lua_istable(L, 2)) {
 		/* x and y are array element 1 and 2 */
@@ -676,7 +772,6 @@ static int Lua_Image_render(lua_State *L) {
 				return luaL_argerror(L, 1, "'color' has invalid or missing elements");
 			/* the alpha value of the color is optional */
 			getint(L, &color[3], 4);
-			image->alpha = (GLubyte)color[3];
 		} else if (!lua_isnil(L, -1))
 			return luaL_argerror(L, 1, "'color' should be an array and nothing else");
 	} else {
@@ -695,7 +790,7 @@ static int Lua_Image_render(lua_State *L) {
 	glRotated(rotation, 0, 0, 1);
 	glTranslated(-translate_x, -translate_y, 0);
 
-	glColor4ub( (GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], image->alpha);
+	glColor4ub( (GLubyte)color[0], (GLubyte)color[1], (GLubyte)color[2], (GLubyte)color[3]);
 	
 	for (y_tile=0; y_tile<image->y_tiles; y_tile++) {
 		glPushMatrix();
@@ -739,6 +834,9 @@ static int image_gc(lua_State *L) {
 	Lua_Image *image = checkimage(L);
 	glDeleteTextures( image->x_tiles*image->y_tiles, image->textures );
 	free(image->textures);
+	/* if the pointer is NULL, no operation is performed */
+	free(image->color);
+	free(image->rect);
 	SDL_FreeSurface(image->src);
 	/* remove image from list */
 	if (image->prev == NULL) {
@@ -923,34 +1021,37 @@ static int Lua_Graphics_draw(lua_State *L) {
 }
 
 static const struct luaL_Reg graphicslib [] = {
-	{"init", 				Lua_Graphics_init},
-	{"getWindowWidth", 		Lua_Graphics_getWindowWidth},
-	{"getWindowHeight", 	Lua_Graphics_getWindowHeight},
+	{"init",				Lua_Graphics_init},
+	{"getWindowWidth",		Lua_Graphics_getWindowWidth},
+	{"getWindowHeight",		Lua_Graphics_getWindowHeight},
 	{"getWindowSize",		Lua_Graphics_getWindowSize},
-	{"showCursor", 			Lua_Graphics_showCursor},
-	{"getTicks", 			Lua_Graphics_getTicks},
+	{"showCursor",			Lua_Graphics_showCursor},
+	{"getTicks",			Lua_Graphics_getTicks},
 	{"translateView",		Lua_Graphics_translateView},
 	{"scaleView",			Lua_Graphics_scaleView},
 	{"rotateView",			Lua_Graphics_rotateView},
 	{"saveView",			Lua_Graphics_saveView},
 	{"restoreView",			Lua_Graphics_restoreView},
 	{"resetView",			Lua_Graphics_resetView},
-	{"addImage", 			Lua_Image_load},
+	{"addImage",			Lua_Image_load},
 	{"addImageFromString",	Lua_Image_loadFromString},
 	{"addImageFromCairo",	Lua_Image_loadFromCairoSurface},
-	{"draw", 				Lua_Graphics_draw},
+	{"draw",				Lua_Graphics_draw},
 	{NULL, NULL}
 };
 
 static const struct luaL_Reg imagelib_m [] = {
-	{"__gc", 				image_gc},
-	{"__tostring", 			image_tostring},
-	{"getWidth", 			Lua_Image_getWidth},
-	{"getHeight", 			Lua_Image_getHeight},
-	{"getSize", 			Lua_Image_getSize},
-	{"isTransparent", 		Lua_Image_isTransparent},
-	{"setAlpha", 			Lua_Image_setAlpha},
-	{"getAlpha", 			Lua_Image_getAlpha},
+	{"__gc",				image_gc},
+	{"__tostring",			image_tostring},
+	{"getWidth",			Lua_Image_getWidth},
+	{"getHeight",			Lua_Image_getHeight},
+	{"getSize",				Lua_Image_getSize},
+	{"isTransparent",		Lua_Image_isTransparent},
+	{"setAlpha",			Lua_Image_setAlpha},
+	{"getAlpha",			Lua_Image_getAlpha},
+	{"setColor",			Lua_Image_setColor},
+	{"getColor",			Lua_Image_getColor},
+	{"clearColor",			Lua_Image_clearColor},
 	{"setCenterX",			Lua_Image_setCenterX},
 	{"getCenterX",			Lua_Image_getCenterX},
 	{"setCenterY",			Lua_Image_setCenterY},
@@ -965,7 +1066,10 @@ static const struct luaL_Reg imagelib_m [] = {
 	{"getScale",			Lua_Image_getScale},
 	{"setRotation",			Lua_Image_setRotation},
 	{"getRotation",			Lua_Image_getRotation},
-	{"render", 				Lua_Image_render},
+	{"setRect",				Lua_Image_setRect},
+	{"getRect",				Lua_Image_getRect},
+	{"clearRect",			Lua_Image_clearRect},
+	{"render",				Lua_Image_render},
 	{NULL, NULL}
 };
 
