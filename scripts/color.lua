@@ -1,4 +1,4 @@
-colors = {
+color = {
 	white	= {255, 255, 255},
 	black	= {  0,   0,   0},
 	gray	= {128, 128, 128},
@@ -16,3 +16,5 @@ colors = {
 	teal	= {  0, 128, 128},
 	aqua	= {  0, 255, 255}
 }
+
+return color
