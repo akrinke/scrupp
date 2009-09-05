@@ -28,7 +28,7 @@
 
 #define PROG_NAME 	"Scrupp"
 #ifndef VERSION
-# define VERSION "0.2"
+# define VERSION "0.4"
 #endif
 #define COPYRIGHT	"Copyright (C) 2005-2009 Andreas Krinke"
 #define AUTHOR		"Andreas Krinke"
