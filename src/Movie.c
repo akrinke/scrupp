@@ -79,7 +79,7 @@ static int Lua_Movie_load(lua_State *L) {
 	if ((movie_surface == NULL) || (po2_surface == NULL)) {
 		return luaL_error(L, "Error loading file '%s': %s", filename, SDL_GetError());
 	}
-	
+
 	SMPEG_setdisplay(movie, movie_surface, movie_mutex, update_callback);
 	SMPEG_enablevideo(movie, 1);
 	SMPEG_enableaudio(movie, 0);
@@ -92,7 +92,7 @@ static int Lua_Movie_load(lua_State *L) {
 					GL_RGBA, GL_UNSIGNED_BYTE, po2_surface->pixels );
 	
 	SDL_FreeSurface(po2_surface);
-	
+
 	ptr = (Lua_Movie **)lua_newuserdata(L, sizeof(Lua_Movie *));
 	*ptr = NULL;
 	*ptr = (Lua_Movie *)malloc(sizeof(Lua_Movie));
@@ -211,7 +211,8 @@ static int Lua_Movie_getSize(lua_State *L) {
 static int Lua_Movie_getInfo(lua_State *L) {
 	Lua_Movie *movie = tomovie(L);
 	SMPEG_Info info;
-
+	SMPEG_status(movie->movie);
+	movie->changed=1;
 	SMPEG_getinfo(movie->movie, &info);
 	lua_createtable(L, 0, 10);
 
@@ -277,10 +278,9 @@ static int Lua_Movie_getAlpha(lua_State *L) {
 	return 1;
 }
 
-static int Lua_Movie_renderFrame(lua_State *L) {
+static int Lua_Movie_loadFirstFrame(lua_State *L) {
 	Lua_Movie *movie = tomovie(L);
-	int framenum = luaL_checkint(L, 2);
-	SMPEG_renderFrame(movie->movie, framenum);
+	SMPEG_renderFrame(movie->movie, 1);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, movie->surface->w, movie->surface->h,
 					GL_RGBA, GL_UNSIGNED_BYTE, movie->surface->pixels);
 	return 0;
@@ -483,7 +483,7 @@ static const struct luaL_Reg movielib_m [] = {
 	{"isPlaying", Lua_Movie_isPlaying},
 	{"setAlpha", Lua_Movie_setAlpha},
 	{"getAlpha", Lua_Movie_getAlpha},
-	{"renderFrame", Lua_Movie_renderFrame},
+	{"loadFirstFrame", Lua_Movie_loadFirstFrame},
 	{"render", Lua_Movie_render},
 	{"remove", movie_gc},
 	{NULL, NULL}
