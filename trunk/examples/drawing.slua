@@ -1,0 +1,36 @@
+scrupp.init("Drawing Demo", 600, 400, 32, false)
+
+local font = scrupp.addFont("fonts/Vera.ttf", 20)
+local msg = font:generateImage("Click!")
+
+local color = require "color"
+
+-- prepare one table for big white pixels
+local pixels = { antialiasing = false, size = 20, pixellist = true }
+
+-- prepare one table for red connected lines
+local lines = { color = color.red, antialiasing = true, connect = true }
+
+main = {
+	render = function(dt)
+		msg:render(10, 10)
+		scrupp.draw(lines)
+		scrupp.draw(pixels)
+	end,
+	
+	mousepressed = function(x, y, button)
+		-- add the point where the mouse was pressed to the list of pixels
+		pixels[#pixels+1] = x
+		pixels[#pixels+1] = y
+		
+		-- add the point to the list of lines, too
+		lines[#lines+1] = x
+		lines[#lines+1] = y
+	end,
+	
+	keypressed = function(key)
+		if key == "ESCAPE" then
+			scrupp.exit()
+		end
+	end
+}

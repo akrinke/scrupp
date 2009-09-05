@@ -1,0 +1,33 @@
+scrupp.init("Font Demo", 600, 400, 32, false)
+
+-- load a font
+local font = scrupp.addFont("fonts/Vera.ttf", 20)
+-- get the recommended line height in pixel
+local lineSkip = font:getLineSkip()
+-- get the text size of a sample text
+local w, h = font:getTextSize("Hello World")
+
+local color = require "color"
+
+-- generate an image containing some text using the default color
+local image_1 = font:generateImage("Hello World")
+
+-- generate an image using the defined color cBlue
+-- -- because font:generateImage() gets only one parameter and this is a table
+-- -- we can omit the parenthesises and just use the curly brackets of the table 
+-- -- constructor
+local image_2 = font:generateImage{"Hello World", color = color.blue}
+
+main = {
+	render = function(dt)
+		-- render the already loaded images:
+		image_1:render(100,50)
+		image_2:render(100 + w, 50 + lineSkip)
+	end,
+	
+	keypressed = function(key)
+		if key == "ESCAPE" then
+			scrupp.exit()
+		end
+	end
+}
