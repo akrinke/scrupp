@@ -4,6 +4,7 @@ scriptdir = $(pkgdatadir)/scripts
 script_DATA = \
 	animation.lua \
 	class.lua \
+	color.lua \
 	font.lua \
 	timer.lua
 	
