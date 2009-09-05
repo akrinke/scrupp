@@ -1,0 +1,35 @@
+scrupp.init("Mouse Demo", 600, 400, 32, false)
+
+require "font"
+
+local font = Font("fonts/Vera.ttf", 20)
+local text = "Click!"
+
+local cursor = font:generateImage("X")
+
+-- deactivate the hardware mouse cursor
+scrupp.showCursor(false)
+
+main = {
+	render = function(dt)
+		font:print(10,10, text)
+		if not scrupp.mouseButtonIsDown("left") then
+			cursor:render(scrupp.getMouseX(), scrupp.getMouseY())
+			--or: cursor:render(scrupp.getMousePos())
+		end
+	end,
+	
+	mousepressed = function(x, y, button)
+		text = button .." button pressed at "..x..", "..y
+	end,
+	
+	mousereleased = function(x, y, button)
+		text = button .." button released at "..x..", "..y
+	end,
+	
+	keypressed = function(key)
+		if key == "ESCAPE" then
+			scrupp.exit()
+		end
+	end
+}	

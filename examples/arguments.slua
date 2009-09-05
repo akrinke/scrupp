@@ -1,0 +1,33 @@
+scrupp.init("Script Arguments", 600, 400, 32, false)
+
+local font = scrupp.addFont("fonts/Vera.ttf", 20)
+
+-- table containing images
+local cache = {}
+
+-- this function returns a cached image, or creates 
+-- a new image if it's not in the cache
+local function getCachedImage(str)
+	local img = cache[str]
+	if not img then
+		img = font:generateImage(str)
+		cache[str] = img
+	end
+	return img
+end
+
+main = {
+	render = function(dt)
+		getCachedImage("Path of the executable:"):render(10, 10)
+		getCachedImage(arg[-1]):render(10, 40)
+		
+		getCachedImage("Path of the script:"):render(10, 80)
+		getCachedImage(arg[0]):render(10, 110)
+	end,
+	
+	keypressed = function(key)
+		if key == "ESCAPE" then
+			scrupp.exit()
+		end
+	end
+}
