@@ -1,0 +1,43 @@
+Scrupp v0.4
+
+	- including the cairo binding lua-oocairo
+	  by Geoff Richards
+	- including the network library LuaSocket
+	  by Diego Nehab
+	- using autotools for easier compilation and 
+	  installation on Linux
+	- text interface supports UTF8 strings
+	  (Michal Kolodziejczyk)
+	- Lua commands 'dofile' and 'require' support 
+	  the virtual filesystem
+	- new functions to manipulate the OpenGL state:
+	  translate, scale, rotate, save, restore and 
+	  reset the state
+	- support for MPEG-1 movie playback
+	- support for image loading from strings
+	  (e.g. received via network)
+	- support for larger images than the graphics
+	  card can handle (Michal Kolodziejczyk)
+
+
+Scrupp v0.2
+
+	- full support for Mac OS X
+	- nice message boxes for errors + traceback 
+	  on Mac OS X (with Carbon) and Windows
+	- resizable windows
+	- scaling and rotation of images and graphics
+	- images can be colorized
+	- all keys are represented by simple strings	
+	- changed namespace from 'game' to 'scrupp'
+	- removed the mouse and key table;
+	  all functions moved to 'scrupp' namespace
+	- added scrupp.setDelta(delta) 
+	  to set the minimum delta between two frames
+	- new plugins: font, timer
+	+ many more
+
+
+Scrupp v0.1
+
+	- first release

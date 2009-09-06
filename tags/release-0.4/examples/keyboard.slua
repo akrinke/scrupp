@@ -1,0 +1,26 @@
+scrupp.init("Keyboard Demo", 600, 400, 32, false)
+
+require "font"
+
+local font = Font("fonts/Vera.ttf", 20)
+
+local text = "Press any key."
+
+main = {
+	render = function(dt)
+		font:print(10, 10, text)
+	end,
+	
+	keypressed = function(key)
+		text = key .. " pressed."
+		
+		-- the escape key exits the demo
+		if key == "ESCAPE" then
+			scrupp.exit()
+		end
+	end,
+	
+	keyreleased = function(key)
+		text = key .. " released."
+	end
+}	

@@ -1,0 +1,234 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Lua binding for Cairo vector graphics library</title>
+  <link rel="stylesheet" type="text/css" href="site.css">
+
+  
+
+ </head>
+ <body>
+  <div id="header"><h1><a href="http://www.daizucms.org/" rel="home">Daizu CMS</a></h1>
+</div>
+
+<div id="all-cols">
+
+<div id="content-col">
+<div class="hentry">
+ <h2 class="entry-title">Lua binding for Cairo vector graphics library</h2>
+ <div class="entry-meta">
+ 
+
+</div>
+
+ 
+ <div class="entry-content" id="entry-content">
+  <h3>Name</h3><p>lua-oocairo - Lua API for the Cairo vector graphics library</p><h3>Introduction</h3><p>This is a Lua binding for the Cairo graphics library, with an object
+oriented style of API.  There is at least one other Cairo binding
+available in Lua, but it has a more C-like API and is much less complete.</p><h3>Simple Example</h3><p>The code below is a complete example showing how to load this module and
+do some basic drawing with it.  Other features are demonstrated by the
+files in the <i>examples</i> directory included with the module.</p><p>First load the module.  The module doesn't create a global variable,
+so you have to assign it to something.</p><pre class="syntax-highlight"><span class="syn-statement">local</span> Cairo = <span class="syn-identifier">require</span> <span class="syn-constant">"oocairo"</span></pre><p>Create a bitmap image <b>surface</b> for drawing on, and create a context
+object which is used to do the drawing:</p><pre class="syntax-highlight"><span class="syn-statement">local</span> surface = Cairo.image_surface_create(<span class="syn-constant">"rgb24"</span>, <span class="syn-constant">200</span>, <span class="syn-constant">200</span>)
+<span class="syn-statement">local</span> cr = Cairo.context_create(surface)</pre><p>Fill whole image with white.  The <code>paint</code> method will copy the whole of
+the <b>source</b> to the surface.  In this case the source is a solid colour,
+but it can be other things like an image or gradient.  The default source
+is solid fully opaque black.  Since the default colour of the image surface
+is also black, nothing would happen if we didn't set the source to something
+else before painting.</p><pre class="syntax-highlight">cr:set_source_rgb(<span class="syn-constant">1</span>, <span class="syn-constant">1</span>, <span class="syn-constant">1</span>)
+cr:paint()</pre><p>Define an arbitrary shape, then fill it in purple.  The <code>move_to</code> and
+<code>line_to</code> methods, among others, define the shape of the path which is
+used for drawing operations like filling.</p><pre class="syntax-highlight">cr:move_to(<span class="syn-constant">0</span>, <span class="syn-constant">0</span>)
+cr:line_to(<span class="syn-constant">190</span>, <span class="syn-constant">100</span>)
+cr:line_to(<span class="syn-constant">100</span>, <span class="syn-constant">185</span>)
+cr:line_to(<span class="syn-constant">200</span>, <span class="syn-constant">200</span>)
+cr:line_to(<span class="syn-constant">30</span>, <span class="syn-constant">130</span>)
+cr:close_path()
+cr:set_source_rgb(<span class="syn-constant">0.8</span>, <span class="syn-constant">0.4</span>, <span class="syn-constant">1</span>)
+cr:fill()</pre><p>Another shape, this time both filled and with a line drawn along it's edge.
+The path is normally discarded after a drawing operation, so here
+<code>fill_preserve</code> is used to keep it so that it can also be stoked.
+Note that the stroked line won't go all the way around the filled area,
+because the path wasn't closed with <code>close_path</code>.  The black outline
+created by the <code>stroke</code> method will be three pixels wide, and will be
+centered on the path, half of it inside the filled area.</p><pre class="syntax-highlight">cr:move_to(<span class="syn-constant">180</span>, <span class="syn-constant">30</span>)
+cr:line_to(<span class="syn-constant">100</span>, <span class="syn-constant">20</span>)
+cr:line_to(<span class="syn-constant">80</span>, <span class="syn-constant">120</span>)
+cr:set_source_rgb(<span class="syn-constant">0.5</span>, <span class="syn-constant">0.7</span>, <span class="syn-constant">0.3</span>)
+cr:fill_preserve()
+
+cr:set_line_width(<span class="syn-constant">3</span>)
+cr:set_source_rgb(<span class="syn-constant">0</span>, <span class="syn-constant">0</span>, <span class="syn-constant">0</span>)
+cr:stroke()</pre><p>Finally, write the output to a file in PNG format.</p><pre class="syntax-highlight">surface:write_to_png(<span class="syn-constant">"simple-example.png"</span>)</pre><h3>Surface constructor functions</h3><p>The following functions can be accessed from the module table (the table
+returned from <code>require</code>).  One of them must be used to create a surface
+on which to draw on before Cairo can be used for anything interesting.
+These all return a surface object, for which the methods are documented
+at <a href="surface.html">lua-oocairo-surface(3)</a>.  Most drawing is done through a context
+object, which should be constructed with a call to the <code>context_create</code>
+function (also in the module table), passing the surface object as its
+only argument.  The methods for context objects are documented at
+<a href="context.html">lua-oocairo-context(3)</a>.</p><dl><dt><a id="item_image_surface_create"></a>image_surface_create (format, width, height)</dt><dd><p>Return a surface object for drawing an image in memory.  The <i>width</i>
+and <i>height</i> values must be numbers and are measured in pixels.  The
+value of <i>format</i> can be any of the following strings:</p><dl><dt><a id="item_argb32"></a>argb32</dt><dd><p>Each pixel is 32 bits, encoding both colour and alpha (transparency) values.</p></dd><dt><a id="item_rgb24"></a>rgb24</dt><dd><p>Each pixel is 32 bits with only 24 bits used, encoding a colour value.
+All pixels are implicitly 100% opaque.</p></dd><dt><a id="item_a8"></a>a8</dt><dd><p>Each pixel is a single byte encoding the alpha (transparency) value, with
+no colour information.</p></dd><dt><a id="item_a1"></a>a1</dt><dd><p>Each pixel is a single bit encoding whether a pixel is transparent or opaque,
+with no colour information.</p></dd></dl><p>The image created will be black by default, and fully transparent if
+the pixels have an alpha component.</p></dd><dt><a id="item_image_surface_create_from_data"></a>image_surface_create_from_data (data, format, width, height, stride)</dt><dd><p>Creates a new image surface with the size <i>width</i> by <i>height</i> pixels,
+using <i>format</i> just as the <code>image_surface_create</code> function does, but
+the image is initialized using pixel data from the string <i>data</i>.
+The <i>stride</i> value should be whatever is returned from the
+<code>format_stride_for_width</code> function for the given width and pixel format.
+The data should be encoded in the format described for the <code>surf:get_data()</code>
+method in <a href="surface.html">lua-oocairo-surface(3)</a>.</p><p>Note that since Lua strings are immutable, a copy of the data is made and
+used as the live buffer.  There is currently no support for sharing an image
+surface buffer between Cairo and something else.</p><p>This binds the native Cairo function <code>cairo_image_surface_create_for_data</code>,
+but has a slightly different name because the data you provide is only used
+at construction time, not kept around for drawing.</p></dd><dt><a id="item_image_surface_create_from_png"></a>image_surface_create_from_png (file/filename)</dt><dd><p>Creates a new image surface containing the image in a PNG file.  The
+file is read from the filename or file handle specified.  See below
+for details about what kind of file handles can be used.</p></dd><dt><a id="item_pdf_surface_create"></a>pdf_surface_create (file/filename, width, height)</dt><dd><p>Create a surface which writes drawing instructions out to a PDF file,
+at the given filename or through a file handle.  The <i>width</i> and <i>height</i>
+values must be numbers and are measured in points.</p></dd><dt><a id="item_ps_surface_create"></a>ps_surface_create (file/filename, width, height)</dt><dd><p>Create a surface which writes drawing instructions out to an Adobe™
+file, at the given filename or through a file handle.  The <i>width</i> and
+<i>height</i> values must be numbers and are measured in points.</p></dd><dt><a id="item_surface_create_similar"></a>surface_create_similar (surface, content, width, height)</dt><dd><p>Create a new surface of the same type as <i>surface</i>, but with the width
+and height specified.  The <i>content</i> value indicates whether the surface
+should include colour and/or transparency information, and must be one of
+the following strings:</p><dl><dt><a id="item_color"></a>color</dt><dd><p>Surface will have only colour content.</p></dd><dt><a id="item_alpha"></a>alpha</dt><dd><p>Surface will have only transparency content.</p></dd><dt><a id="item_color_2dalpha"></a>color-alpha</dt><dd><p>Surface will have colour and transparency content.</p></dd></dl></dd><dt><a id="item_svg_surface_create"></a>svg_surface_create (file/filename, width, height)</dt><dd><p>Create a surface which writes drawing instructions out to an SVG file,
+at the given filename or through a file handle.  The <i>width</i> and <i>height</i>
+values must be numbers and are measured in points.</p></dd></dl><h3>Other top-level functions</h3><p>The following additional methods are available.  The are rarely needed
+except for <code>context_create</code> and the gradient constructors.</p><dl><dt><a id="item_byte_order"></a>BYTE_ORDER</dt><dd><p>Not actually a function, this is a string indicating which order colour
+components are stored in pixels in raw image data on this platform.
+This will be <code>argb</code> on big-endian systems and <code>bgra</code> on little-endian
+ones.  This is the order in which the bytes for each pixel are stored
+on <code>rgb24</code> and <code>argb32</code> image surfaces.  For <code>a1</code> it indicates the
+order the pixels are encoded as bits.  It can be ignored when the image
+format is <code>a8</code>.</p></dd><dt><a id="item_context_create"></a>context_create (surface)</dt><dd><p>Return a new context object for drawing on <i>surface</i>.
+See <a href="context.html">lua-oocairo-context(3)</a> for methods which can be called on this object.</p></dd><dt><a id="item_context_create_gdk"></a>context_create_gdk (drawable)</dt><dd><p>Return a new context object for drawing on the GdkDrawable object <i>drawable</i>,
+which must be from the Lua-Gnome library.</p><p>Fails unless Lua-Gnome has been loaded and the <code>gtk</code> module is available
+as a global variable.</p><p>See example programs <i>gtk-image.lua</i> and <i>gtk-drawing.lua</i> for examples
+of how to use this.</p></dd><dt><a id="item_font_options_create"></a>font_options_create ()</dt><dd><p>Returns a new Cairo font options object, with all its options set to
+default values.  See <a href="fontopt.html">lua-oocairo-fontopt(3)</a> for information about
+what you can do with it.</p></dd><dt><a id="item_format_stride_for_width"></a>format_stride_for_width (format, width)</dt><dd><p>Returns the number of bytes Cairo will used for storing a single row of
+pixels in the raw data of an image surface.  This can be used as the
+<i>stride</i> value for the <code>image_surface_create_from_data()</code> function
+and the image surface method <code>get_data()</code>.  The <i>format</i> value should
+be one of the pixel format strings such as <code>rgb24</code>, and the width should
+be a number.</p></dd><dt><a id="item_matrix_create"></a>matrix_create ()</dt><dd><p>Return a new copy of the identity matrix.  All transformation matrices
+returned to Lua are in the format of a table of six numbers.
+See <a href="matrix.html">lua-oocairo-matrix(3)</a> for methods which can be called on these.</p></dd><dt><a id="item_pattern_create_for_surface"></a>pattern_create_for_surface (surface)</dt><dd><p>Return a new pattern object representing the image on the surface.
+See <a href="pattern.html">lua-oocairo-pattern(3)</a> for methods which can be called on pattern
+objects.</p></dd><dt><a id="item_pattern_create_linear"></a>pattern_create_linear (x1, y1, x2, y2)</dt><dd><p>Return a new pattern object representing a linear gradient, where the
+offset numbers go from zero at the point specified by the two numbers
+(<i>x1</i>, <i>y1</i>) to the point (<i>x2</i>, <i>y2</i>).</p></dd><dt><a id="item_pattern_create_radial"></a>pattern_create_radial (x1, y1, r1, x2, y2, r2)</dt><dd><p>Return a new pattern object representing a radial gradient, where offsets
+move from the circle defined by the three numbers (<i>x1</i>, <i>y1</i>, <i>r1</i>),
+where <i>r1</i> is the radius, to the circle (<i>x2</i>, <i>y2</i>, <i>r2</i>).</p></dd><dt><a id="item_pattern_create_rgb"></a>pattern_create_rgb (r, g, b)</dt><dd><p>Return a new pattern object representing a solid colour.  The red, green,
+and blue values specified should all be numbers in the range zero to one
+inclusive.</p></dd><dt><a id="item_pattern_create_rgba"></a>pattern_create_rgba (r, g, b, a)</dt><dd><p>Same as <code>pattern_create_rgb</code>, but accepts an alpha value, so the solid
+colour can be semitransparent.</p></dd><dt><a id="item_ps_get_levels"></a>ps_get_levels ()</dt><dd><p>Return a table containing a list of strings indicating what levels of
+PostScript are supported by Cairo.</p></dd><dt><a id="item_scaled_font_create"></a>scaled_font_create (face, font_matrix, ctm, options)</dt><dd><p>Creates a new scaled font object, representing a scaled version of <i>face</i>.
+See <a href="scaledfont.html">lua-oocairo-scaledfont(3)</a> for information about these objects.</p><p>The <i>font_matrix</i> and <i>ctm</i> values must be matrices (any table containing
+six numbers, see <a href="matrix.html">lua-oocairo-matrix(3)</a> for details).  The <i>options</i>
+argument can be nil for the default options, or a font options object
+as returned by the <code>font_options_create</code> function.</p></dd><dt><a id="item_svg_get_versions"></a>svg_get_versions ()</dt><dd><p>Return a table containing a list of strings indicating what versions of
+SVG are supported by Cairo.</p></dd><dt><a id="item_toy_font_face_create"></a>toy_font_face_create (family, slant, weight)</dt><dd><p>Create and return a toy font face object (see <a href="fontface.html">lua-oocairo-fontface(3)</a>).
+See the context method <code>select_font_face</code> for details of the arguments.
+This does the same, but returns the object instead of applying it to a
+context.
+Only available with Cairo 1.8 or better, otherwise this method won't
+exist.</p></dd><dt><a id="item_user_font_face_create"></a>user_font_face_create (callbacks)</dt><dd><p>Returns a font face object which uses the supplied callbacks for rendering
+and such.  This is intended to be used for creating special fancy font
+effects or for providing access to obscure font formats which aren't
+supported by Cairo.  The <i>callbacks</i> value must be a table, with string
+keys for the callbacks.  The <code>render_glyph</code> callback is required, the
+others optional.</p><p>See <a href="userfont.html">lua-oocairo-userfont(3)</a> for details of how to write the callbacks.
+Only available with Cairo 1.8 or better.</p></dd></dl><h3>I/O through file handles</h3><p>Functions in this module which are advertised as accepting a <code>file/filename</code>
+value can accept a filename (a simple string) or a Lua file handle.  They
+will also work with any other object (a userdata value or table) which
+provides the appropriate input or output method.</p><p>For files which are to be used for output, a file handle object needs to
+provide a method called <code>write</code>, which will be called with a single
+string every time more output is available.  Any return values from
+the method are ignored, but it can throw an exception if there's an error.</p><p>For files which are used for input, a file handle needs to provide a
+method called <code>read</code>, which will be called with a number indicating the
+number of bytes it should read.  It should return a string containing
+exactly that number of bytes.</p><p>The <code>memoryfile</code> module available from LuaForge can be used to write
+output into a buffer in memory which can then be accessed as a Lua string.
+This can be useful as a way to get an image into another graphics library
+such as GD, where it can be written in other formats other than PNG.</p><h3>Feature flags</h3><p>When the module is compiled, it will only enable support for the features
+which were compiled into your copy of the Cairo library.  For example, if
+you built Cairo without the PDF backend, then the module will not include
+the functions for creating a PDF surface.</p><p>There are flags in the module table which indicate which features are
+available.  These are all wither <code>true</code> or <code>false</code>:</p><dl><dt><a id="item_has_pdf_surface"></a>HAS_PDF_SURFACE</dt><dd><p>Support for creating a surface which writes drawing instructions out to
+an SVG file.</p></dd><dt><a id="item_has_png_functions"></a>HAS_PNG_FUNCTIONS</dt><dd><p>Support for loading a PNG bitmap and creating an image surface from it,
+or for writing the contents of an image surface out to a PNG.</p></dd><dt><a id="item_has_ps_surface"></a>HAS_PS_SURFACE</dt><dd><p>Support for creating a surface which writes to a PostScript or EPS file.</p></dd><dt><a id="item_has_svg_surface"></a>HAS_SVG_SURFACE</dt><dd><p>Support for creating a surface which writes to a PDF file.</p></dd><dt><a id="item_has_user_font"></a>HAS_USER_FONT</dt><dd><p>Support for custom fonts defined by callback functions.  If true then
+the <code>user_font_face_create</code> function should be available in the main
+module table.</p></dd></dl><h3>Copyright</h3><p>This software and documentation is Copyright © 2008 Geoff Richards
+&lt;geoff@laxan.com&gt;.  It is free software; you can redistribute it
+and/or modify it under the terms of the Lua 5.0 license.  The full terms
+are given in the file <i>COPYRIGHT</i> supplied with the source code package,
+and are also available here: <a href="http://www.lua.org/license.html">http://www.lua.org/license.html</a></p>
+ </div>
+ 
+
+
+ 
+
+</div>
+
+<div id="footer">&copy; Copyright 2008 Geoff Richards
+&lt;geoff&nbsp;at&nbsp;laxan.com&gt;<br>
+Published with Daizu CMS
+</div>
+</div>
+
+
+
+
+<div id="navigation-col"><h2 class="no-css">Navigation</h2>
+<ul>
+  <li><a href="http://www.daizucms.org/lua/">Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/">Libraries for Lua</a>
+    <ul>
+  <li><a href="http://www.daizucms.org/lua/library/oocairo/" title="Lua binding for Cairo">Cairo</a>
+    <ul>
+  <li class="current" title="Lua binding for Cairo vector graphics library">Docs
+    <ul>
+  <li><a href="context.html" title="Drawing context objects">Context</a>  </li>
+ 
+  <li><a href="fontface.html" title="Unscaled font face object">Font face</a>  </li>
+ 
+  <li><a href="fontopt.html">Font options</a>  </li>
+ 
+  <li><a href="matrix.html" title="Transformation matrix table">Matrix</a>  </li>
+ 
+  <li><a href="path.html" title="Path object">Path</a>  </li>
+ 
+  <li><a href="pattern.html" title="Cairo pattern objects">Pattern</a>  </li>
+ 
+  <li><a href="scaledfont.html">Scaled font</a>  </li>
+ 
+  <li><a href="surface.html" title="Cairo surface objects">Surface</a>  </li>
+ 
+  <li><a href="userfont.html">User font</a>  </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+     </li>
+ </ul>
+
+
+</div>
+
+</div>
+
+  
+ </body>
+</html>

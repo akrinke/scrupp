@@ -1,0 +1,10 @@
+All the example files in this directory were taken from lua-oocairo-1.2, a 
+binding from Cairo to the Lua programming language written by Geoff Richards.
+
+The original example files created a png image file in most of the cases. 
+This was changed, so now they all use Scrupp to display the Cairo surfaces.
+
+Remember that Cairo surfaces become OpenGL textures in Scrupp, so you can 
+manipulate them with the hardware accelerated methods provided by OpenGL, 
+e.g. rotation and scaling.
+
