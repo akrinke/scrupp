@@ -129,11 +129,12 @@ static int luaopen_main(lua_State* L, const char *parent) {
 int main(int argc, char *argv[]) {
 	lua_State *L;
 	SDL_Event event;
+	Uint16 wchar;
+	char buf[4] = {0};
 	Uint32 lastTick;	/* Last iteration's tick value */
 	Uint32 delta = 0;
 	int i, n, narg;
 	char *filename = NULL;
-
 	fprintf(stdout, "%s v%s\n", PROG_NAME, VERSION);
 
 	if (argc > 1) {
@@ -254,7 +255,22 @@ int main(int argc, char *argv[]) {
 				lua_rawget(L, LUA_REGISTRYINDEX);
 				lua_rawgeti(L, -1, event.key.keysym.sym);
 				lua_remove(L, -2); /* remove the key_table */
-				if ((lua_pcall(L, 1, 0, -4) != 0) && !check_for_exit(L)) {
+				/* get the utf-16 code */
+				wchar = event.key.keysym.unicode;
+				buf[0] = 0; buf[1] = 0; buf[2] = 0; buf[3] = 0; buf[4] = 0;
+				/* convert utf-16 to utf-8 */
+				if (wchar < 0x80) {
+					buf[0] = wchar;
+				} else if (wchar < 0x800) {
+					buf[0] = (0xC0 | wchar >> 6);
+					buf[1] = (0x80 | wchar & 0x3F);
+				} else {
+					buf[0] = (0xE0 | wchar >> 12);
+					buf[1] = (0x80 | wchar >> 6 & 0x3F);
+					buf[2] = (0x80 | wchar & 0x3F);
+				}
+				lua_pushstring(L, &buf[0]);
+				if ((lua_pcall(L, 2, 0, -5) != 0) && !check_for_exit(L)) {
 					error(L, "Error running main.keypressed:\n\t%s\n", lua_tostring(L, -1));
 				}
 				break;

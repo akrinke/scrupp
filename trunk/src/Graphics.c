@@ -218,6 +218,8 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 	}
 	/* set window caption */
 	SDL_WM_SetCaption (appName, appName);
+	/* enable UNICODE translation of key press events */
+	SDL_EnableUNICODE(1);
 	/* enable double buffering */
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE,   5);
