@@ -36,8 +36,16 @@ static int Lua_Keyboard_isDown(lua_State *L) {
 	return 1;
 }
 
+static int Lua_Keyboard_setKeyRepeat(lua_State *L) {
+	int delay = luaL_checkint(L, 1);
+	int interval = luaL_checkint(L, 2);
+	SDL_EnableKeyRepeat(delay, interval);
+	return 0;
+}
+
 static const struct luaL_Reg keyboardlib [] = {
 	{"keyIsDown", Lua_Keyboard_isDown},
+	{"setKeyRepeat", Lua_Keyboard_setKeyRepeat},
 	{NULL, NULL}
 };
 
