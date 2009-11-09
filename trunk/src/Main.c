@@ -15,6 +15,9 @@
 #include "Sound.h"
 #include "Movie.h"
 
+/* luafilesystem */
+#include "luafilesystem/lfs.h"
+
 /* cairo binding lua-oocairo */
 #include "lua-oocairo/oocairo.h"
 
@@ -162,9 +165,14 @@ int main(int argc, char *argv[]) {
 	luaopen_movie(L, NULL);
 	lua_setglobal(L, NAMESPACE);
 	
-	/* put luaopen_oocairo in package.preload["oocairo"] */
 	lua_getglobal(L, "package");
 	lua_getfield(L, -1, "preload");
+
+	/* put luaopen_lfs in package.preload["lfs"] */
+	lua_pushcfunction(L, luaopen_lfs);
+	lua_setfield(L, -2, "lfs");
+	
+	/* put luaopen_oocairo in package.preload["oocairo"] */
 	lua_pushcfunction(L, luaopen_oocairo);
 	lua_setfield(L, -2, "oocairo");
 	
