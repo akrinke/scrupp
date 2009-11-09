@@ -10,6 +10,9 @@ scrupp_SOURCES = \
 	Movie.h Movie.c \
 	physfsrwops.h physfsrwops.c \
 	Sound.h Sound.c
-SUBDIRS = lua-oocairo luasocket
-LDADD = lua-oocairo/libluaoocairo.a luasocket/libluasocket.a
+SUBDIRS = luafilesystem lua-oocairo luasocket
+LDADD = \
+	luafilesystem/libluafilesystem.a \
+	lua-oocairo/libluaoocairo.a \
+	luasocket/libluasocket.a
 AM_CFLAGS = -DSHARE_DIR=\"$(pkgdatadir)\"
