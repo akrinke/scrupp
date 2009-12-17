@@ -134,7 +134,8 @@ int main(int argc, char *argv[]) {
 	SDL_Event event;
 	Uint16 wchar;
 	char buf[4] = {0};
-	Uint32 lastTick;	/* Last iteration's tick value */
+	int redraw = 0;		/* redraw is needed or not */
+	Uint32 lastTick;	/* last iteration's tick value */
 	Uint32 delta = 0;
 	int i, n, narg;
 	char *filename = NULL;
@@ -219,17 +220,18 @@ int main(int argc, char *argv[]) {
 	if (SDL_GetVideoSurface() == NULL)
 		error(L, "Error: " PROG_NAME " was not initialized by " NAMESPACE ".init()!\n");
 
+	/* do a glClear, because it will always be called after SDL_GL_SwapBuffers */
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	
 	/* main loop */
 
 	/* Wait until SDL_QUIT event type (window closed) or a call to scrupp.exit() occurs */
 	while ( !done ) {
 		lastTick = SDL_GetTicks();
 
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
 		/* maybe the 'main' table has changed
 		   so get a new reference in every cycle */
-		lua_getglobal(L, "main");		
+		lua_getglobal(L, "main");
 
 		if (lua_isnil(L, -1)) {
 			error(L, "Error: Table 'main' not found!\n");
@@ -238,14 +240,30 @@ int main(int argc, char *argv[]) {
 		/* at this point, the stack always contains 
 		   the error function and the 'main' table */
 
-		/* main.render(delta) */
-		lua_getfield(L, -1, "render");
-		lua_pushinteger(L, delta);
-		if ((lua_pcall(L, 1, 0, -4) != 0) && !check_for_exit(L)) {
-			error(L, "Error running main.render:\n\t%s\n", lua_tostring(L, -1));
+		/* main.update(delta) */
+		lua_getfield(L, -1, "update");
+		if (!lua_isnil(L, -1)) {
+			lua_pushinteger(L, delta);
+			if ((lua_pcall(L, 1, 1, -4) != 0) && !check_for_exit(L)) {
+				error(L, "Error running main.update:\n\t%s\n", lua_tostring(L, -1));
+			}
 		}
-
-		SDL_GL_SwapBuffers();
+		
+		/* if update function exists, return value is on top of the stack, otherwise nil */
+		
+		if (lua_toboolean(L, -1) == 0 || redraw) {
+			redraw = 0;
+			/* return value is false or nil -> call draw because frame is not skipped */
+			/* main.render(delta) */
+			lua_getfield(L, -2, "render");
+			lua_pushinteger(L, delta);
+			if ((lua_pcall(L, 1, 0, -5) != 0) && !check_for_exit(L)) {
+				error(L, "Error running main.render:\n\t%s\n", lua_tostring(L, -1));
+			}
+			SDL_GL_SwapBuffers();
+			glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		}
+		lua_pop(L, 1);
 
 		while ( SDL_PollEvent( &event ) ) {
 			switch ( event.type ) {
@@ -265,7 +283,7 @@ int main(int argc, char *argv[]) {
 				lua_remove(L, -2); /* remove the key_table */
 				/* get the utf-16 code */
 				wchar = event.key.keysym.unicode;
-				buf[0] = 0; buf[1] = 0; buf[2] = 0; buf[3] = 0; buf[4] = 0;
+				buf[0] = 0; buf[1] = 0; buf[2] = 0; buf[3] = 0;
 				/* convert utf-16 to utf-8 */
 				if (wchar < 0x80) {
 					buf[0] = wchar;
@@ -338,7 +356,12 @@ int main(int argc, char *argv[]) {
 					error(L, "Error running main.resized:\n\t%s\n", lua_tostring(L, -1));
 				}
 				break;
+			
+			case SDL_VIDEOEXPOSE:
+				redraw = 1;
+				break;
 			}
+				
 		}
 
 		lua_pop(L, 1);	/* pop 'main' table */

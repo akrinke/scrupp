@@ -40,7 +40,7 @@ static int Lua_Mouse_getPos(lua_State *L) {
 }
 
 static int Lua_Mouse_isDown(lua_State *L) {
-	const char *button = luaL_checkstring(L, -1);
+	const char *button = luaL_checkstring(L, 1);
 	Uint8 bitmask = SDL_GetMouseState(NULL, NULL);
 	if (strcmp(button, buttonNames[0]) == 0)
 		bitmask &= SDL_BUTTON(SDL_BUTTON_LEFT);

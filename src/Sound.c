@@ -21,7 +21,7 @@
 static Mix_Chunk* channels[CHANNELS];
 
 static void channelDone(int channel) {
-	printf("channel %d finished playback.\n", channel);
+	/* printf("channel %d finished playback.\n", channel); */
 	channels[channel] = NULL;
 }
 
