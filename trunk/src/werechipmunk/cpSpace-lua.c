@@ -161,12 +161,14 @@ int CollFunc(cpShape *a, cpShape *b, cpContact *contacts, int numContacts, cpFlo
 	lua_State *L=cbd->callbackState;
 	lua_getglobal(L,cbd->functionName); // function name to function ref on stack
 
-	lua_getglobal(L,"__cpShape_ptrs");
+	lua_pushliteral(L, "werechip.cpShape_ptrs");
+	lua_gettable(L, LUA_REGISTRYINDEX);
 	lua_pushlightuserdata(L,a); // userdata for shapes indexed by c pointer
 	lua_rawget(L,-2);
 	lua_remove (L, -2); // we want the ud ref from the table but not the table on the stack
 
-	lua_getglobal(L,"__cpShape_ptrs");
+	lua_pushliteral(L, "werechip.cpShape_ptrs");
+	lua_gettable(L, LUA_REGISTRYINDEX);
 	lua_pushlightuserdata(L,b); // shape b
 	lua_rawget(L,-2);
 	lua_remove (L, -2); 

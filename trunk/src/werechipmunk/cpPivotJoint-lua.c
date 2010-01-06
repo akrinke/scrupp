@@ -40,7 +40,8 @@ static cpPivotJoint *push_cpPivotJoint (lua_State *L) {
    luaL_getmetatable(L, "cpPivotJoint");
    lua_setmetatable(L, -2);
 
-   lua_getglobal(L,"__cpConstraint_ptrs");
+   lua_pushliteral(L, "werechip.cpConstraint_ptrs");
+   lua_gettable(L, LUA_REGISTRYINDEX);
    lua_pushlightuserdata(L, bb);   // table index
    lua_pushvalue(L,-3); // previously created table of *cpPivotJoint pointers to userdata
    lua_rawset(L, -3); // update the table

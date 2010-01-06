@@ -39,7 +39,8 @@ static cpCircleShape *push_cpCircleShape (lua_State *L) {
    luaL_getmetatable(L, "cpCircleShape");
    lua_setmetatable(L, -2);
 
-   lua_getglobal(L,"__cpShape_ptrs");
+   lua_pushliteral(L,"werechip.cpShape_ptrs");
+   lua_gettable(L, LUA_REGISTRYINDEX);
    lua_pushlightuserdata(L, bb);   // table index
    lua_pushvalue(L,-3); // previously created table of *cpBody pointers to userdata
    lua_rawset(L, -3); // update the table

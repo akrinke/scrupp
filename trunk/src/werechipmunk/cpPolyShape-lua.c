@@ -40,7 +40,8 @@ static cpPolyShape *push_cpPolyShape (lua_State *L) {
    luaL_getmetatable(L, "cpPolyShape");
    lua_setmetatable(L, -2);
    
-   lua_getglobal(L,"__cpShape_ptrs");
+   lua_pushliteral(L, "werechip.cpShape_ptrs");
+   lua_gettable(L, LUA_REGISTRYINDEX);
    lua_pushlightuserdata(L,ps);  // the C pointer (light user data) is user as the index
    lua_pushvalue(L,-3); // the UserData indexed by the light user data
    lua_rawset(L, -3); // update the table
@@ -144,7 +145,7 @@ int cpPolyShape_register (lua_State *L) {
   lua_rawset(L, -3);                  /* hide metatable:
                                          metatable.__metatable = methods */
 
-   // no pointer to userdata table as we use __cpShape_ptrs 
+   // no pointer to userdata table as we use werechip.cpShape_ptrs 
                                   
   lua_pop(L, 2);                      /* drop metatable */
   return 0;                           /* return methods on the stack */

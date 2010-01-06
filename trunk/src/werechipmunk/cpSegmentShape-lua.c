@@ -40,7 +40,8 @@ static cpSegmentShape *push_cpSegmentShape (lua_State *L) {
    luaL_getmetatable(L, "cpSegmentShape");
    lua_setmetatable(L, -2);  
    
-   lua_getglobal(L,"__cpShape_ptrs");
+   lua_pushliteral(L, "werechip.cpShape_ptrs");
+   lua_gettable(L, LUA_REGISTRYINDEX);
    lua_pushlightuserdata(L,ss);
    lua_pushvalue(L,-3);
    lua_rawset(L,-3);
