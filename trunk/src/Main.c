@@ -25,6 +25,8 @@
 #include "luasocket/luasocket.h"
 #include "luasocket/mime.h"
 
+/* chipmunk binding werechip */
+#include "werechipmunk/werechipmunk.h"
 
 #include <string.h>
 #include <SDL_opengl.h>
@@ -184,6 +186,10 @@ int main(int argc, char *argv[]) {
 	/* put luaopen_mime_core in package.preload["mime.core"] */
 	lua_pushcfunction(L, luaopen_mime_core);
 	lua_setfield(L, -2, "mime.core");
+	
+	/* put luaopen_werechip in package.preload["werechip"] */
+	lua_pushcfunction(L, luaopen_werechip);
+	lua_setfield(L, -2, "werechip");
 	
 	lua_pop(L, 2);	
 	

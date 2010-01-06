@@ -111,9 +111,11 @@ CFLAGS="$CFLAGS $LUA_CFLAGS $GL_CFLAGS $CAIRO_CFLAGS $SDL_CFLAGS $SMPEG_CFLAGS $
 LIBS="$LIBS $LUA_LIBS $GL_LIBS $CAIRO_LIBS $SDL_LIBS $SMPEG_LIBS $GTK_LIBS"
 AC_OUTPUT([Makefile
 		   src/Makefile
+		   src/chipmunk/Makefile
 		   src/luafilesystem/Makefile
 		   src/lua-oocairo/Makefile
 		   src/luasocket/Makefile
+		   src/werechipmunk/Makefile
 		   doc/Makefile
 		   doc/luafilesystem/Makefile
 		   doc/lua-oocairo/Makefile
