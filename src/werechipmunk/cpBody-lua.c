@@ -40,7 +40,8 @@ static cpBody *push_cpBody (lua_State *L) {
    luaL_getmetatable(L, "cpBody");
    lua_setmetatable(L, -2);
 
-   lua_getglobal(L,"__cpBody_ptrs");
+   lua_pushliteral(L, "werechip.cpBody_ptrs");
+   lua_gettable(L, LUA_REGISTRYINDEX);
    lua_pushlightuserdata(L, bb);   // table index
    lua_pushvalue(L,-3); // previously created table of *cpBody pointers to userdata
    lua_rawset(L, -3); // update the table
@@ -266,7 +267,8 @@ static int cpBody_ApplyDampedSpring (lua_State *L){
 
 static int cpBody_Free(lua_State *L){
    cpBody *b = check_cpBody(L, 1);
-   lua_getglobal(L,"__cpBody_ptrs");
+   lua_pushliteral(L,"werechip.cpBody_ptrs");
+   lua_gettable(L, LUA_REGISTRYINDEX);
    lua_pushlightuserdata(L,b);
    lua_pushnil(L);
    lua_rawset(L,-3);
@@ -333,8 +335,9 @@ int cpBody_register (lua_State *L) {
                                          metatable.__metatable = methods */
   lua_pop(L, 2);                      /* drop metatable */
   
+  lua_pushliteral(L, "werechip.cpBody_ptrs");
   lua_newtable(L); 
-  lua_setglobal(L, "__cpBody_ptrs");
+  lua_settable(L, LUA_REGISTRYINDEX);
 
   return 0;                           /* return methods on the stack */
 }

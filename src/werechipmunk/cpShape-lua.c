@@ -69,7 +69,8 @@ int cpShape_setCollisionType(lua_State *L) {
 
 int cpShape_getBody(lua_State *L) {
    cpShape* shp =(cpShape*)deref((void*)lua_topointer(L,1));
-   lua_getglobal(L,"__cpBody_ptrs");
+   lua_pushliteral(L, "werechip.cpBody_ptrs");
+   lua_gettable(L, LUA_REGISTRYINDEX);
    lua_pushlightuserdata(L,shp->body);
    lua_gettable(L,-2);
    return 1;
@@ -77,7 +78,8 @@ int cpShape_getBody(lua_State *L) {
 
 int cpShape_free(lua_State *L) {
    cpShape* shp = (cpShape*)deref((void*)lua_topointer(L,1));
-   lua_getglobal(L,"__cpShape_ptrs");
+   lua_pushliteral(L,"werechip.cpShape_ptrs");
+   lua_gettable(L, LUA_REGISTRYINDEX);
    lua_pushlightuserdata(L,shp);
    lua_pushnil(L);
    lua_rawset(L,-3);
@@ -112,8 +114,9 @@ int cpShape_register (lua_State *L) {
                                          metatable.__metatable = methods */
   lua_pop(L, 2);                      /* drop metatable */
   
+  lua_pushliteral(L, "werechip.cpShape_ptrs");
   lua_newtable(L); 
-  lua_setglobal(L, "__cpShape_ptrs");
+  lua_settable(L, LUA_REGISTRYINDEX);
 
   return 0;                           /* return methods on the stack */
 }

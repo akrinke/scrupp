@@ -46,7 +46,8 @@ inline cpConstraint* get_cpConstraint (lua_State *L, int index) {
 
 int cpConstraint_free(lua_State *L){
    cpConstraint *b = check_cpConstraint(L, 1);
-   lua_getglobal(L,"__cpConstraint_ptrs");
+   lua_pushliteral(L,"werechip.cpConstraint_ptrs");
+   lua_gettable(L, LUA_REGISTRYINDEX);
    lua_pushlightuserdata(L,b);
    lua_pushnil(L);
    lua_rawset(L,-3);
@@ -82,9 +83,10 @@ int cpConstraint_register (lua_State *L) {
   lua_pushvalue(L, -3);               /* dup methods table*/
   lua_rawset(L, -3);                  /* hide metatable:
                                          metatable.__metatable = methods */
-   													  
-	lua_newtable(L); 
-	lua_setglobal(L, "__cpConstraint_ptrs");
+
+  lua_pushliteral(L, "werechip.cpConstraint_ptrs");
+  lua_newtable(L); 
+  lua_settable(L, LUA_REGISTRYINDEX);
   
   lua_pop(L, 2);                      /* drop metatable */
   return 0;                           /* return methods on the stack */

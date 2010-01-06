@@ -149,9 +149,6 @@ int cpMisc_register (lua_State *L) {
                                          metatable.__metatable = methods */
   lua_pop(L, 2);                      /* drop metatable */
 
-  lua_newtable(L); 
-  lua_setglobal(L, "__debug_points");
-
   return 0;                           /* return methods on the stack */
  
 }
