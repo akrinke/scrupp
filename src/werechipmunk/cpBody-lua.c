@@ -265,16 +265,6 @@ static int cpBody_ApplyDampedSpring (lua_State *L){
    return 0;
 }
 
-static int cpBody_Free(lua_State *L){
-   cpBody *b = check_cpBody(L, 1);
-   lua_pushliteral(L,"werechip.cpBody_ptrs");
-   lua_gettable(L, LUA_REGISTRYINDEX);
-   lua_pushlightuserdata(L,b);
-   lua_pushnil(L);
-   lua_rawset(L,-3);
-   cpBodyFree(b);
-   return 0;
-}  
 static const luaL_reg cpBody_methods[] = {
   {"new",               cpBody_new},
   {"newStatic",         cpBody_newStatic},
@@ -301,11 +291,10 @@ static const luaL_reg cpBody_methods[] = {
   {"resetForces",       cpBody_ResetForces},
   {"applyForce",        cpBody_ApplyForce},
   {"applyDampedSpring", cpBody_ApplyDampedSpring},
-  {"free",              cpBody_Free},
   {0, 0}
 };  
   
-int cpBody_tostring (lua_State *L) {
+static int cpBody_tostring (lua_State *L) {
    // TODO eventually provide text of xml tag representing
    // this object and its properties
    char buff[32];
@@ -314,11 +303,15 @@ int cpBody_tostring (lua_State *L) {
    return 1;
 }
 
+static int cpBody_gc(lua_State *L) {
+   cpBody *b = check_cpBody(L, 1);
+   cpBodyFree(b);
+   return 0;
+}
 
 static const luaL_reg cpBody_meta[] = {  
    {"__tostring", cpBody_tostring}, 
-//   {"__gc",       cpBody_gc},   // only holding pointer...
-
+   {"__gc",       cpBody_gc}, // only holding pointer...
    {0, 0}                        // as Lua GC is freeing it, well thats the theory.... :D
 };
 
@@ -335,8 +328,14 @@ int cpBody_register (lua_State *L) {
                                          metatable.__metatable = methods */
   lua_pop(L, 2);                      /* drop metatable */
   
+  /* create a table with weak values which maps C pointers (light userdata) to full userdata */
   lua_pushliteral(L, "werechip.cpBody_ptrs");
-  lua_newtable(L); 
+  lua_newtable(L);
+  lua_pushvalue(L, -1);               /* duplicate the table */
+  lua_pushliteral(L, "__mode");
+  lua_pushliteral(L, "v");
+  lua_rawset(L, -3);                  /* table.__mode = 'v' */
+  lua_setmetatable(L, -2);            /* table.metatable = table */
   lua_settable(L, LUA_REGISTRYINDEX);
 
   return 0;                           /* return methods on the stack */

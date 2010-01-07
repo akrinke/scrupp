@@ -71,6 +71,12 @@ static int cpCircleShape_new(lua_State *L) {
    cpCircleShape *circle = push_cpCircleShape(L); // have to allocate onto stack
 //cpCircleShapeInit(cpCircleShape *circle, cpBody *body, cpFloat radius, cpVect offset)  
    cpCircleShapeInit(circle, body, radius, *offset);        // so initialise it manually
+   lua_pushliteral(L, "werechip.references");
+   lua_gettable(L, LUA_REGISTRYINDEX);
+   lua_pushvalue(L, -2);
+   lua_pushvalue(L, 1);
+   lua_rawset(L, -3);
+   lua_pop(L, 1);
  
    return 1;
 }
@@ -99,7 +105,6 @@ static const luaL_reg cpCircleShape_methods[] = {
   {"setFriction",       cpShape_setFriction},
   {"setCollisionType",  cpShape_setCollisionType},
   {"getBody",           cpShape_getBody},
-  {"free",              cpShape_free},
   {0, 0}
 };   
 
@@ -110,6 +115,7 @@ int cpCircleShape_tostring (lua_State *L) {
 }
 static const luaL_reg cpCircleShape_meta[] = {  
    {"__tostring", cpCircleShape_tostring}, 
+   {"__gc",              cpShape_gc},
    {0, 0}                       
 };
 

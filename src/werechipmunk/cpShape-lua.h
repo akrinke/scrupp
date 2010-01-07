@@ -23,4 +23,4 @@ int cpShape_setCollisionType(lua_State *L);
 int cpShape_setRestitution (lua_State *L);
 int cpShape_setFriction (lua_State *L);
 int cpShape_getBody(lua_State *L);
-int cpShape_free(lua_State *L);
+int cpShape_gc(lua_State *L);

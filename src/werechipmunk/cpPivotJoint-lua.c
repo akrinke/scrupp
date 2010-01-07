@@ -40,13 +40,6 @@ static cpPivotJoint *push_cpPivotJoint (lua_State *L) {
    luaL_getmetatable(L, "cpPivotJoint");
    lua_setmetatable(L, -2);
 
-   lua_pushliteral(L, "werechip.cpConstraint_ptrs");
-   lua_gettable(L, LUA_REGISTRYINDEX);
-   lua_pushlightuserdata(L, bb);   // table index
-   lua_pushvalue(L,-3); // previously created table of *cpPivotJoint pointers to userdata
-   lua_rawset(L, -3); // update the table
-   lua_pop(L,1);
-
   return bb;
 }
 
@@ -65,12 +58,12 @@ static int cpPivotJoint_new(lua_State *L) {
 //cpPivotJoint *cpPivotJointInit(cpPivotJoint *joint, cpBody *a, cpBody *b, cpVect pivot)
    cpPivotJointInit((cpPivotJoint*)s, b1,b2,*p1,*p2);        // so initialise it manually
    
+   cpConstraint_store_refs(L);
    return 1;
 }
    
 static const luaL_reg cpPivotJoint_methods[] = {
 	{"new",               cpPivotJoint_new},
-	{"free",               cpConstraint_free},
 	{0, 0}
 };   
 
@@ -82,6 +75,7 @@ int cpPivotJoint_tostring (lua_State *L) {
 
 static const luaL_reg cpPivotJoint_meta[] = {  
    {"__tostring", cpPivotJoint_tostring}, 
+   {"__gc", cpConstraint_gc},
    {0, 0}                       
 };
 
