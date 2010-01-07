@@ -72,7 +72,12 @@ static int cpSegmentShape_new(lua_State *L) {
    cpSegmentShape *seg = push_cpSegmentShape(L); // have to allocate onto stack
 //cpSegmentShape* cpSegmentShapeInit(cpSegmentShape *seg, cpBody *body, cpVect a, cpVect b, cpFloat radius) 
    cpSegmentShapeInit(seg, body, *a, *b, radius);        // so initialise it manually
- 
+   lua_pushliteral(L, "werechip.references");
+   lua_gettable(L, LUA_REGISTRYINDEX);
+   lua_pushvalue(L, -2);
+   lua_pushvalue(L, 1);
+   lua_rawset(L, -3);
+   lua_pop(L, 1);
    return 1;
 }
 
@@ -120,7 +125,6 @@ static const luaL_reg cpSegmentShape_methods[] = {
   {"setFriction",       cpShape_setFriction},
   {"setCollisionType",  cpShape_setCollisionType},
   {"getBody",           cpShape_getBody},
-  {"free",              cpShape_free},
   {0, 0}
 };   
 
@@ -134,6 +138,7 @@ int cpSegmentShape_tostring (lua_State *L) {
 }
 static const luaL_reg cpSegmentShape_meta[] = {  
    {"__tostring", cpSegmentShape_tostring}, 
+   {"__gc",       cpShape_gc},
    {0, 0}                       
 };
 

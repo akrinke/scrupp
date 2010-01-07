@@ -40,13 +40,6 @@ static cpSimpleMotor *push_cpSimpleMotor (lua_State *L) {
    luaL_getmetatable(L, "cpSimpleMotor");
    lua_setmetatable(L, -2);
 
-   lua_pushliteral(L, "werechip.cpConstraint_ptrs");
-   lua_gettable(L, LUA_REGISTRYINDEX);
-   lua_pushlightuserdata(L, bb);   // table index
-   lua_pushvalue(L,-3); // previously created table of *cpSimpleMotor pointers to userdata
-   lua_rawset(L, -3); // update the table
-   lua_pop(L,1);
-
   return bb;
 }
 
@@ -63,13 +56,13 @@ static int cpSimpleMotor_new(lua_State *L) {
    cpConstraint *s = (cpConstraint*)push_cpSimpleMotor(L); // 
    cpSimpleMotorInit((cpSimpleMotor*)s, b1,b2,rate);        // so initialise it manually
    
+   cpConstraint_store_refs(L);
    return 1;
 }
 
    
 static const luaL_reg cpSimpleMotor_methods[] = {
 	{"new",               cpSimpleMotor_new},
-	{"free",              cpConstraint_free},
 	{0, 0}
 };   
 
@@ -80,6 +73,7 @@ int cpSimpleMotor_tostring (lua_State *L) {
 }
 static const luaL_reg cpSimpleMotor_meta[] = {  
    {"__tostring", cpSimpleMotor_tostring}, 
+   {"__gc",       cpConstraint_gc},
    {0, 0}                       
 };
 

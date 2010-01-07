@@ -36,18 +36,35 @@
 #include <string.h> // for callback function name copy (will change)
 
 cpSpace *push_cpSpace (lua_State *L) {
-	cpSpace *bb = (cpSpace *)lua_newuserdata(L, sizeof(cpSpace));
+   cpSpace **ptr = (cpSpace **)lua_newuserdata(L, sizeof(cpSpace*));
+   *ptr = cpSpaceAlloc();
 	luaL_getmetatable(L, "cpSpace");
 	lua_setmetatable(L, -2);
-	return bb;
+   return *ptr;
 }
 
 cpSpace *check_cpSpace (lua_State *L, int index) {
-	cpSpace *b;
+   cpSpace **pp;
 	luaL_checktype(L, index, LUA_TUSERDATA);
-	b = (cpSpace *)luaL_checkudata(L, index, "cpSpace");
-	if (b == NULL) luaL_typerror(L, index, "cpSpace");
-	return b;
+   pp = (cpSpace **)luaL_checkudata(L, index, "cpSpace");
+   if (*pp == NULL) luaL_typerror(L, index, "cpSpace");
+   return *pp;
+}
+
+static inline void create_reference(lua_State *L) {
+   lua_getfenv(L, 1);    /* get the environment table of the space userdata */
+   lua_pushvalue(L, 2);  /* push the userdata which should be referenced */
+   lua_pushboolean(L, 1);
+   lua_rawset(L, -3);
+   lua_pop(L, 1);
+}
+
+static inline void remove_reference(lua_State *L) {
+   lua_getfenv(L, 1);    /* get the environment table of the space userdata */
+   lua_pushvalue(L, 2); /* push the userdata whose reference should be removed */
+   lua_pushnil(L);
+   lua_rawset(L, -3);
+   lua_pop(L, 1);
 }
 
 static int cpSpace_new(lua_State *L) {
@@ -56,6 +73,9 @@ static int cpSpace_new(lua_State *L) {
 	int i = luaL_checkinteger (L, 1);
 	cpSpace *s = push_cpSpace(L); // have to allocate onto stack
 	cpSpaceInit(s);		  // so initialise it manually
+   /* set the environment of the space to a new table */
+   lua_newtable(L);
+   lua_setfenv(L, -2);
 	return 1;
 }
 
@@ -73,6 +93,7 @@ static int cpSpace_removeConstraint(lua_State *L) {
 	cpSpace* space = check_cpSpace(L,1);
 	cpConstraint* c = get_cpConstraint(L,2); 
 	cpSpaceRemoveConstraint(space,c);
+   remove_reference(L);
 	return 0;
 }
 
@@ -82,6 +103,7 @@ static int cpSpace_removeBody(lua_State *L) {
 	cpSpace* space = check_cpSpace(L,1);
 	cpBody* bdy = check_cpBody(L,2); 
 	cpSpaceRemoveBody(space,bdy);
+   remove_reference(L);
 	return 0;
 }
 
@@ -90,6 +112,7 @@ static int cpSpace_removeStaticShape(lua_State *L) {
 	cpSpace* space = check_cpSpace(L,1);
 	cpShape* shp = (cpShape*)deref((void*)lua_topointer(L,2)); 
 	cpSpaceRemoveStaticShape(space,shp);
+   remove_reference(L);
 	return 0;
 }
 
@@ -98,6 +121,7 @@ static int cpSpace_removeShape(lua_State *L) {
 	cpSpace* space = check_cpSpace(L,1);
 	cpShape* shp = (cpShape*)deref((void*)lua_topointer(L,2)); 
 	cpSpaceRemoveShape(space,shp);
+   remove_reference(L);
 	return 0;
 }
 
@@ -105,6 +129,7 @@ static int cpSpace_addShape(lua_State *L) {
 	cpSpace* space = check_cpSpace(L,1);
 	cpShape* shp = (cpShape*)deref((void*)lua_topointer(L,2)); 
 	cpSpaceAddShape(space,shp);
+   create_reference(L);
 	return 0;
 }
 
@@ -112,6 +137,7 @@ static int cpSpace_addBody(lua_State *L) {
 	cpSpace *space = check_cpSpace(L,1);
 	cpBody *body = (cpBody *)check_cpBody(L,2);
 	cpSpaceAddBody(space,body);
+   create_reference(L);
 	return 0;
 }
 
@@ -119,6 +145,7 @@ static int cpSpace_addStaticShape(lua_State *L) {
 	cpSpace *space = check_cpSpace(L,1);
 	cpShape *shp = (cpShape*)deref((void*)lua_topointer(L,2)); // can't check for cpshape as could be cpPolyShape or others
 	cpSpaceAddStaticShape(space,shp);
+   create_reference(L);
 	return 0;
 }
 
@@ -127,6 +154,7 @@ static int cpSpace_addConstraint(lua_State *L) {
 	cpSpace *space = check_cpSpace(L,1);
 	cpConstraint *c = get_cpConstraint(L,2);
 	cpSpaceAddConstraint(space,c);
+   create_reference(L);
 	return 0;
 }
 
@@ -148,6 +176,18 @@ static int cpSpace_setGravity(lua_State *L) {
 static int cpSpace_freeChildren(lua_State *L) {
 	cpSpace *space = check_cpSpace(L,1);
 	cpSpaceFreeChildren(space);
+    lua_pushliteral(L, "werechip.references");
+    lua_rawget(L, LUA_REGISTRYINDEX);
+    lua_pushvalue(L, 1); /* push the space userdata on the stack */
+    lua_newtable(L);
+    lua_rawset(L, -3);
+    lua_pop(L, 1);
+    return 0;
+}
+
+static int cpSpace_gc(lua_State *L) {
+   cpSpace *space = check_cpSpace(L,1);
+   cpSpaceFree(space);
 }
 	
 typedef struct {
@@ -241,15 +281,6 @@ static int cpSpace_getContactDistance(lua_State *L) {
 	return 1;		
 }
 
-
-//  depricated for removal......
-cpSpace *GlobalSpace;  // TODO not keen on this.... think of alternitive...
-// for debugging with primatives renderer
-static int cpSpace_initRenderer(lua_State *L) {
-	cpSpace *space = check_cpSpace(L,1);
-	GlobalSpace=space;
-	return 0;
-}
 static const luaL_reg cpSpace_methods[] = {
 	{"new",							cpSpace_new},
 	{"addShape",					cpSpace_addShape},
@@ -258,7 +289,6 @@ static const luaL_reg cpSpace_methods[] = {
 	{"addConstraint",				cpSpace_addConstraint},
 	{"step",							cpSpace_step},
 	{"setGravity",					cpSpace_setGravity},
-	{"initRenderer",				cpSpace_initRenderer},
 	{"addCollisionPairFunc",	cpSpace_addCollisionPairFunc},
 	{"getContactPoint",			cpSpace_getContactPoint},
 	{"getContactNormal",			cpSpace_getContactNormal},
@@ -271,12 +301,9 @@ static const luaL_reg cpSpace_methods[] = {
 	{0, 0}
 };	
 
-// TODO dont forget gc call to delete space 
-// TODO callback structure to be cleaned up by remove callback function
-// TODO not here!
-
 static const luaL_reg cpSpace_meta[] = {  
 	{"__tostring", cpSpace_tostring}, 
+    {"__gc", cpSpace_gc},
 	{0, 0}							  
 };
 

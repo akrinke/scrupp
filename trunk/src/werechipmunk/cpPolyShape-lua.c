@@ -84,6 +84,13 @@ static int cpPolyShape_new(lua_State *L) {
 //cpPolyShape *cpPolyShapeInit(cpPolyShape *poly, cpBody *body, int numVerts, cpVect *verts, cpVect offset)
    cpPolyShapeInit(poly, body, nVerts,verts,*offset);        // so initialise it manually
    free(verts);
+   lua_pushliteral(L, "werechip.references");
+   lua_gettable(L, LUA_REGISTRYINDEX);
+   lua_pushvalue(L, -2);
+   lua_pushvalue(L, 1);
+   lua_rawset(L, -3);
+   lua_pop(L, 1);
+
    return 1;
 }
 
@@ -112,7 +119,6 @@ static const luaL_reg cpPolyShape_methods[] = {
   {"setFriction",       cpShape_setFriction},
   {"setCollisionType",  cpShape_setCollisionType},
   {"getBody",           cpShape_getBody},
-  {"free",              cpShape_free},
   {0, 0}
 };   
 
@@ -128,6 +134,7 @@ int cpPolyShape_tostring (lua_State *L) {
 // TODO TODO TODO add GC code vects and axes need freeing
 static const luaL_reg cpPolyShape_meta[] = {  
    {"__tostring",          cpPolyShape_tostring}, 
+   {"__gc",       cpShape_gc},
    {0, 0}                       
 };
 

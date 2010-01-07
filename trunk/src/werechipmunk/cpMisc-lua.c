@@ -95,7 +95,7 @@ static int cpMisc_calcSegmentMoment(lua_State *L) {
 static int cpMisc_calcPolyMoment(lua_State *L) {
    double m = luaL_checknumber(L,1);
    int nVerts= luaL_checkinteger(L,2);
-   
+   /* TODO TODO check that arg 3 is a table */
    cpVect* verts = (cpVect *)calloc(nVerts, sizeof(cpVect));
    
    int i;
@@ -168,6 +168,19 @@ int luaopen_werechip(lua_State *lstate) {
    cpPinJoint_register(lstate);
    cpPivotJoint_register(lstate);
    cpSimpleMotor_register(lstate);
+   
+   /* create a table with weak keys
+    * this table stores all references to userdatas 
+    * (shapes, bodies, constraints) a userdata has
+    */
+   lua_pushliteral(lstate, "werechip.references");
+   lua_newtable(lstate);
+   lua_pushvalue(lstate, -1);               /* duplicate the table */
+   lua_pushliteral(lstate, "__mode");
+   lua_pushliteral(lstate, "k");
+   lua_rawset(lstate, -3);                  /* table.__mode = 'k' */
+   lua_setmetatable(lstate, -2);            /* table.metatable = table */
+   lua_settable(lstate, LUA_REGISTRYINDEX);
    return 0;
 }
 

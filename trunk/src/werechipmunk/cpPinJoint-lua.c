@@ -39,14 +39,7 @@ static cpPinJoint *push_cpPinJoint (lua_State *L) {
    luaL_getmetatable(L, "cpPinJoint");
    lua_setmetatable(L, -2);
 
-   lua_pushliteral(L, "werechip.cpConstraint_ptrs");
-   lua_gettable(L, LUA_REGISTRYINDEX);
-   lua_pushlightuserdata(L, bb);   // table index
-   lua_pushvalue(L,-3); // previously created table of *cpPinJoint pointers to userdata
-   lua_rawset(L, -3); // update the table
-   lua_pop(L,1);
-
-  return bb;
+   return bb;
 }
 
 static int cpPinJoint_new(lua_State *L) {
@@ -64,12 +57,12 @@ static int cpPinJoint_new(lua_State *L) {
 //cpPinJoint *cpPinJointInit(cpPinJoint *joint, cpBody *a, cpBody *b, cpVect anchr1, cpVect anchr2)
    cpPinJointInit((cpPinJoint*)s, b1,b2,*a1,*a2);        // so initialise it manually
    
+   cpConstraint_store_refs(L);
    return 1;
 }
    
 static const luaL_reg cpPinJoint_methods[] = {
 	{"new",               cpPinJoint_new},
-	{"free",               cpConstraint_free},
 	{0, 0}
 };   
 
@@ -80,6 +73,7 @@ int cpPinJoint_tostring (lua_State *L) {
 }
 static const luaL_reg cpPinJoint_meta[] = {  
    {"__tostring", cpPinJoint_tostring}, 
+   {"__gc",       cpConstraint_gc},
    {0, 0}                       
 };
 
@@ -94,9 +88,6 @@ int cpPinJoint_register (lua_State *L) {
   lua_pushvalue(L, -3);               /* dup methods table*/
   lua_rawset(L, -3);                  /* hide metatable:
                                          metatable.__metatable = methods */
-   													  
-// no joint pointer table uses constraints
-  
   lua_pop(L, 2);                      /* drop metatable */
   return 0;                           /* return methods on the stack */
 }

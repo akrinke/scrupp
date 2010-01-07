@@ -76,16 +76,10 @@ int cpShape_getBody(lua_State *L) {
    return 1;
 }
 
-int cpShape_free(lua_State *L) {
+int cpShape_gc(lua_State *L) {
    cpShape* shp = (cpShape*)deref((void*)lua_topointer(L,1));
-   lua_pushliteral(L,"werechip.cpShape_ptrs");
-   lua_gettable(L, LUA_REGISTRYINDEX);
-   lua_pushlightuserdata(L,shp);
-   lua_pushnil(L);
-   lua_rawset(L,-3);
    cpShapeFree(shp);
 }   
-
 
 static const luaL_reg cpShape_methods[] = {
 //  {"new",               cpShape_new}, // should only use PolyShape etc
@@ -93,11 +87,11 @@ static const luaL_reg cpShape_methods[] = {
   {"setFriction",       cpShape_setFriction},
   {"setCollisionType",  cpShape_setCollisionType},
   {"getBody",           cpShape_getBody},
-  {"free",              cpShape_free},
   {0, 0}
 };   
 static const luaL_reg cpShape_meta[] = {  
    {"__tostring",       cpShape_tostring}, 
+   {"__gc",             cpShape_gc},
    {0, 0}                       
 };
 
@@ -114,8 +108,14 @@ int cpShape_register (lua_State *L) {
                                          metatable.__metatable = methods */
   lua_pop(L, 2);                      /* drop metatable */
   
+  /* create a table with weak values which maps C pointers (light userdata) to full userdata */
   lua_pushliteral(L, "werechip.cpShape_ptrs");
-  lua_newtable(L); 
+  lua_newtable(L);
+  lua_pushvalue(L, -1);               /* duplicate the table */
+  lua_pushliteral(L, "__mode");
+  lua_pushliteral(L, "v");
+  lua_rawset(L, -3);                  /* table.__mode = 'v' */
+  lua_setmetatable(L, -2);            /* table.metatable = table */
   lua_settable(L, LUA_REGISTRYINDEX);
 
   return 0;                           /* return methods on the stack */

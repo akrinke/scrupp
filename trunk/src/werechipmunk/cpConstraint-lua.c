@@ -39,36 +39,46 @@ cpConstraint* check_cpConstraint (lua_State *L, int index) {
   return (cpConstraint*)bb;
 }
 
-inline cpConstraint* get_cpConstraint (lua_State *L, int index) {
-  cpConstraint *c =(cpConstraint*)deref((void*)lua_topointer(L, index));
-  return c;
-}
-
-int cpConstraint_free(lua_State *L){
-   cpConstraint *b = check_cpConstraint(L, 1);
-   lua_pushliteral(L,"werechip.cpConstraint_ptrs");
+void cpConstraint_store_refs(lua_State *L) {
+   /* store references to the two bodies */
+   lua_pushliteral(L, "werechip.references");
    lua_gettable(L, LUA_REGISTRYINDEX);
-   lua_pushlightuserdata(L,b);
-   lua_pushnil(L);
+   lua_pushvalue(L, -2);
+   lua_newtable(L);
+   lua_pushvalue(L, 1);   /* push body 1 on the stack */
+   lua_rawseti(L, -2, 1); /* t[1] = body 1 */
+   lua_pushvalue(L, 2);   /* push body 2 on the stack */
+   lua_rawseti(L, -2, 2); /* t[2] = body 2 */
    lua_rawset(L,-3);
-   cpConstraintFree(b);
-   return 0;
+   lua_pop(L, 1);
 }  
 
+inline cpConstraint* get_cpConstraint (lua_State *L, int index) {
+   cpConstraint *c =(cpConstraint*)deref((void*)lua_topointer(L, index));
+   return c;
+}
    
 static const luaL_reg cpConstraint_methods[] = {
 //  {"new",               cpConstraint_new},  //should only be created by joints 
-	{"free",               cpConstraint_free}, // called by child instances
+//	{"free",               cpConstraint_free}, // called by child instances
 	{0, 0}
 };   
 
-int cpConstraint_tostring (lua_State *L) {
+static int cpConstraint_tostring (lua_State *L) {
    // TODO eventually provide text of xml tag representing
    // this object and its properties
    return 0;
 }
+
+int cpConstraint_gc(lua_State *L){
+   cpConstraint *b = check_cpConstraint(L, 1);
+   cpConstraintFree(b);
+   return 0;
+}
+
 static const luaL_reg cpConstraint_meta[] = {  
    {"__tostring", cpConstraint_tostring}, 
+   {"__gc",       cpConstraint_gc},
    {0, 0}                       
 };
 
@@ -83,11 +93,6 @@ int cpConstraint_register (lua_State *L) {
   lua_pushvalue(L, -3);               /* dup methods table*/
   lua_rawset(L, -3);                  /* hide metatable:
                                          metatable.__metatable = methods */
-
-  lua_pushliteral(L, "werechip.cpConstraint_ptrs");
-  lua_newtable(L); 
-  lua_settable(L, LUA_REGISTRYINDEX);
-  
   lua_pop(L, 2);                      /* drop metatable */
   return 0;                           /* return methods on the stack */
 }

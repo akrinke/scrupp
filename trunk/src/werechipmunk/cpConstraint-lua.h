@@ -19,6 +19,7 @@
  *    THE SOFTWARE.
  */ 
 
-int cpConstraint_free(lua_State *L);
+int cpConstraint_gc(lua_State *L);
+void cpConstraint_store_refs(lua_State *L);
 cpConstraint* get_cpConstraint (lua_State *L, int index);
 
