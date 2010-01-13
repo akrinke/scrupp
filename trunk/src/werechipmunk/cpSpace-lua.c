@@ -28,19 +28,17 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
+#include "cpArbiter-lua.h"
 #include "cpVect-lua.h"
 #include "cpBody-lua.h"
 #include "cpMisc-lua.h"
 #include "cpConstraint-lua.h"
 
-#include <string.h> // for callback function name copy (will change)
-
-cpSpace *push_cpSpace (lua_State *L) {
-   cpSpace **ptr = (cpSpace **)lua_newuserdata(L, sizeof(cpSpace*));
-   *ptr = cpSpaceAlloc();
+void push_cpSpace (lua_State *L, cpSpace *space) {
+	cpSpace **ptr = (cpSpace **)lua_newuserdata(L, sizeof(cpSpace *));
+	*ptr = space;
 	luaL_getmetatable(L, "cpSpace");
 	lua_setmetatable(L, -2);
-   return *ptr;
 }
 
 cpSpace *check_cpSpace (lua_State *L, int index) {
@@ -71,8 +69,9 @@ static int cpSpace_new(lua_State *L) {
 	int n = lua_gettop(L);  // Number of arguments
 	if (n != 1 ) return luaL_error(L, "Got %d arguments expected 1, iterations ", n);
 	int i = luaL_checkinteger (L, 1);
-	cpSpace *s = push_cpSpace(L); // have to allocate onto stack
-	cpSpaceInit(s);		  // so initialise it manually
+	cpSpace *space = cpSpaceAlloc();
+	cpSpaceInit(space);
+	push_cpSpace(L, space);
    /* set the environment of the space to a new table */
    lua_newtable(L);
    lua_setfenv(L, -2);
@@ -174,8 +173,8 @@ static int cpSpace_setGravity(lua_State *L) {
 
 //void cpSpaceFreeChildren(cpSpace *space)
 static int cpSpace_freeChildren(lua_State *L) {
-	cpSpace *space = check_cpSpace(L,1);
-	cpSpaceFreeChildren(space);
+    cpSpace *space = check_cpSpace(L,1);
+    cpSpaceFreeChildren(space);
     lua_pushliteral(L, "werechip.references");
     lua_rawget(L, LUA_REGISTRYINDEX);
     lua_pushvalue(L, 1); /* push the space userdata on the stack */
@@ -189,96 +188,84 @@ static int cpSpace_gc(lua_State *L) {
    cpSpace *space = check_cpSpace(L,1);
    cpSpaceFree(space);
 }
-	
+
+static void CollisionHandler(lua_State *L, cpArbiter *arb, cpSpace *space, int func_ref) {
+	push_cpArbiter(L, arb);
+	lua_rawgeti(L, LUA_REGISTRYINDEX, func_ref);
+	/* push copy of arbiter */
+	lua_pushvalue(L, -2);
+	push_cpSpace(L, space);
+
+	if (lua_pcall(L, 2, 1, 0) != 0) {
+		luaL_error(L, "Error running werechipmunk callback:\n\t%s\n", lua_tostring(L, -1));
+	}
+	/* access to the arbiter is no longer possible */
+	cpArbiter **ptr = lua_touserdata(L, -2);
+	ptr = NULL;
+	/* return value of callback stays on top of the stack */
+}
+
 typedef struct {
-	void *udata;
-	char functionName[128];
-	lua_State *callbackState;
+	lua_State *L;
+	int BeginFunc;
+	int PreSolveFunc;
+	int PostSolveFunc;
+	int SeparateFunc;
 } callbackData;
 
-int CollFunc(cpShape *a, cpShape *b, cpContact *contacts, int numContacts, cpFloat normal_coef, void *data) {
-	callbackData* cbd=(callbackData*)data;
-	lua_State *L=cbd->callbackState;
-	lua_getglobal(L,cbd->functionName); // function name to function ref on stack
+static int CollisionBeginFunc(cpArbiter *arb, cpSpace *space, void *data) {
+	callbackData* cbd = (callbackData*)data;
+	CollisionHandler(cbd->L, arb, space, cbd->BeginFunc);
+	return lua_toboolean(cbd->L, -1);
+}
 
-	lua_pushliteral(L, "werechip.cpShape_ptrs");
-	lua_gettable(L, LUA_REGISTRYINDEX);
-	lua_pushlightuserdata(L,a); // userdata for shapes indexed by c pointer
-	lua_rawget(L,-2);
-	lua_remove (L, -2); // we want the ud ref from the table but not the table on the stack
+static int CollisionPreSolveFunc(cpArbiter *arb, cpSpace *space, void *data) {
+	callbackData* cbd = (callbackData*)data;
+	CollisionHandler(cbd->L, arb, space, cbd->PreSolveFunc);
+	return lua_toboolean(cbd->L, -1);
+}
 
-	lua_pushliteral(L, "werechip.cpShape_ptrs");
-	lua_gettable(L, LUA_REGISTRYINDEX);
-	lua_pushlightuserdata(L,b); // shape b
-	lua_rawget(L,-2);
-	lua_remove (L, -2); 
-	
-	lua_pushlightuserdata(L,contacts);
-	lua_pushinteger(L,numContacts);
-	lua_pushnumber(L,normal_coef);
-	
-	int e=lua_pcall(L, 5, 1, 0);
-	if (e!=0) {
-		printf("callback Lua error: %s\n",lua_tostring(L,-1));
-		lua_pop(L,1);
-		return 1;	
-	}
+static void CollisionPostSolveFunc(cpArbiter *arb, cpSpace *space, void *data) {
+	callbackData* cbd = (callbackData*)data;
+	CollisionHandler(cbd->L, arb, space, cbd->PostSolveFunc);
+}
 
-	int r=lua_toboolean(L,1);
-	lua_pop(L,1);
-
-	return r;
+static void CollisionSeparateFunc(cpArbiter *arb, cpSpace *space, void *data) {
+	callbackData* cbd = (callbackData*)data;
+	CollisionHandler(cbd->L, arb, space, cbd->SeparateFunc);
 }
 
 //void cpSpaceAddCollisionPairFunc(cpSpace *space, cpCollisionType a, cpCollisionType b, cpCollFunc func, void *data) 
-static int cpSpace_addCollisionPairFunc(lua_State *L) {
-	cpSpace *space = check_cpSpace(L,1);
-	unsigned int a=luaL_checkinteger(L,2);
-	unsigned int b=luaL_checkinteger(L,3);
-	char* func=(char*)lua_tostring(L,4); 
-	callbackData *cbdata=malloc(sizeof(callbackData)); // TODO TODO free this when coll pair func removed  TODO TODO
-	cbdata->callbackState=L;
-	strcpy(cbdata->functionName,func);
-//	cbdata->udata=data;  TODO add lua param for userdata...
-	cpSpaceAddCollisionPairFunc(space, a,b, CollFunc , cbdata) ;
+static int cpSpace_addCollisionHandler(lua_State *L) {
+	lua_settop(L, 7);
+	cpSpace *space = check_cpSpace(L, 1);
+	cpCollisionType a = (cpCollisionType)luaL_checkint(L, 2);
+	cpCollisionType b = (cpCollisionType)luaL_checkint(L, 3);
+	callbackData *cbdata = malloc(sizeof(callbackData));
+	cbdata->L = L;
+	cbdata->SeparateFunc = luaL_ref(L, LUA_REGISTRYINDEX);
+	cbdata->PostSolveFunc = luaL_ref(L, LUA_REGISTRYINDEX);
+	cbdata->PreSolveFunc = luaL_ref(L, LUA_REGISTRYINDEX);
+	cbdata->BeginFunc = luaL_ref(L, LUA_REGISTRYINDEX);
+	cpSpaceAddCollisionHandler(
+		space, a,b, 
+		cbdata->BeginFunc				== LUA_REFNIL ? NULL : CollisionBeginFunc,
+		cbdata->PreSolveFunc			== LUA_REFNIL ? NULL : CollisionPreSolveFunc,
+		cbdata->PostSolveFunc		== LUA_REFNIL ? NULL : CollisionPostSolveFunc,
+		cbdata->SeparateFunc			== LUA_REFNIL ? NULL : CollisionSeparateFunc,
+		cbdata
+	);
 	return 0;
 }
 
-/*
-typedef struct cpContact{
-		  // Contact point and normal.
-		  cpVect p, n;
-		  // Penetration distance.
-		  cpFloat dist;
-		  ...
-} cpContact;
-*/
-static int cpSpace_getContactPoint(lua_State *L) {
-	cpContact *c;
-	c=(cpContact*)lua_touserdata(L,2); // start at stack index 2 as we dont need cpSpace...
-	int n=luaL_checkinteger(L,3);
-	cpVect *pos  = push_cpVect(L);
-	pos->x = c[n].p.x;
-	pos->y = c[n].p.y;
-	return 1;
-}
-
-static int cpSpace_getContactNormal(lua_State *L) {
-	cpContact *c;
-	c=(cpContact*)lua_touserdata(L,2); // start at stack index 2 as we dont need space...
-	int n=luaL_checkinteger(L,3);
-	cpVect *norm  = push_cpVect(L);
-	norm->x = c[n].n.x;
-	norm->y = c[n].n.y;
-	return 1;	
-}
-
-static int cpSpace_getContactDistance(lua_State *L) {
-	cpContact *c;
-	c=(cpContact*)lua_touserdata(L,2); // start at stack index 2 as we dont need space...
-	int n=luaL_checkinteger(L,3);
-	lua_pushnumber(L,c[n].dist);
-	return 1;		
+static int cpSpace_removeCollisionHandler(lua_State *L) {
+	cpSpace *space = check_cpSpace(L, 1);
+	cpCollisionType a = (cpCollisionType)luaL_checkint(L,2);
+	cpCollisionType b = (cpCollisionType)luaL_checkint(L,3);
+	struct{cpCollisionType a, b;} ids = {a, b};
+	cpCollisionHandler *old_handler = cpHashSetRemove(space->collFuncSet, CP_HASH_PAIR(a, b), &ids);
+	free(old_handler->data);
+	cpfree(old_handler);
 }
 
 static const luaL_reg cpSpace_methods[] = {
@@ -289,22 +276,20 @@ static const luaL_reg cpSpace_methods[] = {
 	{"addConstraint",				cpSpace_addConstraint},
 	{"step",							cpSpace_step},
 	{"setGravity",					cpSpace_setGravity},
-	{"addCollisionPairFunc",	cpSpace_addCollisionPairFunc},
-	{"getContactPoint",			cpSpace_getContactPoint},
-	{"getContactNormal",			cpSpace_getContactNormal},
-	{"getContactDistance",		cpSpace_getContactDistance},
-	{"removeStaticShape",		cpSpace_removeStaticShape},	
-	{"removeShape",				cpSpace_removeShape},	
+	{"addCollisionHandler",		cpSpace_addCollisionHandler},
+	{"removeCollisionHandler", cpSpace_removeCollisionHandler},
+	{"removeStaticShape",		cpSpace_removeStaticShape},
+	{"removeShape",				cpSpace_removeShape},
 	{"removeBody",					cpSpace_removeBody},
 	{"removeConstraint",			cpSpace_removeConstraint},
-	{"freeChildren",				cpSpace_freeChildren},	
+	{"freeChildren",				cpSpace_freeChildren},
 	{0, 0}
 };	
 
 static const luaL_reg cpSpace_meta[] = {  
 	{"__tostring", cpSpace_tostring}, 
-    {"__gc", cpSpace_gc},
-	{0, 0}							  
+	{"__gc", cpSpace_gc},
+	{0, 0}
 };
 
 int cpSpace_register (lua_State *L) {

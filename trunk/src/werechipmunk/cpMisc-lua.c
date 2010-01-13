@@ -157,6 +157,7 @@ int cpMisc_register (lua_State *L) {
 int luaopen_werechip(lua_State *lstate) {
    cpVect_register(lstate);
    cpBB_register(lstate);
+   cpArbiter_register(lstate);
    cpBody_register(lstate);
    cpShape_register(lstate);
    cpCircleShape_register(lstate);
