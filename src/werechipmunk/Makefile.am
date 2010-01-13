@@ -1,5 +1,6 @@
-noinst_LIBRARIES = libwerechip.a
-libwerechip_a_SOURCES = \
+noinst_LIBRARIES = libwerechipmunk.a
+libwerechipmunk_a_SOURCES = \
+  cpArbiter-lua.h      cpArbiter-lua.c \
   cpBB-lua.h           cpBB-lua.c \
   cpBody-lua.h         cpBody-lua.c \
   cpCircleShape-lua.h  cpCircleShape-lua.c \
