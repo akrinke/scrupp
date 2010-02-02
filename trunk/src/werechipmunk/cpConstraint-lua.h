@@ -1,4 +1,5 @@
-/*    Copyright (c) 2009 Mr C.Camacho
+/*    Copyright (c) 2010 Andreas Krinke
+ *    Copyright (c) 2009 Mr C.Camacho
  *
  *    Permission is hereby granted, free of charge, to any person obtaining a copy
  *    of this software and associated documentation files (the "Software"), to deal
@@ -19,7 +20,10 @@
  *    THE SOFTWARE.
  */ 
 
-int cpConstraint_gc(lua_State *L);
-void cpConstraint_store_refs(lua_State *L);
-cpConstraint* get_cpConstraint (lua_State *L, int index);
+#ifndef CPCONSTRAINT_LUA_H
+#define CPCONSTRAINT_LUA_H
 
+cpConstraint *check_cpConstraint(lua_State *L, int index);
+int cpConstraint_gc(lua_State *L);
+
+#endif

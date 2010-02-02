@@ -1,4 +1,5 @@
-/*    Copyright (c) 2009 Mr C.Camacho
+/*    Copyright (c) 2010 Andreas Krinke
+ *    Copyright (c) 2009 Mr C.Camacho
  *
  *    Permission is hereby granted, free of charge, to any person obtaining a copy
  *    of this software and associated documentation files (the "Software"), to deal
@@ -27,72 +28,63 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#include "cpVect-lua.h"
 #include "cpBody-lua.h"
 #include "cpConstraint-lua.h"
 
-
 static cpSimpleMotor *push_cpSimpleMotor (lua_State *L) {
-   cpSimpleMotor *bb=cpSimpleMotorAlloc(); // initialise later
-   cpSimpleMotor **pbb = (cpSimpleMotor **)lua_newuserdata(L, sizeof(cpSimpleMotor*));
-   *pbb = bb;
+  cpSimpleMotor *sm = cpSimpleMotorAlloc();
+  cpSimpleMotor **psm = (cpSimpleMotor **)lua_newuserdata(L, sizeof(cpSimpleMotor*));
+  *psm = sm;
 
-   luaL_getmetatable(L, "cpSimpleMotor");
-   lua_setmetatable(L, -2);
+  luaL_getmetatable(L, "cpSimpleMotor");
+  lua_setmetatable(L, -2);
 
-  return bb;
+  return sm;
 }
 
 static int cpSimpleMotor_new(lua_State *L) {
+  cpBody* b1 = check_cpBody (L, 1);
+  cpBody* b2 = check_cpBody (L, 2);
+  cpFloat rate = (cpFloat)luaL_checknumber (L, 3);
 
-   int n = lua_gettop(L);  // Number of arguments
-   
-   if (n != 3 ) return luaL_error(L, "Got %d arguments expected 3, 2 bodies and rate ", n);
-   
-   cpBody* b1 = check_cpBody (L, 1);
-   cpBody* b2 = check_cpBody (L, 2);
-   float rate = luaL_checknumber (L, 3);
+  cpSimpleMotor *sm = push_cpSimpleMotor(L);
+  cpSimpleMotorInit(sm, b1, b2, rate);
 
-   cpConstraint *s = (cpConstraint*)push_cpSimpleMotor(L); // 
-   cpSimpleMotorInit((cpSimpleMotor*)s, b1,b2,rate);        // so initialise it manually
-   
-   cpConstraint_store_refs(L);
-   return 1;
+  cpConstraint_store_refs(L);
+  return 1;
 }
 
-   
-static const luaL_reg cpSimpleMotor_methods[] = {
-	{"new",               cpSimpleMotor_new},
-	{0, 0}
-};   
-
-int cpSimpleMotor_tostring (lua_State *L) {
-   // TODO eventually provide text of xml tag representing
-   // this object and its properties
-   return 0;
+static int cpSimpleMotor_tostring (lua_State *L) {
+  lua_pushfstring(L, "cpSimpleMotor (%p)", lua_topointer(L, 1));
+  return 1;
 }
-static const luaL_reg cpSimpleMotor_meta[] = {  
-   {"__tostring", cpSimpleMotor_tostring}, 
-   {"__gc",       cpConstraint_gc},
-   {0, 0}                       
+
+static const luaL_reg cpSimpleMotor_functions[] = {
+  {"newSimpleMotor", cpSimpleMotor_new},
+  {NULL, NULL}
+};
+
+static const luaL_reg cpSimpleMotor_meta[] = {
+  {"__gc",       cpConstraint_gc},
+  {"__tostring", cpSimpleMotor_tostring},
+  {NULL, NULL}
 };
 
 int cpSimpleMotor_register (lua_State *L) {
-  luaL_openlib(L, "cpSimpleMotor", cpSimpleMotor_methods, 0);  /* create methods table, add it to the globals */
-  luaL_newmetatable(L, "cpSimpleMotor");          /* create metatable for cpSimpleMotor, and add it to the Lua registry */
-  luaL_openlib(L, 0, cpSimpleMotor_meta, 0);    /* fill metatable */
-  lua_pushliteral(L, "__index");
-  lua_pushvalue(L, -3);               /* dup methods table*/
-  lua_rawset(L, -3);                  /* metatable.__index = methods */
-  lua_pushliteral(L, "__metatable");
-  lua_pushvalue(L, -3);               /* dup methods table*/
-  lua_rawset(L, -3);                  /* hide metatable:
-                                         metatable.__metatable = methods */
-   													  
-// no joint pointer table uses constraints pointer table
-  
-  lua_pop(L, 2);                      /* drop metatable */
-  return 0;                           /* return methods on the stack */
+  luaL_register(L, NULL, cpSimpleMotor_functions);
+
+  luaL_newmetatable(L, "cpSimpleMotor");
+  luaL_register(L, NULL, cpSimpleMotor_meta);
+
+  /* cpConstraints.metatable = 1 */
+  lua_pushliteral(L, "cpConstraints");
+  lua_rawget(L, LUA_REGISTRYINDEX);
+  lua_pushvalue(L, -2);
+  lua_pushinteger(L, 1);
+  lua_rawset(L, -3);
+
+  /* drop metatable and cpConstraints table */
+  lua_pop(L, 2);
+
+  return 0;
 }
-
-

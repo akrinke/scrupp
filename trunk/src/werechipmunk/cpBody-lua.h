@@ -1,4 +1,5 @@
-/*    Copyright (c) 2009 Mr C.Camacho
+/*    Copyright (c) 2010 Andreas Krinke
+ *    Copyright (c) 2009 Mr C.Camacho
  *
  *    Permission is hereby granted, free of charge, to any person obtaining a copy
  *    of this software and associated documentation files (the "Software"), to deal
@@ -19,7 +20,10 @@
  *    THE SOFTWARE.
  */ 
 
+#ifndef CPBODY_LUA_H
+#define CPBODY_LUA_H
 
-void stackdump(lua_State* l);
-int cpBody_register (lua_State *L);
-cpBody* check_cpBody (lua_State *L, int index);
+#define check_cpBody(L, index) \
+  *(cpBody **)luaL_checkudata(L, (index), "cpBody")
+
+#endif

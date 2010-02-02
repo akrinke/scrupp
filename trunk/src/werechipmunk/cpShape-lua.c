@@ -1,4 +1,5 @@
-/*    Copyright (c) 2009 Mr C.Camacho
+/*    Copyright (c) 2010 Andreas Krinke
+ *    Copyright (c) 2009 Mr C.Camacho
  *
  *    Permission is hereby granted, free of charge, to any person obtaining a copy
  *    of this software and associated documentation files (the "Software"), to deal
@@ -27,98 +28,58 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#include "cpMisc-lua.h"
+#include "cpShape-lua.h"
 
 cpShape *check_cpShape (lua_State *L, int index) {
-  cpShape *b;
-  luaL_checktype(L, index, LUA_TUSERDATA);
-  b = (cpShape *)deref(luaL_checkudata(L, index, "cpShape"));
-  if (b == NULL) luaL_typerror(L, index, "cpShape");
-  return b;
-}
-
-
-int cpShape_tostring (lua_State *L) {
-   // TODO eventually provide text of xml tag representing
-   // this object and its properties
-   lua_pushstring(L,"cpShape");
-   return 1;
-}
-
-
-int cpShape_setRestitution (lua_State *L) {
-   cpShape* shp = (cpShape*)deref((void*)lua_topointer(L,1)); 
-   double n = luaL_checknumber(L,2);
-   shp->e = n;
-   return 0;
-}
-
-int cpShape_setFriction (lua_State *L) {
-   cpShape* shp = (cpShape*)deref((void*)lua_topointer(L,1));
-   double n = luaL_checknumber(L,2);
-   shp->u = n;
-   return 0;
-}
-
-int cpShape_setCollisionType(lua_State *L) {
-   cpShape* shp = (cpShape*)deref((void*)lua_topointer(L,1));
-   unsigned int n = luaL_checknumber(L,2);
-   shp->collision_type=n;
-   return 0;
+  cpShape *s = (cpShape *)lua_touserdata(L, index);
+  /* get table of metatables from the registry */
+  lua_pushliteral(L, "cpShapes");
+  lua_rawget(L, LUA_REGISTRYINDEX);
+  if (s == NULL || !lua_getmetatable(L, index)) {
+    luaL_typerror(L, index, "cpShape");
+  }
+  lua_rawget(L, -2);
+  if (lua_isnil(L, -1)) {
+    luaL_typerror(L, index, "cpShape");
+  }
+  /* pop table of metatables and boolean */
+  lua_pop(L, 2);
+  return s;
 }
 
 int cpShape_getBody(lua_State *L) {
-   cpShape* shp =(cpShape*)deref((void*)lua_topointer(L,1));
-   lua_pushliteral(L, "werechip.cpBody_ptrs");
-   lua_gettable(L, LUA_REGISTRYINDEX);
-   lua_pushlightuserdata(L,shp->body);
-   lua_gettable(L,-2);
-   return 1;
+  cpShape *s = check_cpShape(L, 1);
+  lua_pushliteral(L, "cpBody_ptrs");
+  lua_rawget(L, LUA_REGISTRYINDEX);
+  lua_pushlightuserdata(L, s->body);
+  lua_rawget(L, -2);
+  return 1;
+}
+
+int cpShape_setRestitution (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  cpFloat e = (cpFloat)luaL_checknumber(L, 2);
+  s->e = e;
+  return 0;
+}
+
+int cpShape_setFriction (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  cpFloat u = (cpFloat)luaL_checknumber(L, 2);
+  s->u = u;
+  return 0;
+}
+
+int cpShape_setCollisionType(lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  cpCollisionType n = (cpCollisionType)luaL_checkint(L, 2);
+  s->collision_type = n;
+  return 0;
 }
 
 int cpShape_gc(lua_State *L) {
-   cpShape* shp = (cpShape*)deref((void*)lua_topointer(L,1));
-   cpShapeFree(shp);
-}   
-
-static const luaL_reg cpShape_methods[] = {
-//  {"new",               cpShape_new}, // should only use PolyShape etc
-  {"setRestitution",    cpShape_setRestitution},
-  {"setFriction",       cpShape_setFriction},
-  {"setCollisionType",  cpShape_setCollisionType},
-  {"getBody",           cpShape_getBody},
-  {0, 0}
-};   
-static const luaL_reg cpShape_meta[] = {  
-   {"__tostring",       cpShape_tostring}, 
-   {"__gc",             cpShape_gc},
-   {0, 0}                       
-};
-
-int cpShape_register (lua_State *L) {
-  luaL_openlib(L, "cpShape", cpShape_methods, 0);  /* create methods table, add it to the globals */
-  luaL_newmetatable(L, "cpShape");          /* create metatable for cpShape, and add it to the Lua registry */
-  luaL_openlib(L, 0, cpShape_meta, 0);    /* fill metatable */
-  lua_pushliteral(L, "__index");
-  lua_pushvalue(L, -3);               /* dup methods table*/
-  lua_rawset(L, -3);                  /* metatable.__index = methods */
-  lua_pushliteral(L, "__metatable");
-  lua_pushvalue(L, -3);               /* dup methods table*/
-  lua_rawset(L, -3);                  /* hide metatable:
-                                         metatable.__metatable = methods */
-  lua_pop(L, 2);                      /* drop metatable */
-  
-  /* create a table with weak values which maps C pointers (light userdata) to full userdata */
-  lua_pushliteral(L, "werechip.cpShape_ptrs");
-  lua_newtable(L);
-  lua_pushvalue(L, -1);               /* duplicate the table */
-  lua_pushliteral(L, "__mode");
-  lua_pushliteral(L, "v");
-  lua_rawset(L, -3);                  /* table.__mode = 'v' */
-  lua_setmetatable(L, -2);            /* table.metatable = table */
-  lua_settable(L, LUA_REGISTRYINDEX);
-
-  return 0;                           /* return methods on the stack */
+  /* no need to check the type */
+  cpShape* s = lua_touserdata(L, 1);
+  cpShapeFree(s);
+  return 0;
 }
-
-

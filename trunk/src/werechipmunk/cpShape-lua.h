@@ -1,4 +1,5 @@
-/*    Copyright (c) 2009 Mr C.Camacho
+/*    Copyright (c) 2010 Andreas Krinke
+ *    Copyright (c) 2009 Mr C.Camacho
  *
  *    Permission is hereby granted, free of charge, to any person obtaining a copy
  *    of this software and associated documentation files (the "Software"), to deal
@@ -19,8 +20,14 @@
  *    THE SOFTWARE.
  */ 
 
+#ifndef CPSHAPE_LUA_H
+#define CPSHAPE_LUA_H
+
+cpShape *check_cpShape(lua_State *L, int index);
 int cpShape_setCollisionType(lua_State *L);
-int cpShape_setRestitution (lua_State *L);
 int cpShape_setFriction (lua_State *L);
+int cpShape_setRestitution (lua_State *L);
 int cpShape_getBody(lua_State *L);
 int cpShape_gc(lua_State *L);
+
+#endif

@@ -1,4 +1,5 @@
-/*    Copyright (c) 2009 Mr C.Camacho
+/*    Copyright (c) 2010 Andreas Krinke
+ *    Copyright (c) 2009 Mr C.Camacho
  *
  *    Permission is hereby granted, free of charge, to any person obtaining a copy
  *    of this software and associated documentation files (the "Software"), to deal
@@ -19,7 +20,12 @@
  *    THE SOFTWARE.
  */ 
 
-cpVect *push_cpVect (lua_State *L);
-cpVect *check_cpVect (lua_State *L, int index);
-int cpBB_register (lua_State *L);
+#ifndef CPVECT_LUA_H
+#define CPVECT_LUA_H
 
+#define check_cpVect(L, index) \
+  (cpVect *)luaL_checkudata(L, (index), "cpVect")
+
+cpVect *push_cpVect(lua_State *L);
+
+#endif
