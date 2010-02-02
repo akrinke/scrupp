@@ -22,6 +22,6 @@
 #ifndef WERECHIPMUNK_H
 #define WERECHIPMUNK_H 
 
-int luaopen_werechip(lua_State *lstate);
+int luaopen_werechip(lua_State *L);
 
 #endif

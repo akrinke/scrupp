@@ -1,4 +1,5 @@
-/*    Copyright (c) 2009 Mr C.Camacho
+/*    Copyright (c) 2010 Andreas Krinke
+ *    Copyright (c) 2009 Mr C.Camacho
  *
  *    Permission is hereby granted, free of charge, to any person obtaining a copy
  *    of this software and associated documentation files (the "Software"), to deal
@@ -27,111 +28,111 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#include "cpVect-lua.h"
 #include "cpBody-lua.h"
 #include "cpShape-lua.h"
+#include "cpVect-lua.h"
 
-static cpCircleShape *push_cpCircleShape (lua_State *L) {
-   cpCircleShape *bb=cpCircleShapeAlloc(); // initialise later
-   cpCircleShape **pbb = (cpCircleShape **)lua_newuserdata(L, sizeof(cpCircleShape*));
-   *pbb = bb;
+#define check_cpCircleShape(L, index) \
+  *(cpCircleShape **)luaL_checkudata(L, (index), "cpCircleShape")
 
-   luaL_getmetatable(L, "cpCircleShape");
-   lua_setmetatable(L, -2);
+static cpCircleShape *push_cpCircleShape(lua_State *L) {
+  cpCircleShape *cs = cpCircleShapeAlloc();
+  cpCircleShape **ptr = (cpCircleShape **)lua_newuserdata(L, sizeof(cpCircleShape*));
+  *ptr = cs;
 
-   lua_pushliteral(L,"werechip.cpShape_ptrs");
-   lua_gettable(L, LUA_REGISTRYINDEX);
-   lua_pushlightuserdata(L, bb);   // table index
-   lua_pushvalue(L,-3); // previously created table of *cpBody pointers to userdata
-   lua_rawset(L, -3); // update the table
-   lua_pop(L,1);
+  luaL_getmetatable(L, "cpCircleShape");
+  lua_setmetatable(L, -2);
 
-  return bb;
-}
+  /* cpShape_ptrs.shape_ptr = shape_userdata */
+  lua_pushliteral(L,"cpShape_ptrs");
+  lua_rawget(L, LUA_REGISTRYINDEX);
+  lua_pushlightuserdata(L, cs);
+  lua_pushvalue(L, -3);
+  lua_rawset(L, -3);
+  lua_pop(L, 1);
 
-cpCircleShape* check_cpCircleShape (lua_State *L, int index) {
-  cpCircleShape *bb;
-  luaL_checktype(L, index, LUA_TUSERDATA);
-  cpCircleShape **pbb =(cpCircleShape**)luaL_checkudata(L, index, "cpCircleShape");
-  bb=*pbb;
-  if (bb == NULL) luaL_typerror(L, index, "cpCircleShape");
-  return (cpCircleShape*)bb;
+  return cs;
 }
 
 static int cpCircleShape_new(lua_State *L) {
+  cpBody *body = check_cpBody(L, 1);
+  cpFloat radius = (cpFloat)luaL_checknumber(L, 2);
+  cpVect *offset = check_cpVect(L, 3);
 
-   int n = lua_gettop(L);  // Number of arguments
-   
-   if (n != 3 ) return luaL_error(L, "Got %d arguments expected 3", n);
-   
-   cpBody* body = check_cpBody (L, 1);      
-   double radius = luaL_checknumber (L, 2);
-   cpVect* offset = check_cpVect (L, 3);      
+  cpCircleShape *circle = push_cpCircleShape(L);
+  cpCircleShapeInit(circle, body, radius, *offset);
 
-   cpCircleShape *circle = push_cpCircleShape(L); // have to allocate onto stack
-//cpCircleShapeInit(cpCircleShape *circle, cpBody *body, cpFloat radius, cpVect offset)  
-   cpCircleShapeInit(circle, body, radius, *offset);        // so initialise it manually
-   lua_pushliteral(L, "werechip.references");
-   lua_gettable(L, LUA_REGISTRYINDEX);
-   lua_pushvalue(L, -2);
-   lua_pushvalue(L, 1);
-   lua_rawset(L, -3);
-   lua_pop(L, 1);
- 
-   return 1;
+  /* cpReferences.shape_userdata = body_userdata */
+  lua_pushliteral(L, "cpReferences");
+  lua_rawget(L, LUA_REGISTRYINDEX);
+  lua_pushvalue(L, -2);
+  lua_pushvalue(L, 1);
+  lua_rawset(L, -3);
+  lua_pop(L, 1);
+
+  return 1;
 }
-
  
 static int cpCircleShape_getOffset(lua_State *L) {
-   cpCircleShape* cs = check_cpCircleShape (L, 1);
-   cpVect *v = push_cpVect(L);
-   cpVect vo  = cpCircleShapeGetOffset((cpShape*)cs);
-   v->x = vo.x;
-   v->y = vo.y;
-   return 1;
+  cpCircleShape *cs = check_cpCircleShape (L, 1);
+  cpVect *v = push_cpVect(L);
+  cpVect vo  = cpCircleShapeGetOffset((cpShape*)cs);
+  v->x = vo.x;
+  v->y = vo.y;
+  return 1;
 }
  
 static int cpCircleShape_getRadius(lua_State *L) {
-   cpCircleShape* cs = check_cpCircleShape (L, 1);
-   lua_pushnumber(L, cpCircleShapeGetRadius((cpShape*)cs));
-   return 1;
+  cpCircleShape* cs = check_cpCircleShape(L, 1);
+  lua_pushnumber(L, cpCircleShapeGetRadius((cpShape*)cs));
+  return 1;
 }
- 
-static const luaL_reg cpCircleShape_methods[] = {
-  {"new",               cpCircleShape_new},
-  {"getOffset",         cpCircleShape_getOffset},
-  {"getRadius",         cpCircleShape_getRadius},
-  {"setRestitution",    cpShape_setRestitution},
-  {"setFriction",       cpShape_setFriction},
-  {"setCollisionType",  cpShape_setCollisionType},
-  {"getBody",           cpShape_getBody},
-  {0, 0}
-};   
 
-int cpCircleShape_tostring (lua_State *L) {
-   // TODO eventually provide text of xml tag representing
-   // this object and its properties
-   return 0;
+static int cpCircleShape_tostring (lua_State *L) {
+  lua_pushfstring(L, "cpCircleShape (%p)", lua_topointer(L, 1));
+  return 1;
 }
-static const luaL_reg cpCircleShape_meta[] = {  
-   {"__tostring", cpCircleShape_tostring}, 
-   {"__gc",              cpShape_gc},
-   {0, 0}                       
+
+static const luaL_reg cpCircleShape_functions[] = {
+  {"newCircleShape", cpCircleShape_new},
+  {NULL, NULL}
+};
+
+static const luaL_reg cpCircleShape_methods[] = {
+  {"getOffset",        cpCircleShape_getOffset},
+  {"getRadius",        cpCircleShape_getRadius},
+  {"setRestitution",   cpShape_setRestitution},
+  {"setFriction",      cpShape_setFriction},
+  {"setCollisionType", cpShape_setCollisionType},
+  {"getBody",          cpShape_getBody},
+  {NULL, NULL}
+};
+
+static const luaL_reg cpCircleShape_meta[] = {
+  {"__gc",       cpShape_gc},
+  {"__tostring", cpCircleShape_tostring},
 };
 
 int cpCircleShape_register (lua_State *L) {
-  luaL_openlib(L, "cpCircleShape", cpCircleShape_methods, 0);  /* create methods table, add it to the globals */
-  luaL_newmetatable(L, "cpCircleShape");          /* create metatable for cpCircleShape, and add it to the Lua registry */
-  luaL_openlib(L, 0, cpCircleShape_meta, 0);    /* fill metatable */
+  luaL_register(L, NULL, cpCircleShape_functions);
+  
+  luaL_newmetatable(L, "cpCircleShape");
+  luaL_register(L, NULL, cpCircleShape_meta);
+  /* metatable.__index = methods */
   lua_pushliteral(L, "__index");
-  lua_pushvalue(L, -3);               /* dup methods table*/
-  lua_rawset(L, -3);                  /* metatable.__index = methods */
-  lua_pushliteral(L, "__metatable");
-  lua_pushvalue(L, -3);               /* dup methods table*/
-  lua_rawset(L, -3);                  /* hide metatable:
-                                         metatable.__metatable = methods */
-  lua_pop(L, 2);                      /* drop metatable */
-  return 0;                           /* return methods on the stack */
+  lua_newtable(L);
+  luaL_register(L, NULL, cpCircleShape_methods);
+  lua_rawset(L, -3);
+  
+  /* cpShapes.metatable = 1 */
+  lua_pushliteral(L, "cpShapes");
+  lua_rawget(L, LUA_REGISTRYINDEX);
+  lua_pushvalue(L, -2);
+  lua_pushinteger(L, 1);
+  lua_rawset(L, -3);
+
+  /* drop metatable and cpShapes table */
+  lua_pop(L, 2);
+
+  return 0;
 }
-
-

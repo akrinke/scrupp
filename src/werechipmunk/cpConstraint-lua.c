@@ -1,4 +1,5 @@
-/*    Copyright (c) 2009 Mr C.Camacho
+/*    Copyright (c) 2010 Andreas Krinke
+ *    Copyright (c) 2009 Mr C.Camacho
  *
  *    Permission is hereby granted, free of charge, to any person obtaining a copy
  *    of this software and associated documentation files (the "Software"), to deal
@@ -27,74 +28,40 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#include "cpVect-lua.h"
-#include "cpMisc-lua.h"
+cpConstraint *check_cpConstraint(lua_State *L, int index) {
+  cpConstraint *c = (cpConstraint *)lua_touserdata(L, index);
+  /* get table of metatables from the registry */
+  lua_pushliteral(L, "cpConstraints");
+  lua_rawget(L, LUA_REGISTRYINDEX);
+  if (c == NULL || !lua_getmetatable(L, index)) {
+    luaL_typerror(L, index, "cpConstraint");
+  }
+  lua_rawget(L, -2);
+  if (lua_isnil(L, -1)) {
+    luaL_typerror(L, index, "cpConstraint");
+  }
+  /* pop table of metatables and boolean */
+  lua_pop(L, 2);
+  return c;
+}
 
-cpConstraint* check_cpConstraint (lua_State *L, int index) {
-  cpConstraint *bb;
-  luaL_checktype(L, index, LUA_TUSERDATA);
-  cpConstraint **pbb =(cpConstraint**)luaL_checkudata(L, index, "cpConstraint");
-  bb=*pbb;
-  if (bb == NULL) luaL_typerror(L, index, "cpConstraint");
-  return (cpConstraint*)bb;
+int cpConstraint_gc(lua_State *L) {
+  /* no need to check the type */
+  cpConstraint *c = (cpConstraint *)lua_touserdata(L, 1);
+  cpConstraintFree(c);
+  return 0;
 }
 
 void cpConstraint_store_refs(lua_State *L) {
-   /* store references to the two bodies */
-   lua_pushliteral(L, "werechip.references");
-   lua_gettable(L, LUA_REGISTRYINDEX);
-   lua_pushvalue(L, -2);
-   lua_newtable(L);
-   lua_pushvalue(L, 1);   /* push body 1 on the stack */
-   lua_rawseti(L, -2, 1); /* t[1] = body 1 */
-   lua_pushvalue(L, 2);   /* push body 2 on the stack */
-   lua_rawseti(L, -2, 2); /* t[2] = body 2 */
-   lua_rawset(L,-3);
-   lua_pop(L, 1);
-}  
-
-inline cpConstraint* get_cpConstraint (lua_State *L, int index) {
-   cpConstraint *c =(cpConstraint*)deref((void*)lua_topointer(L, index));
-   return c;
+  /* store references to the two bodies */
+  lua_pushliteral(L, "cpReferences");
+  lua_rawget(L, LUA_REGISTRYINDEX);
+  lua_pushvalue(L, -2);
+  lua_newtable(L);
+  lua_pushvalue(L, 1);   /* push body 1 on the stack */
+  lua_rawseti(L, -2, 1); /* t[1] = body 1 */
+  lua_pushvalue(L, 2);   /* push body 2 on the stack */
+  lua_rawseti(L, -2, 2); /* t[2] = body 2 */
+  lua_rawset(L,-3);
+  lua_pop(L, 1);
 }
-   
-static const luaL_reg cpConstraint_methods[] = {
-//  {"new",               cpConstraint_new},  //should only be created by joints 
-//	{"free",               cpConstraint_free}, // called by child instances
-	{0, 0}
-};   
-
-static int cpConstraint_tostring (lua_State *L) {
-   // TODO eventually provide text of xml tag representing
-   // this object and its properties
-   return 0;
-}
-
-int cpConstraint_gc(lua_State *L){
-   cpConstraint *b = check_cpConstraint(L, 1);
-   cpConstraintFree(b);
-   return 0;
-}
-
-static const luaL_reg cpConstraint_meta[] = {  
-   {"__tostring", cpConstraint_tostring}, 
-   {"__gc",       cpConstraint_gc},
-   {0, 0}                       
-};
-
-int cpConstraint_register (lua_State *L) {
-  luaL_openlib(L, "cpConstraint", cpConstraint_methods, 0);  /* create methods table, add it to the globals */
-  luaL_newmetatable(L, "cpConstraint");          /* create metatable for cpConstraint, and add it to the Lua registry */
-  luaL_openlib(L, 0, cpConstraint_meta, 0);    /* fill metatable */
-  lua_pushliteral(L, "__index");
-  lua_pushvalue(L, -3);               /* dup methods table*/
-  lua_rawset(L, -3);                  /* metatable.__index = methods */
-  lua_pushliteral(L, "__metatable");
-  lua_pushvalue(L, -3);               /* dup methods table*/
-  lua_rawset(L, -3);                  /* hide metatable:
-                                         metatable.__metatable = methods */
-  lua_pop(L, 2);                      /* drop metatable */
-  return 0;                           /* return methods on the stack */
-}
-
-

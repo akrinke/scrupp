@@ -27,6 +27,8 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
+#include "cpVect-lua.h"
+
 #define toarbiterp(L) \
   (cpArbiter **)luaL_checkudata(L, 1, "cpArbiter")
 
@@ -49,8 +51,8 @@ static int cpArbiter_getShapes(lua_State *L) {
   cpArbiter *arb = toarbiter(L);
   CP_ARBITER_GET_SHAPES(arb, a, b);
   
-  lua_pushliteral(L, "werechip.cpShape_ptrs");
-  lua_gettable(L, LUA_REGISTRYINDEX);
+  lua_pushliteral(L, "cpShape_ptrs");
+  lua_rawget(L, LUA_REGISTRYINDEX);
   lua_pushlightuserdata(L, a);
   lua_rawget(L, -2);
   lua_pushlightuserdata(L, b);
@@ -61,7 +63,7 @@ static int cpArbiter_getShapes(lua_State *L) {
 
 static int cpArbiter_isFirstContact(lua_State *L) {
   cpArbiter *arb = toarbiter(L);
-  lua_pushboolean(L, cpArbiterIsFirstContact(arb));  
+  lua_pushboolean(L, cpArbiterIsFirstContact(arb));
   return 1;
 }
 
@@ -126,8 +128,8 @@ static int cpArbiter_setU(lua_State *L) {
   return 0;
 }
 
-static int cpArbiter_tostring (lua_State *L) {
-  lua_pushfstring(L, "cpArbiter (%p)", toarbiter(L));
+static int cpArbiter_tostring(lua_State *L) {
+  lua_pushfstring(L, "cpArbiter (%p)", lua_topointer(L, 1));
   return 1;
 }
 
@@ -138,27 +140,23 @@ static const luaL_reg cpArbiter_methods[] = {
   {"getPoint",                    cpArbiter_getPoint},
   {"getTotalImpulse",             cpArbiter_totalImpulse},
   {"getTotalImpulseWithFriction", cpArbiter_totalImpulseWithFriction},
-  {0, 0}
+  {NULL, NULL}
 };
 
 static const luaL_reg cpArbiter_meta[] = {
   {"__tostring", cpArbiter_tostring},
-  {0, 0}
+  {NULL, NULL}
 };
 
-int cpArbiter_register (lua_State *L) {
-  /* create methods table, add it to the globals */
-  luaL_openlib(L, "cpArbiter", cpArbiter_methods, 0);
-  /* create metatable for cpArbiter, and add it to the Lua registry */
+int cpArbiter_register(lua_State *L) {
   luaL_newmetatable(L, "cpArbiter");
-  luaL_openlib(L, 0, cpArbiter_meta, 0); /* fill metatable */
+  /* metatable.__index = methods */
   lua_pushliteral(L, "__index");
-  lua_pushvalue(L, -3);                  /* dup methods table*/
-  lua_rawset(L, -3);                     /* metatable.__index = methods */
-  lua_pushliteral(L, "__metatable");
-  lua_pushvalue(L, -3);                  /* dup methods table*/
-  lua_rawset(L, -3);                     /* hide metatable:
-                                            metatable.__metatable = methods */
-  lua_pop(L, 2);                         /* drop metatable */
-  return 0;                              /* return methods on the stack */
+  /* create and fill methods table */
+  lua_newtable(L);
+  luaL_register(L, NULL, cpArbiter_methods);
+  lua_rawset(L, -3);
+  /* pop the metatable */
+  lua_pop(L, 1);
+  return 0;
 }

@@ -1,4 +1,5 @@
-/*    Copyright (c) 2009 Mr C.Camacho
+/*    Copyright (c) 2010 Andreas Krinke
+ *    Copyright (c) 2009 Mr C.Camacho
  *
  *    Permission is hereby granted, free of charge, to any person obtaining a copy
  *    of this software and associated documentation files (the "Software"), to deal
@@ -27,134 +28,133 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#include "cpVect-lua.h"
 #include "cpBody-lua.h"
 #include "cpShape-lua.h"
-#include "cpMisc-lua.h"
+#include "cpVect-lua.h"
 
+#define check_cpSegmentShape(L, index) \
+  *(cpSegmentShape **)luaL_checkudata(L, (index), "cpSegmentShape")
 
-static cpSegmentShape *push_cpSegmentShape (lua_State *L) {
-   cpSegmentShape *ss=cpSegmentShapeAlloc();
-   cpSegmentShape **pss=(cpSegmentShape**)lua_newuserdata(L, sizeof(cpSegmentShape *));
-   *pss=ss;
-   luaL_getmetatable(L, "cpSegmentShape");
-   lua_setmetatable(L, -2);  
-   
-   lua_pushliteral(L, "werechip.cpShape_ptrs");
-   lua_gettable(L, LUA_REGISTRYINDEX);
-   lua_pushlightuserdata(L,ss);
-   lua_pushvalue(L,-3);
-   lua_rawset(L,-3);
-   lua_pop(L,1);
-   
-   return ss;
-}
+static cpSegmentShape *push_cpSegmentShape(lua_State *L) {
+  cpSegmentShape *ss = cpSegmentShapeAlloc();
+  cpSegmentShape **pss = (cpSegmentShape**)lua_newuserdata(L, sizeof(cpSegmentShape *));
+  *pss = ss;
 
-static cpSegmentShape *check_cpSegmentShape (lua_State *L, int index) {
-   cpSegmentShape *ss;
-   luaL_checktype(L,index,LUA_TUSERDATA);
-   ss=(cpSegmentShape*)deref((void*)luaL_checkudata(L,index,"cpSegmentShape"));
-   if (ss == NULL) luaL_typerror(L,index,"cpSegmentShape");
-   return ss;
+  luaL_getmetatable(L, "cpSegmentShape");
+  lua_setmetatable(L, -2);
+
+  /* cpShape_ptrs.shape_ptr = shape_userdata */
+  lua_pushliteral(L, "cpShape_ptrs");
+  lua_rawget(L, LUA_REGISTRYINDEX);
+  lua_pushlightuserdata(L, ss);
+  lua_pushvalue(L, -3);
+  lua_rawset(L, -3);
+  lua_pop(L, 1);
+
+  return ss;
 }
 
 static int cpSegmentShape_new(lua_State *L) {
+  cpBody *body = check_cpBody(L, 1);
+  cpVect *a = check_cpVect(L, 2);
+  cpVect *b = check_cpVect(L, 3);
+  cpFloat radius = (cpFloat)luaL_checknumber(L, 4);
 
-   int n = lua_gettop(L);  // Number of arguments
-   
-   if (n != 4 ) return luaL_error(L, "Got %d arguments expected 4", n);
-   
-   cpBody* body = check_cpBody (L, 1);
-   cpVect* a = check_cpVect (L, 2); 
-   cpVect* b = check_cpVect (L, 3);      
-   double radius = luaL_checknumber (L, 4);
-
-   cpSegmentShape *seg = push_cpSegmentShape(L); // have to allocate onto stack
-//cpSegmentShape* cpSegmentShapeInit(cpSegmentShape *seg, cpBody *body, cpVect a, cpVect b, cpFloat radius) 
-   cpSegmentShapeInit(seg, body, *a, *b, radius);        // so initialise it manually
-   lua_pushliteral(L, "werechip.references");
-   lua_gettable(L, LUA_REGISTRYINDEX);
-   lua_pushvalue(L, -2);
-   lua_pushvalue(L, 1);
-   lua_rawset(L, -3);
-   lua_pop(L, 1);
-   return 1;
+  cpSegmentShape *ss = push_cpSegmentShape(L);
+  cpSegmentShapeInit(ss, body, *a, *b, radius);
+  
+  /* cpReferences.shape_userdata = body_userdata */
+  lua_pushliteral(L, "cpReferences");
+  lua_rawget(L, LUA_REGISTRYINDEX);
+  lua_pushvalue(L, -2);
+  lua_pushvalue(L, 1);
+  lua_rawset(L, -3);
+  lua_pop(L, 1);
+  return 1;
 }
 
  
 static int cpSegmentShape_getA(lua_State *L) {
-   cpSegmentShape* cs = check_cpSegmentShape (L, 1);
-   cpVect *v = push_cpVect(L);
-   cpVect vo  = cpSegmentShapeGetA((cpShape*)cs);
-   v->x = vo.x;
-   v->y = vo.y;
-   return 1;
+  cpSegmentShape *ss = check_cpSegmentShape(L, 1);
+  cpVect *v = push_cpVect(L);
+  cpVect vo = cpSegmentShapeGetA((cpShape*)ss);
+  v->x = vo.x;
+  v->y = vo.y;
+  return 1;
 }
  
 static int cpSegmentShape_getB(lua_State *L) {
-   cpSegmentShape* cs = check_cpSegmentShape (L, 1);
-   cpVect *v = push_cpVect(L);
-   cpVect vo  = cpSegmentShapeGetB((cpShape*)cs);
-   v->x = vo.x;
-   v->y = vo.y;
-   return 1;
+  cpSegmentShape *ss = check_cpSegmentShape(L, 1);
+  cpVect *v = push_cpVect(L);
+  cpVect vo  = cpSegmentShapeGetB((cpShape*)ss);
+  v->x = vo.x;
+  v->y = vo.y;
+  return 1;
 }
  
 static int cpSegmentShape_getNormal(lua_State *L) {
-   cpSegmentShape* cs = check_cpSegmentShape (L, 1);
-   cpVect *v = push_cpVect(L);
-   cpVect vo  = cpSegmentShapeGetNormal((cpShape*)cs);
-   v->x = vo.x;
-   v->y = vo.y;
-   return 1;
+  cpSegmentShape *ss = check_cpSegmentShape(L, 1);
+  cpVect *v = push_cpVect(L);
+  cpVect vo  = cpSegmentShapeGetNormal((cpShape*)ss);
+  v->x = vo.x;
+  v->y = vo.y;
+  return 1;
 }
  
 static int cpSegmentShape_getRadius(lua_State *L) {
-   cpSegmentShape* cs = check_cpSegmentShape (L, 1);
-   lua_pushnumber(L, cpSegmentShapeGetRadius((cpShape*)cs));
-   return 1;
+  cpSegmentShape *ss = check_cpSegmentShape(L, 1);
+  lua_pushnumber(L, (double)cpSegmentShapeGetRadius((cpShape*)ss));
+  return 1;
 }
- 
-static const luaL_reg cpSegmentShape_methods[] = {
-  {"new",               cpSegmentShape_new},
-  {"getA",              cpSegmentShape_getA},
-  {"getB",              cpSegmentShape_getB},
-  {"getNormal",         cpSegmentShape_getNormal},
-  {"getRadius",         cpSegmentShape_getRadius},
-  {"setRestitution",    cpShape_setRestitution},
-  {"setFriction",       cpShape_setFriction},
-  {"setCollisionType",  cpShape_setCollisionType},
-  {"getBody",           cpShape_getBody},
-  {0, 0}
-};   
 
-int cpSegmentShape_tostring (lua_State *L) {
-   // TODO eventually provide text of xml tag representing
-   // this object and its properties
-   char buff[32];
-   sprintf(buff,"%p->%p",lua_touserdata(L,1),deref(lua_touserdata(L,1)));
-   lua_pushfstring(L,"cpSegmentShape (%s)",buff);
-   return 1;
+static int cpSegmentShape_tostring (lua_State *L) {
+  lua_pushfstring(L, "cpSegmentShape (%p)", lua_topointer(L, 1));
+  return 1;
 }
-static const luaL_reg cpSegmentShape_meta[] = {  
-   {"__tostring", cpSegmentShape_tostring}, 
-   {"__gc",       cpShape_gc},
-   {0, 0}                       
+
+static const luaL_reg cpSegmentShape_functions[] = {
+  {"newSegmentShape", cpSegmentShape_new},
+  {NULL, NULL}
+};
+
+static const luaL_reg cpSegmentShape_methods[] = {
+  {"getA",             cpSegmentShape_getA},
+  {"getB",             cpSegmentShape_getB},
+  {"getNormal",        cpSegmentShape_getNormal},
+  {"getRadius",        cpSegmentShape_getRadius},
+  {"setRestitution",   cpShape_setRestitution},
+  {"setFriction",      cpShape_setFriction},
+  {"setCollisionType", cpShape_setCollisionType},
+  {"getBody",          cpShape_getBody},
+  {NULL, NULL}
+};
+
+static const luaL_reg cpSegmentShape_meta[] = {
+  {"__gc",       cpShape_gc},
+  {"__tostring", cpSegmentShape_tostring},
+  {NULL, NULL}
 };
 
 int cpSegmentShape_register (lua_State *L) {
-  luaL_openlib(L, "cpSegmentShape", cpSegmentShape_methods, 0);  /* create methods table, add it to the globals */
-  luaL_newmetatable(L, "cpSegmentShape");          /* create metatable for cpSegmentShape, and add it to the Lua registry */
-  luaL_openlib(L, 0, cpSegmentShape_meta, 0);    /* fill metatable */
+  luaL_register(L, NULL, cpSegmentShape_functions);
+  
+  luaL_newmetatable(L, "cpSegmentShape");
+  luaL_register(L, NULL, cpSegmentShape_meta);
+  /* metatable.__index = methods table */
   lua_pushliteral(L, "__index");
-  lua_pushvalue(L, -3);               /* dup methods table*/
-  lua_rawset(L, -3);                  /* metatable.__index = methods */
-  lua_pushliteral(L, "__metatable");
-  lua_pushvalue(L, -3);               /* dup methods table*/
-  lua_rawset(L, -3);                  /* hide metatable:
-                                         metatable.__metatable = methods */
-  lua_pop(L, 2);                      /* drop metatable */
-  return 0;                           /* return methods on the stack */
+  lua_newtable(L);
+  luaL_register(L, NULL, cpSegmentShape_methods);
+  lua_rawset(L, -3);
+  
+  /* cpShapes.metatable = 1 */
+  lua_pushliteral(L, "cpShapes");
+  lua_rawget(L, LUA_REGISTRYINDEX);
+  lua_pushvalue(L, -2);
+  lua_pushinteger(L, 1);  
+  lua_rawset(L, -3);
+  
+  /* drop metatable and cpShapes table */
+  lua_pop(L, 2);
+
+  return 0;
 }
-
-
