@@ -57,10 +57,10 @@ static cpCircleShape *push_cpCircleShape(lua_State *L) {
 static int cpCircleShape_new(lua_State *L) {
   cpBody *body = check_cpBody(L, 1);
   cpFloat radius = (cpFloat)luaL_checknumber(L, 2);
-  cpVect *offset = check_cpVect(L, 3);
+  cpVect offset = check_cpVect(L, 3);
 
   cpCircleShape *circle = push_cpCircleShape(L);
-  cpCircleShapeInit(circle, body, radius, *offset);
+  cpCircleShapeInit(circle, body, radius, offset);
 
   /* cpReferences.shape_userdata = body_userdata */
   lua_pushliteral(L, "cpReferences");
@@ -75,11 +75,8 @@ static int cpCircleShape_new(lua_State *L) {
  
 static int cpCircleShape_getOffset(lua_State *L) {
   cpCircleShape *cs = check_cpCircleShape (L, 1);
-  cpVect *v = push_cpVect(L);
-  cpVect vo  = cpCircleShapeGetOffset((cpShape*)cs);
-  v->x = vo.x;
-  v->y = vo.y;
-  return 1;
+  push_cpVect(L, cpCircleShapeGetOffset((cpShape*)cs));
+  return 2;
 }
  
 static int cpCircleShape_getRadius(lua_State *L) {

@@ -45,7 +45,7 @@ static cpBody *push_cpBody (lua_State *L) {
   lua_pushlightuserdata(L, b);
   lua_pushvalue(L, -3);
   lua_rawset(L, -3);
-  lua_pop(L,1);
+  lua_pop(L, 1);
 
   return b;
 }
@@ -87,22 +87,22 @@ static int cpBody_setAngle (lua_State *L) {
 
 static int cpBody_setPos (lua_State *L) {
   cpBody *b = check_cpBody(L, 1);
-  cpVect *v = check_cpVect(L, 2);
-  cpBodySetPos(b, *v);
+  cpVect v = check_cpVect(L, 2);
+  cpBodySetPos(b, v);
   return 0;
 }
 
 static int cpBody_setForce (lua_State *L) {
   cpBody *b = check_cpBody(L, 1);
-  cpVect *v = check_cpVect(L, 2);
-  cpBodySetForce(b, *v);
+  cpVect v = check_cpVect(L, 2);
+  cpBodySetForce(b, v);
   return 0;
 }
 
 static int cpBody_setVel (lua_State *L) {
   cpBody *b = check_cpBody(L, 1);
-  cpVect *v = check_cpVect(L, 2);
-  cpBodySetVel(b, *v);
+  cpVect v = check_cpVect(L, 2);
+  cpBodySetVel(b, v);
   return 0;
 }
 
@@ -152,65 +152,47 @@ static int cpBody_getMass (lua_State *L) {
 
 static int cpBody_getPos (lua_State *L){
   cpBody *b = check_cpBody(L, 1);
-  cpVect *v = push_cpVect(L);
-  cpVect vi = cpBodyGetPos(b);
-  v->x = vi.x;
-  v->y = vi.y;
-  return 1;
+  push_cpVect(L, cpBodyGetPos(b));
+  return 2;
 }
 
 static int cpBody_getVel (lua_State *L){
   cpBody *b = check_cpBody(L, 1);
-  cpVect *v = push_cpVect(L);
-  cpVect vi = cpBodyGetVel(b);
-  v->x = vi.x;
-  v->y = vi.y;
-  return 1;
+  push_cpVect(L, cpBodyGetVel(b));
+  return 2;
 }
 
 static int cpBody_getForce (lua_State *L){
   cpBody *b = check_cpBody(L, 1);
-  cpVect *v = push_cpVect(L);
-  cpVect vi = cpBodyGetForce(b);
-  v->x = vi.x;
-  v->y = vi.y;
-  return 1;
+  push_cpVect(L, cpBodyGetForce(b));
+  return 2;
 }
 
 static int cpBody_getRot (lua_State *L){
   cpBody *b = check_cpBody(L, 1);
-  cpVect *v = push_cpVect(L);
-  cpVect vi = cpBodyGetRot(b);
-  v->x = vi.x;
-  v->y = vi.y;
-  return 1;
+  push_cpVect(L, cpBodyGetRot(b));
+  return 2;
 }
 
 static int cpBody_getLocal2World (lua_State *L){
   cpBody *b = check_cpBody(L, 1);
-  cpVect *vi = check_cpVect(L, 2);
-  cpVect *v = push_cpVect(L);
-  cpVect vo = cpBodyLocal2World(b, *vi);
-  v->x = vo.x;
-  v->y = vo.y;
-  return 1;
+  cpVect vi = check_cpVect(L, 2);
+  push_cpVect(L, cpBodyLocal2World(b, vi));
+  return 2;
 }
 
 static int cpBody_getWorld2Local (lua_State *L){
   cpBody *b = check_cpBody(L, 1);
-  cpVect *vi = check_cpVect(L, 2);
-  cpVect *v = push_cpVect(L);
-  cpVect vo = cpBodyWorld2Local(b, *vi);
-  v->x = vo.x;
-  v->y = vo.y;
-  return 1;
+  cpVect vi = check_cpVect(L, 2);
+  push_cpVect(L, cpBodyWorld2Local(b, vi));
+  return 2;
 }
 
 static int cpBody_ApplyImpulse (lua_State *L){
   cpBody *b = check_cpBody(L, 1);
-  cpVect *j = check_cpVect(L, 2);
-  cpVect *r = check_cpVect(L, 3);
-  cpBodyApplyImpulse(b, *j, *r);
+  cpVect j = check_cpVect(L, 2);
+  cpVect r = check_cpVect(L, 4);
+  cpBodyApplyImpulse(b, j, r);
   return 0;
 }
 
@@ -222,9 +204,9 @@ static int cpBody_ResetForces (lua_State *L){
 
 static int cpBody_ApplyForce (lua_State *L){
   cpBody *b = check_cpBody(L, 1);
-  cpVect *f = check_cpVect(L, 2);
-  cpVect *r = check_cpVect(L, 3);
-  cpBodyApplyForce(b, *f, *r);
+  cpVect f = check_cpVect(L, 2);
+  cpVect r = check_cpVect(L, 4);
+  cpBodyApplyForce(b, f, r);
   return 0;
 }
 
@@ -233,20 +215,20 @@ static int cpBody_ApplyForce (lua_State *L){
 static int cpBody_ApplyDampedSpring (lua_State *L){
   cpBody *a = check_cpBody(L, 1);
   cpBody *b = check_cpBody(L, 2);
-  cpVect *an1 = check_cpVect(L, 3);
-  cpVect *an2 = check_cpVect(L, 4);
-  cpFloat rlen = (cpFloat)luaL_checknumber(L,5);
-  cpFloat k = (cpFloat)luaL_checknumber(L,6);
-  cpFloat dmp = (cpFloat)luaL_checknumber(L,7);
-  cpFloat dt = (cpFloat)luaL_checknumber(L,8);
-  cpApplyDampedSpring(a, b, *an1, *an2, rlen, k, dmp, dt);
+  cpVect an1 = check_cpVect(L, 3);
+  cpVect an2 = check_cpVect(L, 5);
+  cpFloat rlen = (cpFloat)luaL_checknumber(L, 7);
+  cpFloat k = (cpFloat)luaL_checknumber(L, 8);
+  cpFloat dmp = (cpFloat)luaL_checknumber(L, 9);
+  cpFloat dt = (cpFloat)luaL_checknumber(L, 10);
+  cpApplyDampedSpring(a, b, an1, an2, rlen, k, dmp, dt);
   return 0;
 }
 
 static int cpBody_gc(lua_State *L) {
   /* no need to check the type */
-  cpBody *b = lua_touserdata(L, 1);
-  cpBodyFree(b);
+  cpBody **b = lua_touserdata(L, 1);
+  cpBodyFree(*b);
   return 0;
 }
 

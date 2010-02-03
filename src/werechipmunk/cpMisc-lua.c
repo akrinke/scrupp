@@ -34,39 +34,40 @@ static int cpMisc_calcCircleMoment(lua_State *L) {
   cpFloat m = (cpFloat)luaL_checknumber(L, 1);
   cpFloat r1 = (cpFloat)luaL_checknumber(L, 2);
   cpFloat r2 = (cpFloat)luaL_checknumber(L, 3);
-  cpVect *os = check_cpVect(L, 4);
-  lua_pushnumber(L, (double)cpMomentForCircle(m, r1, r2, *os));
+  cpVect os = check_cpVect(L, 4);
+  lua_pushnumber(L, (double)cpMomentForCircle(m, r1, r2, os));
   return 1;
 }
 
 static int cpMisc_calcSegmentMoment(lua_State *L) {
   cpFloat m = (cpFloat)luaL_checknumber(L, 1);
-  cpVect *a = check_cpVect(L, 2);
-  cpVect *b = check_cpVect(L, 3);
-  lua_pushnumber(L, (double)cpMomentForSegment(m, *a, *b));
+  cpVect a = check_cpVect(L, 2);
+  cpVect b = check_cpVect(L, 4);
+  lua_pushnumber(L, (double)cpMomentForSegment(m, a, b));
   return 1;
 }
 
 static int cpMisc_calcPolyMoment(lua_State *L) {
   cpFloat m = (cpFloat)luaL_checknumber(L, 1);
-  /* TODO check that arg 2 is > 2 */
-  int nVerts = luaL_checkint(L, 2);
-  /* TODO TODO check that arg 3 is a table */
-  cpVect *verts = (cpVect *)calloc(nVerts, sizeof(cpVect));
+  luaL_checktype(L, 2, LUA_TTABLE);
+  int n = lua_objlen(L, 2);
+  luaL_argcheck(L, (n % 2 == 0) && (n > 4), 2, "at least 3 pairs of coordinates are requires");
+  cpVect offset = check_cpVect(L, 3);
+
+  cpVect *verts = (cpVect *)calloc(n/2, sizeof(cpVect));
 
   int i;
-  for (i=0; i<nVerts; i++) {
+  for (i=1; i<n; i=i+2) {
+    lua_pushinteger(L, i);
+    lua_gettable(L, 2);
     lua_pushinteger(L, i+1);
-    lua_gettable(L, 3);
-    cpVect *c = check_cpVect(L, -1);
-    verts[i].x=c->x;
-    verts[i].y=c->y;
-    lua_pop(L,1);
+    lua_gettable(L, 2);
+    verts[i].x = (cpFloat)luaL_checknumber(L, -2);;
+    verts[i].y = (cpFloat)luaL_checknumber(L, -1);
+    lua_pop(L, 2);
   }
 
-  cpVect *os = check_cpVect(L, 4);
-
-  lua_pushnumber(L, (double)cpMomentForPoly(m, nVerts, verts, *os));
+  lua_pushnumber(L, (double)cpMomentForPoly(m, n/2, verts, offset));
   free(verts);
   return 1;
 }

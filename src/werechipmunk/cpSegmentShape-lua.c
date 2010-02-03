@@ -56,12 +56,12 @@ static cpSegmentShape *push_cpSegmentShape(lua_State *L) {
 
 static int cpSegmentShape_new(lua_State *L) {
   cpBody *body = check_cpBody(L, 1);
-  cpVect *a = check_cpVect(L, 2);
-  cpVect *b = check_cpVect(L, 3);
-  cpFloat radius = (cpFloat)luaL_checknumber(L, 4);
+  cpVect a = check_cpVect(L, 2);
+  cpVect b = check_cpVect(L, 4);
+  cpFloat radius = (cpFloat)luaL_checknumber(L, 6);
 
   cpSegmentShape *ss = push_cpSegmentShape(L);
-  cpSegmentShapeInit(ss, body, *a, *b, radius);
+  cpSegmentShapeInit(ss, body, a, b, radius);
   
   /* cpReferences.shape_userdata = body_userdata */
   lua_pushliteral(L, "cpReferences");
@@ -73,34 +73,24 @@ static int cpSegmentShape_new(lua_State *L) {
   return 1;
 }
 
- 
 static int cpSegmentShape_getA(lua_State *L) {
   cpSegmentShape *ss = check_cpSegmentShape(L, 1);
-  cpVect *v = push_cpVect(L);
-  cpVect vo = cpSegmentShapeGetA((cpShape*)ss);
-  v->x = vo.x;
-  v->y = vo.y;
-  return 1;
+  push_cpVect(L, cpSegmentShapeGetA((cpShape*)ss));
+  return 2;
 }
- 
+
 static int cpSegmentShape_getB(lua_State *L) {
   cpSegmentShape *ss = check_cpSegmentShape(L, 1);
-  cpVect *v = push_cpVect(L);
-  cpVect vo  = cpSegmentShapeGetB((cpShape*)ss);
-  v->x = vo.x;
-  v->y = vo.y;
-  return 1;
+  push_cpVect(L, cpSegmentShapeGetB((cpShape*)ss));
+  return 2;
 }
- 
+
 static int cpSegmentShape_getNormal(lua_State *L) {
   cpSegmentShape *ss = check_cpSegmentShape(L, 1);
-  cpVect *v = push_cpVect(L);
-  cpVect vo  = cpSegmentShapeGetNormal((cpShape*)ss);
-  v->x = vo.x;
-  v->y = vo.y;
-  return 1;
+  push_cpVect(L, cpSegmentShapeGetNormal((cpShape*)ss));
+  return 2;
 }
- 
+
 static int cpSegmentShape_getRadius(lua_State *L) {
   cpSegmentShape *ss = check_cpSegmentShape(L, 1);
   lua_pushnumber(L, (double)cpSegmentShapeGetRadius((cpShape*)ss));

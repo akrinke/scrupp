@@ -23,9 +23,7 @@
 #ifndef CPVECT_LUA_H
 #define CPVECT_LUA_H
 
-#define check_cpVect(L, index) \
-  (cpVect *)luaL_checkudata(L, (index), "cpVect")
-
-cpVect *push_cpVect(lua_State *L);
+inline cpVect check_cpVect(lua_State *L, int index);
+inline void push_cpVect(lua_State *L, cpVect v);
 
 #endif

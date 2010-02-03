@@ -57,22 +57,25 @@ static cpPolyShape *push_cpPolyShape (lua_State *L) {
 
 static int cpPolyShape_new(lua_State *L) {
   cpBody *body = check_cpBody(L, 1);
-  unsigned int nVerts = (unsigned int)luaL_checkint(L, 2);
-  cpVect *offset = check_cpVect (L, 4);
+  luaL_checktype(L, 2, LUA_TTABLE);
+  int n = lua_objlen(L, 2);
+  luaL_argcheck(L, (n % 2 == 0) && (n > 4), 2, "at least 3 pairs of coordinates are requires");
+  cpVect offset = check_cpVect(L, 3);
 
-  cpVect *verts = (cpVect *)malloc(nVerts * sizeof(cpVect));
+  cpVect *verts = (cpVect *)malloc(n * sizeof(cpVect));
 
   int i;
-  for (i = 0; i < nVerts; i++) {    
+  for (i=1; i<n; i=i+2) {
+    lua_pushinteger(L, i);
+    lua_gettable(L, 2);
     lua_pushinteger(L, i+1);
-    lua_gettable(L, 3);
-    cpVect *c = check_cpVect(L, -1);
-    lua_pop(L,1);
-    verts[i].x=c->x;
-    verts[i].y=c->y;
+    lua_gettable(L, 2);
+    verts[i].x = (cpFloat)luaL_checknumber(L, -2);
+    verts[i].y = (cpFloat)luaL_checknumber(L, -1);
+    lua_pop(L, 2);
   }
   cpPolyShape *poly = push_cpPolyShape(L);
-  cpPolyShapeInit(poly, body, (int)nVerts, verts, *offset);
+  cpPolyShapeInit(poly, body, n/2, verts, offset);
   free(verts);
   
   /* cpReferences.shape_userdata = body_userdata */
@@ -87,13 +90,10 @@ static int cpPolyShape_new(lua_State *L) {
 }
 
 static int cpPolyShape_getVert(lua_State *L) {
-  cpPolyShape *cs = check_cpPolyShape(L, 1);
+  cpPolyShape *ps = check_cpPolyShape(L, 1);
   int i = luaL_checkint(L, 2);
-  cpVect *v = push_cpVect(L);
-  cpVect vo  = cpPolyShapeGetVert((cpShape*)cs, i);
-  v->x = vo.x;
-  v->y = vo.y;
-  return 1;
+  push_cpVect(L, cpPolyShapeGetVert((cpShape*)ps, i));
+  return 2;
 }
 
 static int cpPolyShape_getNumVerts(lua_State *L) {

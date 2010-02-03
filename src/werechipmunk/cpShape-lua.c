@@ -31,11 +31,11 @@
 #include "cpShape-lua.h"
 
 cpShape *check_cpShape (lua_State *L, int index) {
-  cpShape *s = (cpShape *)lua_touserdata(L, index);
+  cpShape **ps = (cpShape **)lua_touserdata(L, index);
   /* get table of metatables from the registry */
   lua_pushliteral(L, "cpShapes");
   lua_rawget(L, LUA_REGISTRYINDEX);
-  if (s == NULL || !lua_getmetatable(L, index)) {
+  if (ps == NULL || !lua_getmetatable(L, index)) {
     luaL_typerror(L, index, "cpShape");
   }
   lua_rawget(L, -2);
@@ -44,7 +44,7 @@ cpShape *check_cpShape (lua_State *L, int index) {
   }
   /* pop table of metatables and boolean */
   lua_pop(L, 2);
-  return s;
+  return *ps;
 }
 
 int cpShape_getBody(lua_State *L) {
@@ -79,7 +79,7 @@ int cpShape_setCollisionType(lua_State *L) {
 
 int cpShape_gc(lua_State *L) {
   /* no need to check the type */
-  cpShape* s = lua_touserdata(L, 1);
-  cpShapeFree(s);
+  cpShape **ps = lua_touserdata(L, 1);
+  cpShapeFree(*ps);
   return 0;
 }

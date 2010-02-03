@@ -29,11 +29,11 @@
 #include <lualib.h>
 
 cpConstraint *check_cpConstraint(lua_State *L, int index) {
-  cpConstraint *c = (cpConstraint *)lua_touserdata(L, index);
+  cpConstraint **pc = (cpConstraint **)lua_touserdata(L, index);
   /* get table of metatables from the registry */
   lua_pushliteral(L, "cpConstraints");
   lua_rawget(L, LUA_REGISTRYINDEX);
-  if (c == NULL || !lua_getmetatable(L, index)) {
+  if (pc == NULL || !lua_getmetatable(L, index)) {
     luaL_typerror(L, index, "cpConstraint");
   }
   lua_rawget(L, -2);
@@ -42,13 +42,13 @@ cpConstraint *check_cpConstraint(lua_State *L, int index) {
   }
   /* pop table of metatables and boolean */
   lua_pop(L, 2);
-  return c;
+  return *pc;
 }
 
 int cpConstraint_gc(lua_State *L) {
   /* no need to check the type */
-  cpConstraint *c = (cpConstraint *)lua_touserdata(L, 1);
-  cpConstraintFree(c);
+  cpConstraint **c = (cpConstraint **)lua_touserdata(L, 1);
+  cpConstraintFree(*c);
   return 0;
 }
 
