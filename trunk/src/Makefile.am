@@ -17,9 +17,9 @@ SUBDIRS = \
 	luasocket \
 	werechipmunk
 LDADD = \
-	chipmunk/libchipmunk.a \
 	luafilesystem/libluafilesystem.a \
 	lua-oocairo/libluaoocairo.a \
 	luasocket/libluasocket.a \
-	werechipmunk/libwerechip.a
+	werechipmunk/libwerechipmunk.a \
+	chipmunk/libchipmunk.a
 AM_CFLAGS = -DSHARE_DIR=\"$(pkgdatadir)\"
