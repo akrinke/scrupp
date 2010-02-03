@@ -148,9 +148,11 @@ static int cpSpace_step(lua_State *L) {
 }
 
 static int cpSpace_setGravity(lua_State *L) {
-  cpSpace *space = check_cpSpace(L,1);
-  cpVect *v = check_cpVect(L,2);
-  space->gravity = *v;
+  cpSpace *space = check_cpSpace(L, 1);
+  cpFloat x = (cpFloat)luaL_checknumber(L, 2);
+  cpFloat y = (cpFloat)luaL_checknumber(L, 3);
+  space->gravity.x = x;
+  space->gravity.y = y;
   return 0;
 }
 

@@ -46,11 +46,11 @@ static cpPivotJoint *push_cpPivotJoint (lua_State *L) {
 static int cpPivotJoint_new(lua_State *L) {
   cpBody *b1 = check_cpBody (L, 1);
   cpBody *b2 = check_cpBody (L, 2);
-  cpVect *p1 = check_cpVect (L, 3);
-  cpVect *p2 = check_cpVect (L, 4);
+  cpVect p1 = check_cpVect (L, 3);
+  cpVect p2 = check_cpVect (L, 5);
 
   cpPivotJoint *pj = push_cpPivotJoint(L);
-  cpPivotJointInit(pj, b1, b2, *p1, *p2);
+  cpPivotJointInit(pj, b1, b2, p1, p2);
 
   cpConstraint_store_refs(L);
   return 1;

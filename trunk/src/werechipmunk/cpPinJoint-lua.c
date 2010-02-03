@@ -46,11 +46,11 @@ static cpPinJoint *push_cpPinJoint (lua_State *L) {
 static int cpPinJoint_new(lua_State *L) {
   cpBody *b1 = check_cpBody(L, 1);
   cpBody *b2 = check_cpBody(L, 2);
-  cpVect *a1 = check_cpVect(L, 3);
-  cpVect *a2 = check_cpVect(L, 4);
+  cpVect a1 = check_cpVect(L, 3);
+  cpVect a2 = check_cpVect(L, 5);
 
   cpPinJoint *pj = push_cpPinJoint(L);
-  cpPinJointInit(pj, b1, b2, *a1, *a2);
+  cpPinJointInit(pj, b1, b2, a1, a2);
 
   cpConstraint_store_refs(L);
   return 1;

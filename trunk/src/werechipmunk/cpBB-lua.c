@@ -30,81 +30,52 @@
 
 #include "cpVect-lua.h"
 
-#define check_cpBB(L, index) \
-  (cpBB *)luaL_checkudata(L, (index), "cpBB")
-
-static cpBB *push_cpBB (lua_State *L) {
-  cpBB *bb = (cpBB *)lua_newuserdata(L, sizeof(cpBB));
-  luaL_getmetatable(L, "cpBB");
-  lua_setmetatable(L, -2);
+static inline cpBB check_cpBB(lua_State *L, int index) {
+  cpBB bb = {
+    (cpFloat)luaL_checknumber(L, index),
+    (cpFloat)luaL_checknumber(L, index+1),
+    (cpFloat)luaL_checknumber(L, index+2),
+    (cpFloat)luaL_checknumber(L, index+3)
+  };
   return bb;
 }
 
-static int cpBB_new(lua_State *L) {
-  cpFloat l = (cpFloat)luaL_checknumber (L, 1);
-  cpFloat b = (cpFloat)luaL_checknumber (L, 2);
-  cpFloat r = (cpFloat)luaL_checknumber (L, 3);
-  cpFloat t = (cpFloat)luaL_checknumber (L, 4);
-  cpBB *bb = push_cpBB(L);
-  bb->l = l;
-  bb->b = b;
-  bb->r = r;
-  bb->t = t;
-  return 1;
-}
-
 static int cpBB_intersects(lua_State *L) {
-  cpBB *o1 = check_cpBB(L, 1);
-  cpBB *o2 = check_cpBB(L, 2);
-  lua_pushboolean(L, cpBBintersects(*o1, *o2));
+  cpBB bb1 = check_cpBB(L, 1);
+  cpBB bb2 = check_cpBB(L, 5);
+  lua_pushboolean(L, cpBBintersects(bb1, bb2));
   return 1;
 }
 
 static int cpBB_containsBB(lua_State *L) {
-  cpBB *o1 = check_cpBB(L, 1);
-  cpBB *o2 = check_cpBB(L, 2);
-  lua_pushboolean(L, cpBBcontainsBB(*o1, *o2));
+  cpBB bb1 = check_cpBB(L, 1);
+  cpBB bb2 = check_cpBB(L, 5);
+  lua_pushboolean(L, cpBBcontainsBB(bb1, bb2));
   return 1;
 }
 
 static int cpBB_containsVect(lua_State *L) {
-  cpBB *o1 = check_cpBB(L, 1);
-  cpVect *o2 = check_cpVect(L, 2);
-  lua_pushboolean(L, cpBBcontainsVect(*o1, *o2));
+  cpBB bb = check_cpBB(L, 1);
+  cpVect v = check_cpVect(L, 5);
+  lua_pushboolean(L, cpBBcontainsVect(bb, v));
   return 1;
 }
 
 static int cpBB_clampVect(lua_State *L) {
-  cpBB *o1 = check_cpBB(L, 1);
-  cpVect *o2 = check_cpVect(L, 2);
-  cpVect v = cpBBClampVect(*o1, *o2);
-  cpVect *o = push_cpVect(L);
-  o->x = v.x;
-  o->y = v.y;
-  return 1;
+  cpBB bb = check_cpBB(L, 1);
+  cpVect v = check_cpVect(L, 5);
+  push_cpVect(L, cpBBClampVect(bb, v));
+  return 2;
 }
 
 static int cpBB_wrapVect(lua_State *L) {
-  cpBB *o1 = check_cpBB(L, 1);
-  cpVect *o2 = check_cpVect(L, 2);
-  cpVect v = cpBBWrapVect(*o1, *o2);
-  cpVect *o = push_cpVect(L);
-  o->x = v.x;
-  o->y = v.y;
-  return 1;
-}
-
-static int cpBB_tostring(lua_State *L) {
-  lua_pushfstring(L, "cpBB (%p)", lua_topointer(L, 1));
-  return 1;
+  cpBB bb = check_cpBB(L, 1);
+  cpVect v = check_cpVect(L, 5);
+  push_cpVect(L, cpBBWrapVect(bb, v));
+  return 2;
 }
 
 static const luaL_reg cpBB_functions[] = {
-  {"newBB", cpBB_new},
-  {NULL, NULL}
-};
-
-static const luaL_reg cpBB_methods[] = {
   {"intersects",   cpBB_intersects},
   {"containsBB",   cpBB_containsBB},
   {"containsVect", cpBB_containsVect},
@@ -113,24 +84,10 @@ static const luaL_reg cpBB_methods[] = {
   {NULL, NULL}
 };
 
-static const luaL_reg cpBB_meta[] = {
-  {"__tostring", cpBB_tostring},
-  {NULL, NULL}
-};
-
 int cpBB_register(lua_State *L) {
-  luaL_register(L, NULL, cpBB_functions);
-  
-  luaL_newmetatable(L, "cpBB");
-  luaL_register(L, NULL, cpBB_meta);
-  /* metatable.__index = methods */
-  lua_pushliteral(L, "__index");
+  lua_pushliteral(L, "bb");
   lua_newtable(L);
-  luaL_register(L, NULL, cpBB_methods);
+  luaL_register(L, NULL, cpBB_functions);
   lua_rawset(L, -3);
-
-  lua_pop(L, 1);
   return 0;
 }
-
-  

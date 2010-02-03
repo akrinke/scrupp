@@ -69,39 +69,27 @@ static int cpArbiter_isFirstContact(lua_State *L) {
 
 static int cpArbiter_getNormal(lua_State *L) {
   cpArbiter *arb = toarbiter(L);
-  cpVect normal = cpArbiterGetNormal(arb, 0);
-  cpVect *pNormal = push_cpVect(L);
-  pNormal->x = normal.x;
-  pNormal->y = normal.y;
-  return 1;
+  push_cpVect(L, cpArbiterGetNormal(arb, 0));
+  return 2;
 }
 
 static int cpArbiter_getPoint(lua_State *L) {
   cpArbiter *arb = toarbiter(L);
   int i = luaL_checkint(L, 2);
-  cpVect point = cpArbiterGetPoint(arb, i);
-  cpVect *pPoint = push_cpVect(L);
-  pPoint->x = point.x;
-  pPoint->y = point.y;
-  return 1;
+  push_cpVect(L, cpArbiterGetPoint(arb, i));
+  return 2;
 }
 
 static int cpArbiter_totalImpulse(lua_State *L) {
   cpArbiter *arb = toarbiter(L);
-  cpVect impulse = cpArbiterTotalImpulse(arb);
-  cpVect *pImpulse = push_cpVect(L);
-  pImpulse->x = impulse.x;
-  pImpulse->y = impulse.y;
-  return 1;
+  push_cpVect(L, cpArbiterTotalImpulse(arb));
+  return 2;
 }
 
 static int cpArbiter_totalImpulseWithFriction(lua_State *L) {
   cpArbiter *arb = toarbiter(L);
-  cpVect impulse = cpArbiterTotalImpulseWithFriction(arb);
-  cpVect *pImpulse = push_cpVect(L);
-  pImpulse->x = impulse.x;
-  pImpulse->y = impulse.y;
-  return 1;
+  push_cpVect(L, cpArbiterTotalImpulseWithFriction(arb));
+  return 2;
 }
 
 static int cpArbiter_getE(lua_State *L) {
