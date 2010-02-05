@@ -313,22 +313,24 @@ static int Lua_Graphics_init(lua_State *L) {
 
 static int Lua_Graphics_showCursor(lua_State *L) {
 	int result;
-	if (lua_isnoneornil(L, 1)) {
+	if (lua_isnone(L, 1)) {
 		result = SDL_ShowCursor(SDL_QUERY);
-		if (result == SDL_ENABLE)
+		if (result == SDL_ENABLE) {
 			lua_pushboolean(L, 1);
-		else
+		} else {
 			lua_pushboolean(L, 0);
+		}
+		return 1;
 	} else {
-		luaL_checkany(L, -1);
 		result = lua_toboolean(L, 1);
 		lua_pushnil(L);
-		if (result)
+		if (result) {
 			SDL_ShowCursor(SDL_ENABLE);
-		else
+		} else {
 			SDL_ShowCursor(SDL_DISABLE);
+		}
+		return 0;
 	}
-	return 1;
 }
 
 static int Lua_Graphics_getWindowWidth(lua_State *L) {
@@ -526,9 +528,18 @@ static int Lua_Image_getAlpha(lua_State *L) {
 
 static int Lua_Image_setColor(lua_State *L) {
 	Lua_Image *image = checkimage(L);
+	if (lua_istable(L, 2)) {
+		lua_pushinteger(L, 1);
+		lua_gettable(L, 2);
+		lua_pushinteger(L, 2);
+		lua_gettable(L, 2);
+		lua_pushinteger(L, 3);
+		lua_gettable(L, 2);
+		lua_remove(L, 2);
+	}
 	GLubyte r = (GLubyte)luaL_checkint(L, 2);
 	GLubyte g = (GLubyte)luaL_checkint(L, 3);
-	GLubyte b = (GLubyte)luaL_checkint(L, 4);
+	GLubyte b = (GLubyte)luaL_checkint(L, 4);	
 	if (image->color == NULL) {
 		image->color = (GLubyte *)malloc(3*sizeof(GLubyte));
 	}
