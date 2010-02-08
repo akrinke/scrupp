@@ -23,11 +23,41 @@
 #ifndef CPSHAPE_LUA_H
 #define CPSHAPE_LUA_H
 
-cpShape *check_cpShape(lua_State *L, int index);
-int cpShape_setCollisionType(lua_State *L);
+#define DEFINE_SHAPE_METHODS \
+  {"getBody", cpShape_getBody}, \
+  {"setBody", cpShape_setBody}, \
+  {"getCollisionType", cpShape_getCollisionType }, \
+  {"setCollisionType", cpShape_setCollisionType }, \
+  {"getGroup", cpShape_getGroup}, \
+  {"setGroup", cpShape_setGroup}, \
+  {"getLayers", cpShape_getLayers}, \
+  {"setLayers", cpShape_setLayers}, \
+  {"getBB", cpShape_getBB}, \
+  {"cacheBB", cpShape_cacheBB}, \
+  {"getElasticity", cpShape_getElasticity}, \
+  {"setElasticity", cpShape_setElasticity}, \
+  {"getFriction", cpShape_getFriction}, \
+  {"setFriction", cpShape_setFriction}, \
+  {"getSurfaceVelocity", cpShape_getSurfaceVelocity}, \
+  {"setSurfaceVelocity", cpShape_setSurfaceVelocity}
+
+cpShape *check_cpShape (lua_State *L, int index);
+int cpShape_getBody (lua_State *L);
+int cpShape_setBody (lua_State *L);
+int cpShape_getCollisionType (lua_State *L);
+int cpShape_setCollisionType (lua_State *L);
+int cpShape_getGroup (lua_State *L);
+int cpShape_setGroup (lua_State *L);
+int cpShape_getLayers (lua_State *L);
+int cpShape_setLayers (lua_State *L);
+int cpShape_getBB (lua_State *L);
+int cpShape_cacheBB (lua_State *L);
+int cpShape_getElasticity (lua_State *L);
+int cpShape_setElasticity (lua_State *L);
+int cpShape_getFriction (lua_State *L);
 int cpShape_setFriction (lua_State *L);
-int cpShape_setRestitution (lua_State *L);
-int cpShape_getBody(lua_State *L);
-int cpShape_gc(lua_State *L);
+int cpShape_getSurfaceVelocity (lua_State *L);
+int cpShape_setSurfaceVelocity (lua_State *L);
+int cpShape_gc (lua_State *L);
 
 #endif

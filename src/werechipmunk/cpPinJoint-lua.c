@@ -43,7 +43,7 @@ static cpPinJoint *push_cpPinJoint (lua_State *L) {
   return pj;
 }
 
-static int cpPinJoint_new(lua_State *L) {
+static int cpPinJoint_new (lua_State *L) {
   cpBody *b1 = check_cpBody(L, 1);
   cpBody *b2 = check_cpBody(L, 2);
   cpVect a1 = check_cpVect(L, 3);
@@ -66,6 +66,11 @@ static const luaL_reg cpPinJoint_functions[] = {
   {NULL, NULL}
 };
 
+static const luaL_reg cpPinJoint_methods[] = {
+  DEFINE_CONSTRAINT_METHODS,
+  {NULL, NULL}
+};
+
 static const luaL_reg cpPinJoint_meta[] = {
   {"__gc",       cpConstraint_gc},
   {"__tostring", cpPinJoint_tostring},
@@ -77,6 +82,11 @@ int cpPinJoint_register (lua_State *L) {
 
   luaL_newmetatable(L, "cpPinJoint");
   luaL_register(L, NULL, cpPinJoint_meta);
+  /* metatable.__index = methods table */
+  lua_pushliteral(L, "__index");
+  lua_newtable(L);
+  luaL_register(L, NULL, cpPinJoint_methods);
+  lua_rawset(L, -3);
 
   /* cpConstraints.metatable = 1 */
   lua_pushliteral(L, "cpConstraints");

@@ -28,7 +28,9 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-cpConstraint *check_cpConstraint(lua_State *L, int index) {
+#include "cpBody-lua.h"
+
+cpConstraint *check_cpConstraint (lua_State *L, int index) {
   cpConstraint **pc = (cpConstraint **)lua_touserdata(L, index);
   /* get table of metatables from the registry */
   lua_pushliteral(L, "cpConstraints");
@@ -45,14 +47,85 @@ cpConstraint *check_cpConstraint(lua_State *L, int index) {
   return *pc;
 }
 
-int cpConstraint_gc(lua_State *L) {
+int cpConstraint_getBodyA (lua_State *L) {
+  cpConstraint *c = check_cpConstraint(L, 1);
+  lua_pushliteral(L, "cpBody__ptrs");
+  lua_rawget(L, LUA_REGISTRYINDEX);
+  lua_pushlightuserdata(L, c->a);
+  lua_rawget(L, -2);
+  return 1;
+}
+
+int cpConstraint_setBodyA (lua_State *L) {
+  cpConstraint *c = check_cpConstraint(L, 1);
+  cpBody *b = check_cpBody(L, 2);
+  c->a = b;
+  return 0;
+}
+
+int cpConstraint_getBodyB (lua_State *L) {
+  cpConstraint *c = check_cpConstraint(L, 1);
+  lua_pushliteral(L, "cpBody__ptrs");
+  lua_rawget(L, LUA_REGISTRYINDEX);
+  lua_pushlightuserdata(L, c->b);
+  lua_rawget(L, -2);
+  return 1;
+}
+
+int cpConstraint_setBodyB (lua_State *L) {
+  cpConstraint *c = check_cpConstraint(L, 1);
+  cpBody *b = check_cpBody(L, 2);
+  c->b = b;
+  return 0;
+}
+
+int cpConstraint_getMaxForce (lua_State *L) {
+  cpConstraint *c = check_cpConstraint(L, 1);
+  lua_pushnumber(L, (double)c->maxForce);
+  return 1;
+}
+
+int cpConstraint_setMaxForce (lua_State *L) {
+  cpConstraint *c = check_cpConstraint(L, 1);
+  cpFloat maxForce = (cpFloat)luaL_checknumber(L, 2);
+  c->maxForce = maxForce;
+  return 0;
+}
+
+int cpConstraint_getBiasCoefficient (lua_State *L) {
+  cpConstraint *c = check_cpConstraint(L, 1);
+  lua_pushnumber(L, (double)c->biasCoef);
+  return 1;
+}
+
+int cpConstraint_setBiasCoefficient (lua_State *L) {
+  cpConstraint *c = check_cpConstraint(L, 1);
+  cpFloat biasCoef = (cpFloat)luaL_checknumber(L, 2);
+  c->biasCoef = biasCoef;
+  return 0;
+}
+
+int cpConstraint_getMaxBias (lua_State *L) {
+  cpConstraint *c = check_cpConstraint(L, 1);
+  lua_pushnumber(L, (double)c->maxBias);
+  return 1;
+}
+
+int cpConstraint_setMaxBias (lua_State *L) {
+  cpConstraint *c = check_cpConstraint(L, 1);
+  cpFloat maxBias = (cpFloat)luaL_checknumber(L, 2);
+  c->maxBias = maxBias;
+  return 0;
+}
+
+int cpConstraint_gc (lua_State *L) {
   /* no need to check the type */
   cpConstraint **c = (cpConstraint **)lua_touserdata(L, 1);
   cpConstraintFree(*c);
   return 0;
 }
 
-void cpConstraint_store_refs(lua_State *L) {
+void cpConstraint_store_refs (lua_State *L) {
   /* store references to the two bodies */
   lua_pushliteral(L, "cpReferences");
   lua_rawget(L, LUA_REGISTRYINDEX);

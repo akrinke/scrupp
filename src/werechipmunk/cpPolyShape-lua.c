@@ -55,14 +55,15 @@ static cpPolyShape *push_cpPolyShape (lua_State *L) {
   return ps;
 }
 
-static int cpPolyShape_new(lua_State *L) {
+static int cpPolyShape_new (lua_State *L) {
   cpBody *body = check_cpBody(L, 1);
   luaL_checktype(L, 2, LUA_TTABLE);
   int n = lua_objlen(L, 2);
   luaL_argcheck(L, (n % 2 == 0) && (n > 4), 2, "at least 3 pairs of coordinates are requires");
   cpVect offset = check_cpVect(L, 3);
 
-  cpVect *verts = (cpVect *)malloc(n * sizeof(cpVect));
+  cpVect *verts = (cpVect *)malloc(n/2 * sizeof(cpVect));
+  cpVect *tv = verts;
 
   int i;
   for (i=1; i<n; i=i+2) {
@@ -70,8 +71,9 @@ static int cpPolyShape_new(lua_State *L) {
     lua_gettable(L, 2);
     lua_pushinteger(L, i+1);
     lua_gettable(L, 2);
-    verts[i].x = (cpFloat)luaL_checknumber(L, -2);
-    verts[i].y = (cpFloat)luaL_checknumber(L, -1);
+    tv->x = (cpFloat)luaL_checknumber(L, -2);
+    tv->y = (cpFloat)luaL_checknumber(L, -1);
+    tv++;
     lua_pop(L, 2);
   }
   cpPolyShape *poly = push_cpPolyShape(L);
@@ -89,14 +91,14 @@ static int cpPolyShape_new(lua_State *L) {
   return 1;
 }
 
-static int cpPolyShape_getVert(lua_State *L) {
+static int cpPolyShape_getVert (lua_State *L) {
   cpPolyShape *ps = check_cpPolyShape(L, 1);
   int i = luaL_checkint(L, 2);
-  push_cpVect(L, cpPolyShapeGetVert((cpShape*)ps, i));
+  push_cpVect(L, cpPolyShapeGetVert((cpShape*)ps, i-1));
   return 2;
 }
 
-static int cpPolyShape_getNumVerts(lua_State *L) {
+static int cpPolyShape_getNumVerts (lua_State *L) {
   cpPolyShape* ps = check_cpPolyShape(L, 1);
   lua_pushinteger(L, cpPolyShapeGetNumVerts((cpShape *)ps));
   return 1;
@@ -115,10 +117,7 @@ static const luaL_reg cpPolyShape_functions[] = {
 static const luaL_reg cpPolyShape_methods[] = {
   {"getVert",          cpPolyShape_getVert},
   {"getNumVerts",      cpPolyShape_getNumVerts},
-  {"setRestitution",   cpShape_setRestitution},
-  {"setFriction",      cpShape_setFriction},
-  {"setCollisionType", cpShape_setCollisionType},
-  {"getBody",          cpShape_getBody},
+  DEFINE_SHAPE_METHODS,
   {NULL, NULL}
 };
 

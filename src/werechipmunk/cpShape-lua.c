@@ -29,6 +29,8 @@
 #include <lualib.h>
 
 #include "cpShape-lua.h"
+#include "cpBody-lua.h"
+#include "cpVect-lua.h"
 
 cpShape *check_cpShape (lua_State *L, int index) {
   cpShape **ps = (cpShape **)lua_touserdata(L, index);
@@ -47,7 +49,7 @@ cpShape *check_cpShape (lua_State *L, int index) {
   return *ps;
 }
 
-int cpShape_getBody(lua_State *L) {
+int cpShape_getBody (lua_State *L) {
   cpShape *s = check_cpShape(L, 1);
   lua_pushliteral(L, "cpBody_ptrs");
   lua_rawget(L, LUA_REGISTRYINDEX);
@@ -56,11 +58,110 @@ int cpShape_getBody(lua_State *L) {
   return 1;
 }
 
-int cpShape_setRestitution (lua_State *L) {
+int cpShape_setBody (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  cpBody *b = check_cpBody(L, 2);
+  s->body = b;
+  
+  /* cpReferences.shape_userdata = body_userdata */
+  lua_pushliteral(L, "cpReferences");
+  lua_rawget(L, LUA_REGISTRYINDEX);
+  lua_pushvalue(L, 1);
+  lua_pushvalue(L, 2);
+  lua_rawset(L, -3);
+  lua_pop(L, 1);
+  
+  return 0;
+}
+
+int cpShape_isSensor (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  lua_pushboolean(L, s->sensor);
+  return 1;
+}
+
+int cpShape_setSensor (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  luaL_checkany(L, 2);
+  s->sensor = lua_toboolean(L, 2);
+  return 0;
+}
+
+int cpShape_getCollisionType (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  lua_pushinteger(L, s->collision_type);
+  return 1;
+}
+
+int cpShape_setCollisionType (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  cpCollisionType n = (cpCollisionType)luaL_checkint(L, 2);
+  s->collision_type = n;
+  return 0;
+}
+
+int cpShape_getGroup (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  lua_pushinteger(L, s->group);
+  return 1;
+}
+
+int cpShape_setGroup (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  cpGroup g = (cpGroup)luaL_checkint(L, 2);
+  s->group = g;
+  return 0;  
+}
+
+int cpShape_getLayers (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  lua_pushinteger(L, s->layers);
+  return 1;
+}
+
+int cpShape_setLayers (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  cpLayers l = (cpLayers)luaL_checkint(L, 2);
+  s->layers = l;
+  return 0;
+}
+
+int cpShape_getBB (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  lua_pushnumber(L, (double)s->bb.l);
+  lua_pushnumber(L, (double)s->bb.b);
+  lua_pushnumber(L, (double)s->bb.r);
+  lua_pushnumber(L, (double)s->bb.t);
+  return 4;
+}
+
+int cpShape_cacheBB (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  cpShapeCacheBB(s);
+  lua_pushnumber(L, (double)s->bb.l);
+  lua_pushnumber(L, (double)s->bb.b);
+  lua_pushnumber(L, (double)s->bb.r);
+  lua_pushnumber(L, (double)s->bb.t);
+  return 4;
+}
+
+int cpShape_getElasticity (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  lua_pushnumber(L, (double)s->e);
+  return 1;
+}
+
+int cpShape_setElasticity (lua_State *L) {
   cpShape *s = check_cpShape(L, 1);
   cpFloat e = (cpFloat)luaL_checknumber(L, 2);
   s->e = e;
   return 0;
+}
+
+int cpShape_getFriction (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  lua_pushnumber(L, (double)s->u);
+  return 1;
 }
 
 int cpShape_setFriction (lua_State *L) {
@@ -70,16 +171,38 @@ int cpShape_setFriction (lua_State *L) {
   return 0;
 }
 
-int cpShape_setCollisionType(lua_State *L) {
+int cpShape_getSurfaceVelocity (lua_State *L) {
   cpShape *s = check_cpShape(L, 1);
-  cpCollisionType n = (cpCollisionType)luaL_checkint(L, 2);
-  s->collision_type = n;
+  cpVect v = s->surface_v;
+  push_cpVect(L, v);
+  return 2;
+}
+
+int cpShape_setSurfaceVelocity (lua_State *L) {
+  cpShape *s = check_cpShape(L, 1);
+  cpVect v = check_cpVect(L, 2);
+  s->surface_v = v;
+  return 2;
+}  
+
+int cpShape_resetIdCounter (lua_State *L) {
+  cpResetShapeIdCounter();
   return 0;
 }
 
-int cpShape_gc(lua_State *L) {
+int cpShape_gc (lua_State *L) {
   /* no need to check the type */
   cpShape **ps = lua_touserdata(L, 1);
   cpShapeFree(*ps);
+  return 0;
+}
+
+static const luaL_reg cpShape_functions[] = {
+  {"resetShapeIdCounter", cpShape_resetIdCounter},
+  {NULL, NULL}
+};
+
+int cpShape_register (lua_State *L) {
+  luaL_register(L, NULL, cpShape_functions);
   return 0;
 }

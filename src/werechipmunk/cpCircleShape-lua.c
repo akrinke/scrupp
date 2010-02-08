@@ -35,7 +35,7 @@
 #define check_cpCircleShape(L, index) \
   *(cpCircleShape **)luaL_checkudata(L, (index), "cpCircleShape")
 
-static cpCircleShape *push_cpCircleShape(lua_State *L) {
+static cpCircleShape *push_cpCircleShape (lua_State *L) {
   cpCircleShape *cs = cpCircleShapeAlloc();
   cpCircleShape **ptr = (cpCircleShape **)lua_newuserdata(L, sizeof(cpCircleShape*));
   *ptr = cs;
@@ -54,7 +54,7 @@ static cpCircleShape *push_cpCircleShape(lua_State *L) {
   return cs;
 }
 
-static int cpCircleShape_new(lua_State *L) {
+static int cpCircleShape_new (lua_State *L) {
   cpBody *body = check_cpBody(L, 1);
   cpFloat radius = (cpFloat)luaL_checknumber(L, 2);
   cpVect offset = check_cpVect(L, 3);
@@ -73,13 +73,13 @@ static int cpCircleShape_new(lua_State *L) {
   return 1;
 }
  
-static int cpCircleShape_getOffset(lua_State *L) {
+static int cpCircleShape_getOffset (lua_State *L) {
   cpCircleShape *cs = check_cpCircleShape (L, 1);
   push_cpVect(L, cpCircleShapeGetOffset((cpShape*)cs));
   return 2;
 }
  
-static int cpCircleShape_getRadius(lua_State *L) {
+static int cpCircleShape_getRadius (lua_State *L) {
   cpCircleShape* cs = check_cpCircleShape(L, 1);
   lua_pushnumber(L, cpCircleShapeGetRadius((cpShape*)cs));
   return 1;
@@ -98,10 +98,7 @@ static const luaL_reg cpCircleShape_functions[] = {
 static const luaL_reg cpCircleShape_methods[] = {
   {"getOffset",        cpCircleShape_getOffset},
   {"getRadius",        cpCircleShape_getRadius},
-  {"setRestitution",   cpShape_setRestitution},
-  {"setFriction",      cpShape_setFriction},
-  {"setCollisionType", cpShape_setCollisionType},
-  {"getBody",          cpShape_getBody},
+  DEFINE_SHAPE_METHODS,
   {NULL, NULL}
 };
 

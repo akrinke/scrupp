@@ -23,7 +23,29 @@
 #ifndef CPCONSTRAINT_LUA_H
 #define CPCONSTRAINT_LUA_H
 
+#define DEFINE_CONSTRAINT_METHODS \
+  {"getBodyA", cpConstraint_getBodyA}, \
+  {"setBodyA", cpConstraint_setBodyA}, \
+  {"getBodyB", cpConstraint_getBodyB}, \
+  {"setBodyB", cpConstraint_setBodyB}, \
+  {"getMaxForce", cpConstraint_getMaxForce}, \
+  {"setMaxForce", cpConstraint_setMaxForce}, \
+  {"getBiasCoefficient", cpConstraint_getBiasCoefficient}, \
+  {"setBiasCoefficient", cpConstraint_setBiasCoefficient}, \
+  {"getMaxBias", cpConstraint_getMaxBias}, \
+  {"setMaxBias", cpConstraint_setMaxBias}
+
 cpConstraint *check_cpConstraint(lua_State *L, int index);
-int cpConstraint_gc(lua_State *L);
+int cpConstraint_getBodyA (lua_State *L);
+int cpConstraint_setBodyA (lua_State *L);
+int cpConstraint_getBodyB (lua_State *L);
+int cpConstraint_setBodyB (lua_State *L);
+int cpConstraint_getMaxForce (lua_State *L);
+int cpConstraint_setMaxForce (lua_State *L);
+int cpConstraint_getBiasCoefficient (lua_State *L);
+int cpConstraint_setBiasCoefficient (lua_State *L);
+int cpConstraint_getMaxBias (lua_State *L);
+int cpConstraint_setMaxBias (lua_State *L);
+int cpConstraint_gc (lua_State *L);
 
 #endif
