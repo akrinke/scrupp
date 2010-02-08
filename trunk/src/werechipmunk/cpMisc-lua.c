@@ -30,7 +30,7 @@
 
 #include "cpVect-lua.h"
 
-static int cpMisc_calcCircleMoment(lua_State *L) {
+static int cpMisc_calcCircleMoment (lua_State *L) {
   cpFloat m = (cpFloat)luaL_checknumber(L, 1);
   cpFloat r1 = (cpFloat)luaL_checknumber(L, 2);
   cpFloat r2 = (cpFloat)luaL_checknumber(L, 3);
@@ -39,7 +39,7 @@ static int cpMisc_calcCircleMoment(lua_State *L) {
   return 1;
 }
 
-static int cpMisc_calcSegmentMoment(lua_State *L) {
+static int cpMisc_calcSegmentMoment (lua_State *L) {
   cpFloat m = (cpFloat)luaL_checknumber(L, 1);
   cpVect a = check_cpVect(L, 2);
   cpVect b = check_cpVect(L, 4);
@@ -47,7 +47,7 @@ static int cpMisc_calcSegmentMoment(lua_State *L) {
   return 1;
 }
 
-static int cpMisc_calcPolyMoment(lua_State *L) {
+static int cpMisc_calcPolyMoment (lua_State *L) {
   cpFloat m = (cpFloat)luaL_checknumber(L, 1);
   luaL_checktype(L, 2, LUA_TTABLE);
   int n = lua_objlen(L, 2);
@@ -55,15 +55,17 @@ static int cpMisc_calcPolyMoment(lua_State *L) {
   cpVect offset = check_cpVect(L, 3);
 
   cpVect *verts = (cpVect *)calloc(n/2, sizeof(cpVect));
-
+  cpVect *tv = verts;
+  
   int i;
   for (i=1; i<n; i=i+2) {
     lua_pushinteger(L, i);
     lua_gettable(L, 2);
     lua_pushinteger(L, i+1);
     lua_gettable(L, 2);
-    verts[i].x = (cpFloat)luaL_checknumber(L, -2);;
-    verts[i].y = (cpFloat)luaL_checknumber(L, -1);
+    tv->x = (cpFloat)luaL_checknumber(L, -2);
+    tv->y = (cpFloat)luaL_checknumber(L, -1);
+    tv++;
     lua_pop(L, 2);
   }
 
@@ -85,7 +87,7 @@ static int cpMisc_register (lua_State *L) {
 }
 
 // entry point for lua lib loading
-int luaopen_werechip(lua_State *L) {
+int luaopen_werechip (lua_State *L) {
   cpInitChipmunk();
 
   /* create table with the metatables of the various constraints */
@@ -150,6 +152,7 @@ int luaopen_werechip(lua_State *L) {
   cpVect_register(L);
   
   /* shapes */
+  cpShape_register(L);
   cpCircleShape_register(L);
   cpSegmentShape_register(L);
   cpPolyShape_register(L);

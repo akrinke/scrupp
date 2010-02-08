@@ -31,6 +31,32 @@
 #include "cpBody-lua.h"
 #include "cpVect-lua.h"
 
+#define WCP_DefineGetterSetterFloat(name, cpName) \
+static int cpBody_get##name (lua_State *L) { \
+  cpBody *b = check_cpBody(L, 1); \
+  lua_pushnumber(L, (double)cpBodyGet##cpName(b)); \
+  return 1; \
+} \
+static int cpBody_set##name (lua_State *L) { \
+  cpBody *b = check_cpBody(L, 1); \
+  cpFloat value = (cpFloat)luaL_checknumber(L, 2); \
+  cpBodySet##cpName(b, value); \
+  return 0; \
+}
+
+#define WCP_DefineGetterSetterVect (name, cpName) \
+static int cpBody_get##name(lua_State *L){ \
+  cpBody *b = check_cpBody(L, 1); \
+  push_cpVect(L, cpBodyGet##cpName(b)); \
+  return 2; \
+} \
+static int cpBody_set##name (lua_State *L) { \
+  cpBody *b = check_cpBody(L, 1); \
+  cpVect v = check_cpVect(L, 2); \
+  cpBodySet##cpName(b, v); \
+  return 0; \
+}
+
 static cpBody *push_cpBody (lua_State *L) {
   cpBody *b = cpBodyAlloc();
   cpBody **pb = (cpBody **)lua_newuserdata(L, sizeof(cpBody*));
@@ -50,13 +76,13 @@ static cpBody *push_cpBody (lua_State *L) {
   return b;
 }
 
-static int cpBody_newStatic(lua_State *L) {
+static int cpBody_newStatic (lua_State *L) {
   cpBody *b = push_cpBody(L);
   cpBodyInit(b, INFINITY, INFINITY);
   return 1;
 }
 
-static int cpBody_new(lua_State *L) {
+static int cpBody_new (lua_State *L) {
   cpFloat m = (cpFloat)luaL_checknumber (L, 1);      
   cpFloat i = (cpFloat)luaL_checknumber (L, 2);
   cpBody *b = push_cpBody(L);
@@ -64,111 +90,16 @@ static int cpBody_new(lua_State *L) {
   return 1;
 }
 
-static int cpBody_setMass (lua_State *L) {
-  cpBody *b = check_cpBody(L, 1);
-  cpFloat m = (cpFloat)luaL_checknumber(L, 2);
-  cpBodySetMass(b, m);
-  return 0;
-}
+WCP_DefineGetterSetterFloat(Mass, Mass);
+WCP_DefineGetterSetterFloat(Moment, Moment);
+WCP_DefineGetterSetterVect(Position, Pos);
+WCP_DefineGetterSetterVect(Velocity, Vel);
+WCP_DefineGetterSetterVect(Force, Force);
+WCP_DefineGetterSetterFloat(Angle, Angle);
+WCP_DefineGetterSetterFloat(AngularVelocity, AngVel);
+WCP_DefineGetterSetterFloat(Torque, Torque);
 
-static int cpBody_setMoment (lua_State *L) {
-  cpBody *b = check_cpBody(L, 1);
-  cpFloat i = (cpFloat)luaL_checknumber(L, 2);
-  cpBodySetMoment(b, i);
-  return 0;
-}
-
-static int cpBody_setAngle (lua_State *L) {
-  cpBody *b = check_cpBody(L, 1);
-  cpFloat a = (cpFloat)luaL_checknumber(L, 2);
-  cpBodySetAngle(b, a);
-  return 0;
-}
-
-static int cpBody_setPos (lua_State *L) {
-  cpBody *b = check_cpBody(L, 1);
-  cpVect v = check_cpVect(L, 2);
-  cpBodySetPos(b, v);
-  return 0;
-}
-
-static int cpBody_setForce (lua_State *L) {
-  cpBody *b = check_cpBody(L, 1);
-  cpVect v = check_cpVect(L, 2);
-  cpBodySetForce(b, v);
-  return 0;
-}
-
-static int cpBody_setVel (lua_State *L) {
-  cpBody *b = check_cpBody(L, 1);
-  cpVect v = check_cpVect(L, 2);
-  cpBodySetVel(b, v);
-  return 0;
-}
-
-static int cpBody_setAngVel (lua_State *L) {
-  cpBody *b = check_cpBody(L, 1);
-  cpFloat av = (cpFloat)luaL_checknumber(L, 2);
-  cpBodySetAngVel(b, av);
-  return 0;
-}
-
-static int cpBody_setTorque (lua_State *L) {
-  cpBody *b = check_cpBody(L, 1);
-  cpFloat t = (cpFloat)luaL_checknumber(L, 2);
-  cpBodySetTorque(b, t);
-  return 0;
-}
-
-static int cpBody_getMoment (lua_State *L) {
-  cpBody *b = check_cpBody(L, 1);
-  lua_pushnumber(L, (double)cpBodyGetMoment(b));
-  return 1;
-}
-
-static int cpBody_getAngle (lua_State *L) {
-  cpBody *b = check_cpBody(L, 1);
-  lua_pushnumber(L, (double)cpBodyGetAngle(b));
-  return 1;
-}
-
-static int cpBody_getAngVel (lua_State *L) {
-  cpBody *b = check_cpBody(L, 1);
-  lua_pushnumber(L, (double)cpBodyGetAngVel(b));
-  return 1;
-}
-
-static int cpBody_getTorque (lua_State *L) {
-  cpBody *b = check_cpBody(L, 1);
-  lua_pushnumber(L, (double)cpBodyGetTorque(b));
-  return 1;
-}
-
-static int cpBody_getMass (lua_State *L) {
-  cpBody *b = check_cpBody(L, 1);
-  lua_pushnumber(L, (double)cpBodyGetMass(b));
-  return 1;
-}
-
-static int cpBody_getPos (lua_State *L){
-  cpBody *b = check_cpBody(L, 1);
-  push_cpVect(L, cpBodyGetPos(b));
-  return 2;
-}
-
-static int cpBody_getVel (lua_State *L){
-  cpBody *b = check_cpBody(L, 1);
-  push_cpVect(L, cpBodyGetVel(b));
-  return 2;
-}
-
-static int cpBody_getForce (lua_State *L){
-  cpBody *b = check_cpBody(L, 1);
-  push_cpVect(L, cpBodyGetForce(b));
-  return 2;
-}
-
-static int cpBody_getRot (lua_State *L){
+static int cpBody_getRotation (lua_State *L){
   cpBody *b = check_cpBody(L, 1);
   push_cpVect(L, cpBodyGetRot(b));
   return 2;
@@ -210,8 +141,6 @@ static int cpBody_ApplyForce (lua_State *L){
   return 0;
 }
 
-// deprecated!!!
-//void cpApplyDampedSpring(cpBody *a, cpBody *b, cpVect anchr1, cpVect anchr2, cpFloat rlen, cpFloat k, cpFloat dmp, cpFloat dt)
 static int cpBody_ApplyDampedSpring (lua_State *L){
   cpBody *a = check_cpBody(L, 1);
   cpBody *b = check_cpBody(L, 2);
@@ -225,7 +154,7 @@ static int cpBody_ApplyDampedSpring (lua_State *L){
   return 0;
 }
 
-static int cpBody_gc(lua_State *L) {
+static int cpBody_gc (lua_State *L) {
   /* no need to check the type */
   cpBody **b = lua_touserdata(L, 1);
   cpBodyFree(*b);
@@ -244,29 +173,29 @@ static const luaL_reg cpBody_functions[] = {
 };
 
 static const luaL_reg cpBody_methods[] = {
-  {"setMass",           cpBody_setMass},
-  {"setMoment",         cpBody_setMoment},
-  {"setAngle",          cpBody_setAngle},
-  {"setPos",            cpBody_setPos},
-  {"setForce",          cpBody_setForce},
-  {"setAngVel",         cpBody_setAngVel},
-  {"setTorque",         cpBody_setTorque},
-  {"getMass",           cpBody_getMass},
-  {"getMoment",         cpBody_getMoment},
-  {"getAngle",          cpBody_getAngle},
-  {"getAngVel",         cpBody_getAngVel},
-  {"getTorque",         cpBody_getTorque},
-  {"getPos",            cpBody_getPos},
-  {"getVel",            cpBody_getVel},
-  {"setVel",            cpBody_setVel},
-  {"getForce",          cpBody_getForce},
-  {"getRot",            cpBody_getRot},
-  {"getLocal2World",    cpBody_getLocal2World},
-  {"getWorld2Local",    cpBody_getWorld2Local},
-  {"applyImpulse",      cpBody_ApplyImpulse},
-  {"resetForces",       cpBody_ResetForces},
-  {"applyForce",        cpBody_ApplyForce},
-  {"applyDampedSpring", cpBody_ApplyDampedSpring},
+  {"getMass",            cpBody_getMass},
+  {"setMass",            cpBody_setMass},
+  {"getMoment",          cpBody_getMoment},
+  {"setMoment",          cpBody_setMoment},
+  {"getPosition",        cpBody_getPosition},
+  {"setPosition",        cpBody_setPosition},
+  {"getVelocity",        cpBody_getVelocity},
+  {"setVelocity",        cpBody_setVelocity},
+  {"getForce",           cpBody_getForce},
+  {"setForce",           cpBody_setForce},
+  {"getAngle",           cpBody_getAngle},
+  {"setAngle",           cpBody_setAngle},
+  {"getAngularVelocity", cpBody_getAngularVelocity},
+  {"setAngularVelocity", cpBody_setAngularVelocity},
+  {"getTorque",          cpBody_getTorque},
+  {"setTorque",          cpBody_setTorque},
+  {"getRotation",        cpBody_getRotation},  
+  {"getLocal2World",     cpBody_getLocal2World},
+  {"getWorld2Local",     cpBody_getWorld2Local},
+  {"applyImpulse",       cpBody_ApplyImpulse},
+  {"resetForces",        cpBody_ResetForces},
+  {"applyForce",         cpBody_ApplyForce},
+  {"applyDampedSpring",  cpBody_ApplyDampedSpring},
   {NULL, NULL}
 };
 
@@ -275,7 +204,7 @@ static const luaL_reg cpBody_meta[] = {
   {"__tostring", cpBody_tostring},
 };
 
-int cpBody_register(lua_State *L) {
+int cpBody_register (lua_State *L) {
   luaL_register(L, NULL, cpBody_functions);
   
   luaL_newmetatable(L, "cpBody");

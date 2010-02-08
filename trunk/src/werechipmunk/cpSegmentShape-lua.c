@@ -35,7 +35,7 @@
 #define check_cpSegmentShape(L, index) \
   *(cpSegmentShape **)luaL_checkudata(L, (index), "cpSegmentShape")
 
-static cpSegmentShape *push_cpSegmentShape(lua_State *L) {
+static cpSegmentShape *push_cpSegmentShape (lua_State *L) {
   cpSegmentShape *ss = cpSegmentShapeAlloc();
   cpSegmentShape **pss = (cpSegmentShape**)lua_newuserdata(L, sizeof(cpSegmentShape *));
   *pss = ss;
@@ -54,7 +54,7 @@ static cpSegmentShape *push_cpSegmentShape(lua_State *L) {
   return ss;
 }
 
-static int cpSegmentShape_new(lua_State *L) {
+static int cpSegmentShape_new (lua_State *L) {
   cpBody *body = check_cpBody(L, 1);
   cpVect a = check_cpVect(L, 2);
   cpVect b = check_cpVect(L, 4);
@@ -73,25 +73,25 @@ static int cpSegmentShape_new(lua_State *L) {
   return 1;
 }
 
-static int cpSegmentShape_getA(lua_State *L) {
+static int cpSegmentShape_getA (lua_State *L) {
   cpSegmentShape *ss = check_cpSegmentShape(L, 1);
   push_cpVect(L, cpSegmentShapeGetA((cpShape*)ss));
   return 2;
 }
 
-static int cpSegmentShape_getB(lua_State *L) {
+static int cpSegmentShape_getB (lua_State *L) {
   cpSegmentShape *ss = check_cpSegmentShape(L, 1);
   push_cpVect(L, cpSegmentShapeGetB((cpShape*)ss));
   return 2;
 }
 
-static int cpSegmentShape_getNormal(lua_State *L) {
+static int cpSegmentShape_getNormal (lua_State *L) {
   cpSegmentShape *ss = check_cpSegmentShape(L, 1);
   push_cpVect(L, cpSegmentShapeGetNormal((cpShape*)ss));
   return 2;
 }
 
-static int cpSegmentShape_getRadius(lua_State *L) {
+static int cpSegmentShape_getRadius (lua_State *L) {
   cpSegmentShape *ss = check_cpSegmentShape(L, 1);
   lua_pushnumber(L, (double)cpSegmentShapeGetRadius((cpShape*)ss));
   return 1;
@@ -112,10 +112,7 @@ static const luaL_reg cpSegmentShape_methods[] = {
   {"getB",             cpSegmentShape_getB},
   {"getNormal",        cpSegmentShape_getNormal},
   {"getRadius",        cpSegmentShape_getRadius},
-  {"setRestitution",   cpShape_setRestitution},
-  {"setFriction",      cpShape_setFriction},
-  {"setCollisionType", cpShape_setCollisionType},
-  {"getBody",          cpShape_getBody},
+  DEFINE_SHAPE_METHODS,
   {NULL, NULL}
 };
 

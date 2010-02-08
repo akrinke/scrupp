@@ -42,7 +42,7 @@ static cpSimpleMotor *push_cpSimpleMotor (lua_State *L) {
   return sm;
 }
 
-static int cpSimpleMotor_new(lua_State *L) {
+static int cpSimpleMotor_new (lua_State *L) {
   cpBody* b1 = check_cpBody (L, 1);
   cpBody* b2 = check_cpBody (L, 2);
   cpFloat rate = (cpFloat)luaL_checknumber (L, 3);
@@ -64,6 +64,11 @@ static const luaL_reg cpSimpleMotor_functions[] = {
   {NULL, NULL}
 };
 
+static const luaL_reg cpSimpleMotor_methods[] = {
+  DEFINE_CONSTRAINT_METHODS,
+  {NULL, NULL}
+};
+
 static const luaL_reg cpSimpleMotor_meta[] = {
   {"__gc",       cpConstraint_gc},
   {"__tostring", cpSimpleMotor_tostring},
@@ -75,7 +80,12 @@ int cpSimpleMotor_register (lua_State *L) {
 
   luaL_newmetatable(L, "cpSimpleMotor");
   luaL_register(L, NULL, cpSimpleMotor_meta);
-
+  /* metatable.__index = methods table */
+  lua_pushliteral(L, "__index");
+  lua_newtable(L);
+  luaL_register(L, NULL, cpSimpleMotor_methods);
+  lua_rawset(L, -3);
+  
   /* cpConstraints.metatable = 1 */
   lua_pushliteral(L, "cpConstraints");
   lua_rawget(L, LUA_REGISTRYINDEX);
