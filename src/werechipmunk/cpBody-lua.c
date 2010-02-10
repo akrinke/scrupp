@@ -44,7 +44,7 @@ static int cpBody_set##name (lua_State *L) { \
   return 0; \
 }
 
-#define WCP_DefineGetterSetterVect (name, cpName) \
+#define WCP_DefineGetterSetterVect(name, cpName) \
 static int cpBody_get##name(lua_State *L){ \
   cpBody *b = check_cpBody(L, 1); \
   push_cpVect(L, cpBodyGet##cpName(b)); \
