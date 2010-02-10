@@ -47,9 +47,10 @@ double minimumDelta = 30.0;
 /* this lets us exit the app from within Lua */
 int check_for_exit(lua_State *L) {
 	const char *err_msg;
+	size_t len;
 
-	err_msg = lua_tostring(L, -1);
-	if (strcmp(err_msg, "scrupp.exit") == 0) {
+	err_msg = lua_tolstring(L, -1, &len);
+	if (len > 0 && strcmp(err_msg, "scrupp.exit") == 0) {
 		done = 1;
 		fprintf(stdout, "Exiting Scrupp.\n");
 		lua_close(L);
@@ -71,6 +72,10 @@ int error_function(lua_State *L) {
 	size_t len;
 
 	err_msg = lua_tolstring(L, -1, &len); /* get error message */
+	if (len == 0) {
+		return 1;
+	}
+
 	pos = strstr(err_msg, "scrupp.exit");
 	if (pos && (len-(pos-err_msg) == 11)) { /* ends the error message with "scrupp.exit"? */
 		lua_pushliteral(L, "scrupp.exit");
