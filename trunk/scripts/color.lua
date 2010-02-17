@@ -1,3 +1,9 @@
+--[[
+-- $Id$
+-- Some color definitions
+-- See Copyright Notice in COPYRIGHT
+--]]
+
 color = {
 	white	= {255, 255, 255},
 	black	= {  0,   0,   0},
