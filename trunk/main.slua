@@ -9,6 +9,9 @@ local width, height = 640, 480
 
 scrupp.init("Scrupp", width, height, 32, false)
 
+require "console"
+local console = Console()
+
 -- loading fonts
 Fonts = {
 	scrupp.addFont("fonts/Vera.ttf", 28),
@@ -27,10 +30,12 @@ main = {
 		Images[1]:render((width-Images[1]:getWidth())/2,80)
 		Images[2]:render((width-Images[2]:getWidth())/2,150)
 		Images[3]:render((width-Images[3]:getWidth())/2,350)
+		console:render()
 	end,
 
-	keypressed = function(k)
-		if k == "ESCAPE" then
+	keypressed = function(key, wchar)
+		key, wchar = console:keypressed(key, wchar)
+		if key == "ESCAPE" then
 			scrupp.exit()
 		end
 	end
