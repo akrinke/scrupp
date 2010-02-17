@@ -14,6 +14,7 @@
 #include "Graphics.h"
 #include "Movie.h"
 #include "physfsrwops.h"
+#include "IMG_savepng.h"
 
 #define checkimage(L) \
 	(Lua_Image *)luaL_checkudata(L, 1, "scrupp.image")
@@ -843,6 +844,38 @@ static int Lua_Image_render(lua_State *L) {
 	return 0;
 }
 
+static int lua_buffer_write(SDL_RWops *context, const void *ptr, int size, int num) {
+	luaL_Buffer *pb = (luaL_Buffer *)context->hidden.unknown.data1;
+	luaL_addlstring(pb, ptr, num*size);
+	return num;
+}
+
+static int Lua_Image_toString(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	SDL_RWops *rwops;
+
+	luaL_Buffer b;
+	luaL_buffinit(L, &b);
+	rwops = SDL_AllocRW();
+	if (rwops == NULL) {
+		return luaL_error(L, "Could'nt allocate SDL_RWops: %s", SDL_GetError());
+	}
+	/* this SDL_RWops supports writing only */
+	rwops->seek = NULL;
+	rwops->read = NULL;
+	rwops->write = lua_buffer_write;
+	rwops->close = NULL;
+	rwops->hidden.unknown.data1 = &b;
+
+	IMG_SavePNG_RW(rwops, image->src, IMG_COMPRESS_MAX);
+
+	luaL_pushresult(&b);
+
+	SDL_FreeRW(rwops);
+
+	return 1;
+}
+
 static int image_gc(lua_State *L) {
 	Lua_Image *image = checkimage(L);
 	glDeleteTextures( image->x_tiles*image->y_tiles, image->textures );
@@ -1082,6 +1115,7 @@ static const struct luaL_Reg imagelib_m [] = {
 	{"setRect",				Lua_Image_setRect},
 	{"getRect",				Lua_Image_getRect},
 	{"clearRect",			Lua_Image_clearRect},
+	{"toString",			Lua_Image_toString},
 	{"render",				Lua_Image_render},
 	{NULL, NULL}
 };

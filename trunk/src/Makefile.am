@@ -8,8 +8,9 @@ scrupp_SOURCES = \
 	Main.h Main.c \
 	Mouse.h Mouse.c \
 	Movie.h Movie.c \
+	Sound.h Sound.c \
 	physfsrwops.h physfsrwops.c \
-	Sound.h Sound.c
+	IMG_savepng.h IMG_savepng.c
 SUBDIRS = \
 	chipmunk \
 	luafilesystem \
