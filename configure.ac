@@ -4,6 +4,7 @@ AC_CONFIG_AUX_DIR([platforms/unix])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([dist-bzip2])
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
@@ -105,7 +106,9 @@ running configure.])
 	])
 fi
 
-#AC_DEFINE([SHARE_DIR], "$(pkgdatadir)")
+# Check for debug flag
+AC_ARG_ENABLE(debug, [AC_HELP_STRING([--enable-debug],
+		[compile with debugging on])], AC_DEFINE(DEBUG), AC_DEFINE(NDEBUG))
 
 CFLAGS="$CFLAGS $LUA_CFLAGS $GL_CFLAGS $CAIRO_CFLAGS $SDL_CFLAGS $SMPEG_CFLAGS $GTK_CFLAGS"
 LIBS="$LIBS $LUA_LIBS $GL_LIBS $CAIRO_LIBS $SDL_LIBS $SMPEG_LIBS $GTK_LIBS"
