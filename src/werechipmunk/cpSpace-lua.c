@@ -30,7 +30,7 @@
 #include <lualib.h>
 
 #include "cpBody-lua.h"
-#include "cpConstraint-lua.h"
+#include "constraints/cpConstraint-lua.h"
 #include "cpShape-lua.h"
 #include "cpVect-lua.h"
 

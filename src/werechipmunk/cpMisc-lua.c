@@ -158,9 +158,16 @@ int luaopen_werechip (lua_State *L) {
   cpPolyShape_register(L);
   
   /* constraints */
+  cpDampedRotarySpring_register(L);
+  cpDampedSpring_register(L);
+  cpGearJoint_register(L);
+  cpGrooveJoint_register(L);
   cpPinJoint_register(L);
   cpPivotJoint_register(L);
+  cpRatchetJoint_register(L);
+  cpRotaryLimitJoint_register(L);
   cpSimpleMotor_register(L);
+  cpSlideJoint_register(L);
   
   return 1;
 }

@@ -25,5 +25,31 @@
 
 #define check_cpBody(L, index) \
   *(cpBody **)luaL_checkudata(L, (index), "cpBody")
+  
+#define WCP_DefineBodyGetterSetterFloat(NAME, CPNAME) \
+static int cpBody_get##NAME (lua_State *L) { \
+  cpBody *b = check_cpBody(L, 1); \
+  lua_pushnumber(L, (double)cpBodyGet##CPNAME(b)); \
+  return 1; \
+} \
+static int cpBody_set##NAME (lua_State *L) { \
+  cpBody *b = check_cpBody(L, 1); \
+  cpFloat value = (cpFloat)luaL_checknumber(L, 2); \
+  cpBodySet##CPNAME(b, value); \
+  return 0; \
+}
+
+#define WCP_DefineBodyGetterSetterVect(NAME, CPNAME) \
+static int cpBody_get##NAME (lua_State *L) { \
+  cpBody *b = check_cpBody(L, 1); \
+  push_cpVect(L, cpBodyGet##CPNAME(b)); \
+  return 2; \
+} \
+static int cpBody_set##NAME (lua_State *L) { \
+  cpBody *b = check_cpBody(L, 1); \
+  cpVect v = check_cpVect(L, 2); \
+  cpBodySet##CPNAME(b, v); \
+  return 0; \
+}
 
 #endif

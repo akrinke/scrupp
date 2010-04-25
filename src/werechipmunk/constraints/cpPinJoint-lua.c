@@ -30,7 +30,11 @@
 
 #include "cpBody-lua.h"
 #include "cpConstraint-lua.h"
+#include "cpMisc-lua.h"
 #include "cpVect-lua.h"
+
+#define check_cpPinJoint(L, index) \
+  *(cpPinJoint **)luaL_checkudata(L, (index), "cpPinJoint")
 
 static cpPinJoint *push_cpPinJoint (lua_State *L) {
   cpPinJoint *pj = cpPinJointAlloc();
@@ -56,6 +60,10 @@ static int cpPinJoint_new (lua_State *L) {
   return 1;
 }
 
+WCP_DefineConstraintGetterSetterVect(PinJoint, Anchor1, anchr1);
+WCP_DefineConstraintGetterSetterVect(PinJoint, Anchor2, anchr2);
+WCP_DefineConstraintGetterSetterFloat(PinJoint, Distance, dist);
+
 static int cpPinJoint_tostring (lua_State *L) {
   lua_pushfstring(L, "cpPinJoint (%p)", lua_topointer(L, 1));
   return 1;
@@ -67,6 +75,12 @@ static const luaL_reg cpPinJoint_functions[] = {
 };
 
 static const luaL_reg cpPinJoint_methods[] = {
+  WCP_METHOD(PinJoint, getAnchor1),
+  WCP_METHOD(PinJoint, setAnchor1),
+  WCP_METHOD(PinJoint, getAnchor2),
+  WCP_METHOD(PinJoint, setAnchor2),
+  WCP_METHOD(PinJoint, getDistance),
+  WCP_METHOD(PinJoint, setDistance),
   DEFINE_CONSTRAINT_METHODS,
   {NULL, NULL}
 };

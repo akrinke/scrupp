@@ -30,7 +30,11 @@
 
 #include "cpBody-lua.h"
 #include "cpConstraint-lua.h"
+#include "cpMisc-lua.h"
 #include "cpVect-lua.h"
+
+#define check_cpPivotJoint(L, index) \
+  *(cpPivotJoint **)luaL_checkudata(L, (index), "cpPivotJoint")
 
 static cpPivotJoint *push_cpPivotJoint (lua_State *L) {
   cpPivotJoint *pj = cpPivotJointAlloc();
@@ -56,6 +60,9 @@ static int cpPivotJoint_new (lua_State *L) {
   return 1;
 }
 
+WCP_DefineConstraintGetterSetterVect(PivotJoint, Anchor1, anchr1);
+WCP_DefineConstraintGetterSetterVect(PivotJoint, Anchor2, anchr2);
+
 static int cpPivotJoint_tostring (lua_State *L) {
   lua_pushfstring(L, "cpPivotJoint (%p)", lua_topointer(L, 1));
   return 1;
@@ -67,6 +74,10 @@ static const luaL_reg cpPivotJoint_functions[] = {
 };
 
 static const luaL_reg cpPivotJoint_methods[] = {
+  WCP_METHOD(PivotJoint, getAnchor1),
+  WCP_METHOD(PivotJoint, setAnchor1),
+  WCP_METHOD(PivotJoint, getAnchor2),
+  WCP_METHOD(PivotJoint, setAnchor2),
   DEFINE_CONSTRAINT_METHODS,
   {NULL, NULL}
 };
