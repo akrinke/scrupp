@@ -29,33 +29,8 @@
 #include <lualib.h>
 
 #include "cpBody-lua.h"
+#include "cpMisc-lua.h"
 #include "cpVect-lua.h"
-
-#define WCP_DefineGetterSetterFloat(name, cpName) \
-static int cpBody_get##name (lua_State *L) { \
-  cpBody *b = check_cpBody(L, 1); \
-  lua_pushnumber(L, (double)cpBodyGet##cpName(b)); \
-  return 1; \
-} \
-static int cpBody_set##name (lua_State *L) { \
-  cpBody *b = check_cpBody(L, 1); \
-  cpFloat value = (cpFloat)luaL_checknumber(L, 2); \
-  cpBodySet##cpName(b, value); \
-  return 0; \
-}
-
-#define WCP_DefineGetterSetterVect(name, cpName) \
-static int cpBody_get##name(lua_State *L){ \
-  cpBody *b = check_cpBody(L, 1); \
-  push_cpVect(L, cpBodyGet##cpName(b)); \
-  return 2; \
-} \
-static int cpBody_set##name (lua_State *L) { \
-  cpBody *b = check_cpBody(L, 1); \
-  cpVect v = check_cpVect(L, 2); \
-  cpBodySet##cpName(b, v); \
-  return 0; \
-}
 
 static cpBody *push_cpBody (lua_State *L) {
   cpBody *b = cpBodyAlloc();
@@ -90,14 +65,14 @@ static int cpBody_new (lua_State *L) {
   return 1;
 }
 
-WCP_DefineGetterSetterFloat(Mass, Mass);
-WCP_DefineGetterSetterFloat(Moment, Moment);
-WCP_DefineGetterSetterVect(Position, Pos);
-WCP_DefineGetterSetterVect(Velocity, Vel);
-WCP_DefineGetterSetterVect(Force, Force);
-WCP_DefineGetterSetterFloat(Angle, Angle);
-WCP_DefineGetterSetterFloat(AngularVelocity, AngVel);
-WCP_DefineGetterSetterFloat(Torque, Torque);
+WCP_DefineBodyGetterSetterFloat(Mass, Mass);
+WCP_DefineBodyGetterSetterFloat(Moment, Moment);
+WCP_DefineBodyGetterSetterVect(Position, Pos);
+WCP_DefineBodyGetterSetterVect(Velocity, Vel);
+WCP_DefineBodyGetterSetterVect(Force, Force);
+WCP_DefineBodyGetterSetterFloat(Angle, Angle);
+WCP_DefineBodyGetterSetterFloat(AngularVelocity, AngVel);
+WCP_DefineBodyGetterSetterFloat(Torque, Torque);
 
 static int cpBody_getRotation (lua_State *L){
   cpBody *b = check_cpBody(L, 1);
@@ -119,7 +94,7 @@ static int cpBody_getWorld2Local (lua_State *L){
   return 2;
 }
 
-static int cpBody_ApplyImpulse (lua_State *L){
+static int cpBody_applyImpulse (lua_State *L){
   cpBody *b = check_cpBody(L, 1);
   cpVect j = check_cpVect(L, 2);
   cpVect r = check_cpVect(L, 4);
@@ -127,13 +102,13 @@ static int cpBody_ApplyImpulse (lua_State *L){
   return 0;
 }
 
-static int cpBody_ResetForces (lua_State *L){ 
+static int cpBody_resetForces (lua_State *L){ 
   cpBody *b = check_cpBody(L, 1);
   cpBodyResetForces(b);
   return 0;
 }
 
-static int cpBody_ApplyForce (lua_State *L){
+static int cpBody_applyForce (lua_State *L){
   cpBody *b = check_cpBody(L, 1);
   cpVect f = check_cpVect(L, 2);
   cpVect r = check_cpVect(L, 4);
@@ -141,7 +116,7 @@ static int cpBody_ApplyForce (lua_State *L){
   return 0;
 }
 
-static int cpBody_ApplyDampedSpring (lua_State *L){
+static int cpBody_applyDampedSpring (lua_State *L){
   cpBody *a = check_cpBody(L, 1);
   cpBody *b = check_cpBody(L, 2);
   cpVect an1 = check_cpVect(L, 3);
@@ -173,29 +148,29 @@ static const luaL_reg cpBody_functions[] = {
 };
 
 static const luaL_reg cpBody_methods[] = {
-  {"getMass",            cpBody_getMass},
-  {"setMass",            cpBody_setMass},
-  {"getMoment",          cpBody_getMoment},
-  {"setMoment",          cpBody_setMoment},
-  {"getPosition",        cpBody_getPosition},
-  {"setPosition",        cpBody_setPosition},
-  {"getVelocity",        cpBody_getVelocity},
-  {"setVelocity",        cpBody_setVelocity},
-  {"getForce",           cpBody_getForce},
-  {"setForce",           cpBody_setForce},
-  {"getAngle",           cpBody_getAngle},
-  {"setAngle",           cpBody_setAngle},
-  {"getAngularVelocity", cpBody_getAngularVelocity},
-  {"setAngularVelocity", cpBody_setAngularVelocity},
-  {"getTorque",          cpBody_getTorque},
-  {"setTorque",          cpBody_setTorque},
-  {"getRotation",        cpBody_getRotation},  
-  {"getLocal2World",     cpBody_getLocal2World},
-  {"getWorld2Local",     cpBody_getWorld2Local},
-  {"applyImpulse",       cpBody_ApplyImpulse},
-  {"resetForces",        cpBody_ResetForces},
-  {"applyForce",         cpBody_ApplyForce},
-  {"applyDampedSpring",  cpBody_ApplyDampedSpring},
+  WCP_METHOD(Body, getMass),
+  WCP_METHOD(Body, setMass),
+  WCP_METHOD(Body, getMoment),
+  WCP_METHOD(Body, setMoment),
+  WCP_METHOD(Body, getPosition),
+  WCP_METHOD(Body, setPosition),
+  WCP_METHOD(Body, getVelocity),
+  WCP_METHOD(Body, setVelocity),
+  WCP_METHOD(Body, getForce),
+  WCP_METHOD(Body, setForce),
+  WCP_METHOD(Body, getAngle),
+  WCP_METHOD(Body, setAngle),
+  WCP_METHOD(Body, getAngularVelocity),
+  WCP_METHOD(Body, setAngularVelocity),
+  WCP_METHOD(Body, getTorque),
+  WCP_METHOD(Body, setTorque),
+  WCP_METHOD(Body, getRotation),
+  WCP_METHOD(Body, getLocal2World),
+  WCP_METHOD(Body, getWorld2Local),
+  WCP_METHOD(Body, applyImpulse),
+  WCP_METHOD(Body, resetForces),
+  WCP_METHOD(Body, applyForce),
+  WCP_METHOD(Body, applyDampedSpring),
   {NULL, NULL}
 };
 
