@@ -529,6 +529,7 @@ static int Lua_Image_getAlpha(lua_State *L) {
 
 static int Lua_Image_setColor(lua_State *L) {
 	Lua_Image *image = checkimage(L);
+	GLubyte r, g, b;
 	if (lua_istable(L, 2)) {
 		lua_pushinteger(L, 1);
 		lua_gettable(L, 2);
@@ -538,9 +539,9 @@ static int Lua_Image_setColor(lua_State *L) {
 		lua_gettable(L, 2);
 		lua_remove(L, 2);
 	}
-	GLubyte r = (GLubyte)luaL_checkint(L, 2);
-	GLubyte g = (GLubyte)luaL_checkint(L, 3);
-	GLubyte b = (GLubyte)luaL_checkint(L, 4);	
+	r = (GLubyte)luaL_checkint(L, 2);
+	g = (GLubyte)luaL_checkint(L, 3);
+	b = (GLubyte)luaL_checkint(L, 4);	
 	if (image->color == NULL) {
 		image->color = (GLubyte *)malloc(3*sizeof(GLubyte));
 	}

@@ -162,7 +162,7 @@ static int luaopen_main(lua_State* L, const char *parent) {
 	return 1;
 }
 
-/* main - function - entry point */
+/* main-function - entry point */
 int main(int argc, char *argv[]) {
 	lua_State *L;
 	SDL_Event event;
@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
 		/* main.update(delta) */
 		lua_getfield(L, -1, "update");
 		if (!lua_isnil(L, -1)) {
-			lua_pushinteger(L, delta);
+			lua_pushnumber(L, delta);
 			if ((lua_pcall(L, 1, 1, -4) != 0) && !check_for_exit(L)) {
 				error(L, "Error running main.update:\n\t%s\n", lua_tostring(L, -1));
 			}
@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
 			/* return value is false or nil -> call draw because frame is not skipped */
 			/* main.render(delta) */
 			lua_getfield(L, -2, "render");
-			lua_pushinteger(L, delta);
+			lua_pushnumber(L, delta);
 			if ((lua_pcall(L, 1, 0, -5) != 0) && !check_for_exit(L)) {
 				error(L, "Error running main.render:\n\t%s\n", lua_tostring(L, -1));
 			}
