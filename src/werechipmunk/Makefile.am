@@ -23,5 +23,5 @@ libwerechipmunk_a_SOURCES =               \
   constraints/cpSimpleMotor-lua.c         \
   constraints/cpSlideJoint-lua.c          \
   werechipmunk.h
-AM_CFLAGS = -I../chipmunk
+libwerechipmunk_a_CFLAGS = -I$(top_srcdir)/src/chipmunk
 AUTOMAKE_OPTIONS = subdir-objects

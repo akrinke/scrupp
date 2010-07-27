@@ -12,6 +12,10 @@ libluasocket_a_SOURCES = \
 	socket.h \
 	tcp.h tcp.c \
 	timeout.h timeout.c \
-	udp.h udp.c \
-	usocket.h usocket.c
+	udp.h udp.c
+EXTRA_libluasocket_a_SOURCES = \
+	usocket.h usocket.c \
+	wsocket.h wsocket.c
+libluasocket_a_LIBADD = $(LUASOCKET_SYSTEM)
+libluasocket_a_DEPENDENCIES = $(LUASOCKET_SYSTEM)
 EXTRA_DIST = LICENSE NEW
