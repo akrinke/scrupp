@@ -11,6 +11,7 @@ scrupp_SOURCES = \
 	Sound.h Sound.c \
 	physfsrwops.h physfsrwops.c \
 	IMG_savepng.h IMG_savepng.c
+EXTRA_scrupp_SOURCES = SDL_win32_main.c
 SUBDIRS = \
 	chipmunk \
 	luafilesystem \
@@ -23,4 +24,5 @@ LDADD = \
 	luasocket/libluasocket.a \
 	werechipmunk/libwerechipmunk.a \
 	chipmunk/libchipmunk.a
+scrupp_DEPENDENCIES = $(WINMAIN)
 AM_CFLAGS = -DSHARE_DIR=\"$(pkgdatadir)\"
