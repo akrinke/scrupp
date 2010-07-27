@@ -1,4 +1,4 @@
-SUBDIRS = socket
+SUBDIRS = interface socket
 
 scriptdir = $(pkgdatadir)/scripts
 script_DATA = \
