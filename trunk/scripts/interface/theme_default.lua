@@ -51,6 +51,7 @@ end
 
 -- global functions
 
+-- style is one of "normal", "disabled", "pressed", "focussed"
 function createButtonImage(width, height, style)
 	local surface = Cairo.image_surface_create("argb32", width, height)
 	local cr = Cairo.context_create(surface)
