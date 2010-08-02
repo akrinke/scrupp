@@ -1,6 +1,12 @@
 scriptdir = $(pkgdatadir)/scripts/interface
 script_DATA = \
+	button.lua \
+	desktop.lua \
+	field.lua \
 	init.lua \
-	theme_default.lua
+	label.lua \
+	theme_default.lua \
+	tip.lua \
+	utils.lua
 
 EXTRA_DIST = $(script_DATA)
