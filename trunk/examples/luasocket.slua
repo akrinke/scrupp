@@ -1,14 +1,19 @@
+--[[
+-- $Id$
+-- How to use LuaSocket to download and display an image from the web
+-- See Copyright Notice in COPYRIGHT
+--]]
+
 -- size of the window
 local width, height = 600, 400
 
 scrupp.init("LuaSocket Demo", width, height, 32, false)
 
--- load some font
-local font = scrupp.addFont("fonts/Vera.ttf", 20)
-local msg = font:generateImage("This demo loads a screenshot from the scrupp website.")
-local key_msg = font:generateImage("Press any key")
+-- load the font module
+require "font"
+local font = Font("fonts/Vera.ttf", 20)
 
--- loads the HTTP module and any libraries it requires
+-- load the HTTP module and any libraries it requires
 local http = require "socket.http"
 
 -- coordinates of the image (for center position)
@@ -18,9 +23,9 @@ local img
 
 main = {
 	render = function(dt)
-		msg:render(10,10)
+		font:print(10,10, "This demo loads a screenshot from the scrupp website.")
 		if not img then
-			key_msg:render(10, 40)
+			font:print(10, 40, "Press any key")
 		else
 			-- render the screenshot at the center of the window
 			img:render(x,y)	

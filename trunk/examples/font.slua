@@ -1,3 +1,12 @@
+--[[
+-- $Id$
+-- How to use the builtin font support
+-- (not the plugin scripts/font.lua written in Lua)
+-- NOTE: This is very low-level!
+-- The Lua module for font support is easier to use!
+-- See Copyright Notice in COPYRIGHT
+--]]
+
 scrupp.init("Font Demo", 600, 400, 32, false)
 
 -- load a font
@@ -7,6 +16,7 @@ local lineSkip = font:getLineSkip()
 -- get the text size of a sample text
 local w, h = font:getTextSize("Hello World")
 
+-- load the list of colors
 local color = require "color"
 
 -- generate an image containing some text using the default color

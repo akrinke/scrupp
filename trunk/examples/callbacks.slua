@@ -1,51 +1,65 @@
+--[[
+-- $Id$
+-- How to use the callbacks
+-- See Copyright Notice in COPYRIGHT
+--]]
+
 -- create a resizable window
 scrupp.init("Callback Demo", 600, 400, 32, false, true)
 
-local tinsert = table.insert
-
-local font = scrupp.addFont("fonts/Vera.ttf", 20)
+-- load the font module
+require "font"
+local font = Font("fonts/Vera.ttf", 20)
 local msg1 = font:generateImage("This demo shows every execution of a callback.")
 local msg2 = font:generateImage("Press mouse buttons and keys and resize the window.")
 
+-- a stack of messages
 local messages = {}
 
-local function insert(message)
-	tinsert(messages, 1, font:generateImage(message))
+-- after pushing a message, it is at the first position in the table 'messages'
+local function push(message)
+	table.insert(messages, 1, message)
 	messages[11] = nil
 end
 
 main = {
 	render = function(dt)
-		msg1:render(10, 10)
-		msg2:render(10, 40)
+		font:print(10, 10, [[
+This demo logs every execution of a callback.
+(not including the update and render callbacks)
+Press mouse buttons and keys and resize the window.]])
 		for i=1,10 do
 			if messages[i] then
-				messages[i]:render(10, i*30+50)
+				font:print(10, 390-i*30, messages[i])
 			end
 		end	
 	end,
 	
 	resized = function(width, height)
 		scrupp.init("Callback Demo", width, height, 32, false, true)
-		insert("window resized - new size: " .. width .. "x" .. height)
+		push("window resized - new size: " .. width .. "x" .. height)
 	end,
 	
 	mousepressed = function(x, y, button)
-		insert(button .. " button pressed at " .. x .. ", " .. y)
+		push(button .. " button pressed at " .. x .. ", " .. y)
 	end,
 	
 	mousereleased = function(x, y, button)
-		insert(button .. " button released at " .. x .. ", " .. y)
+		push(button .. " button released at " .. x .. ", " .. y)
 	end,
 	
-	keypressed = function(key)
+	keypressed = function(key, char)
 		if key == "ESCAPE" then
 			scrupp.exit()
 		end
-		insert("key '" .. key .. "' pressed")
+		if key ~= char and char ~= "" then
+			push("key '" .. key .. "' (" .. char .. ") pressed")
+		else
+			push("key '" .. key .. "' pressed")
+		end
 	end,
 	
 	keyreleased = function(key)
-		insert("key '" .. key .. "' released")
+		push("key '" .. key .. "' released")
 	end
 }

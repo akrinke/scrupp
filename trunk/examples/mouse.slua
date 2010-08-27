@@ -1,7 +1,13 @@
+--[[
+-- $Id$
+-- How to work with the mouse
+-- See Copyright Notice in COPYRIGHT
+--]]
+
 scrupp.init("Mouse Demo", 600, 400, 32, false)
 
+-- load the font module
 require "font"
-
 local font = Font("fonts/Vera.ttf", 20)
 local text = "Click!"
 
