@@ -1,8 +1,16 @@
+--[[
+-- $Id$
+-- Simple drawing demo
+-- See Copyright Notice in COPYRIGHT
+--]]
+
 scrupp.init("Drawing Demo", 600, 400, 32, false)
 
-local font = scrupp.addFont("fonts/Vera.ttf", 20)
-local msg = font:generateImage("Click!")
+-- load the font module
+require "font"
+local font = Font("fonts/Vera.ttf", 20)
 
+-- load the list of colors
 local color = require "color"
 
 -- prepare one table for big white pixels
@@ -13,7 +21,7 @@ local lines = { color = color.red, antialiasing = true, connect = true }
 
 main = {
 	render = function(dt)
-		msg:render(10, 10)
+		font:print(10, 10, "Click!")
 		scrupp.draw(lines)
 		scrupp.draw(pixels)
 	end,

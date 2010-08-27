@@ -1,28 +1,27 @@
-scrupp.init("Script Arguments", 600, 400, 32, false)
+--[[
+-- $Id$
+-- How to work with command line arguments
+-- See Copyright Notice in COPYRIGHT
+--]]
 
-local font = scrupp.addFont("fonts/Vera.ttf", 20)
+scrupp.init("How to work with command line arguments", 600, 400, 32, false)
 
--- table containing images
-local cache = {}
+-- load the font module
+require "font"
+local font = Font("fonts/Vera.ttf", 20)
 
--- this function returns a cached image, or creates 
--- a new image if it's not in the cache
-local function getCachedImage(str)
-	local img = cache[str]
-	if not img then
-		img = font:generateImage(str)
-		cache[str] = img
-	end
-	return img
+-- if there are no command line arguments,
+-- set the first one to "none"
+if not arg[1] then 
+	arg[1] = "none"
 end
 
 main = {
 	render = function(dt)
-		getCachedImage("Path of the executable:"):render(10, 10)
-		getCachedImage(arg[-1]):render(10, 40)
-		
-		getCachedImage("Path of the script:"):render(10, 80)
-		getCachedImage(arg[0]):render(10, 110)
+		font:print(10, 10, 
+			"Path of the executable:\n", arg[-1], "\n\n",
+			"Path of the script:\n", arg[0], "\n\n",
+			"Arguments:\n", table.concat(arg, "\n"))
 	end,
 	
 	keypressed = function(key)

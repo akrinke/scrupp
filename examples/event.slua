@@ -1,0 +1,41 @@
+--[[
+-- $Id$
+-- Example for the usage of the event module
+-- See Copyright Notice in COPYRIGHT
+--]]
+
+scrupp.init("Event Demo", 600, 400, 32, false)
+
+-- load the event module
+require "event"
+
+-- replace the callback table 'main' by a
+-- system based on events
+Event.install()
+
+-- load the font module
+require "font"
+local font = Font("fonts/Vera.ttf", 20)
+
+-- add a function to the new onRender event
+onRender:add(function(dt)
+	font:print(10, 10, [[
+This demo uses events instead of the default callback 
+table (called 'main').
+You can add functions to one of the event handlers by
+calling, e. g., onKeypress:add(func). If the event 
+occurs, all functions are called in the order of their
+association with the event.
+
+
+Press ESC to exit.]])
+end)
+
+-- add a function to the new onKeypress event
+onKeyPress:add(function(key)
+	if key == "ESCAPE" then
+		scrupp.exit()
+	end
+end)
+
+-- the main table is not needed anymore

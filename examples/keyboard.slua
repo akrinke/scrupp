@@ -1,7 +1,13 @@
+--[[
+-- $Id$
+-- How to process keystrokes
+-- See Copyright Notice in COPYRIGHT
+--]]
+
 scrupp.init("Keyboard Demo", 600, 400, 32, false)
 
+-- load the font module
 require "font"
-
 local font = Font("fonts/Vera.ttf", 20)
 
 local text = "Press any key."
@@ -11,16 +17,19 @@ main = {
 		font:print(10, 10, text)
 	end,
 	
-	keypressed = function(key)
-		text = key .. " pressed."
-		
+	keypressed = function(key, char)
 		-- the escape key exits the demo
 		if key == "ESCAPE" then
 			scrupp.exit()
 		end
+		text = key
+		if key ~= char and char ~= "" then
+			text = text .. " (" .. char .. ")"
+		end
+		text = text .. " pressed."
 	end,
 	
-	keyreleased = function(key)
+	keyreleased = function(key, char)
 		text = key .. " released."
 	end
 }	
