@@ -16,7 +16,7 @@
   lua_pushliteral(L, name); \
   lua_rawseti(L, -2, val);
 
-static int Lua_Keyboard_isDown(lua_State *L) {
+static int Lua_Keyboard_keyIsDown(lua_State *L) {
 	Uint8 *keystate = SDL_GetKeyState(NULL);
 	Uint16 key;
 	
@@ -44,7 +44,7 @@ static int Lua_Keyboard_setKeyRepeat(lua_State *L) {
 }
 
 static const struct luaL_Reg keyboardlib [] = {
-	{"keyIsDown", Lua_Keyboard_isDown},
+	{"keyIsDown", Lua_Keyboard_keyIsDown},
 	{"setKeyRepeat", Lua_Keyboard_setKeyRepeat},
 	{NULL, NULL}
 };

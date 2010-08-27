@@ -906,15 +906,15 @@ static int image_tostring(lua_State *L) {
 static int Lua_Graphics_draw(lua_State *L) {
 	int i;
 	int n;
-	int *coords;
+	double *coords;
 	int relative;
-	GLdouble translate_x = 0.0f;
-	GLdouble translate_y = 0.0f;
-	GLdouble scale_x = 1.0f;
-	GLdouble scale_y = 1.0f;
-	GLdouble rotate = 0.0f;
-	GLdouble center_x = 0.0f;
-	GLdouble center_y = 0.0f;
+	GLdouble translate_x = 0.0;
+	GLdouble translate_y = 0.0;
+	GLdouble scale_x = 1.0;
+	GLdouble scale_y = 1.0;
+	GLdouble rotate = 0.0;
+	GLdouble center_x = 0.0;
+	GLdouble center_y = 0.0;
 	int color[] = {255, 255, 255, 255};
 	GLfloat size = 1.0f;
 	int connect = 0;
@@ -928,9 +928,9 @@ static int Lua_Graphics_draw(lua_State *L) {
 	luaL_argcheck(L, n % 2 == 0, 1, "even number of x- and y-coordinates needed");
 
 	/* collect all coordinates in array */
-	coords = (int*)malloc(n*sizeof(int));
+	coords = (double *)malloc(n*sizeof(double));
 	for (i=0; i<n; i++) {
-		if (!getint(L, &coords[i], i+1)) {
+		if (!getdouble(L, &coords[i], i+1)) {
 			free(coords);
 			return luaL_argerror(L, 1, "invalid x or y component in array");
 		}
@@ -1012,6 +1012,18 @@ static int Lua_Graphics_draw(lua_State *L) {
 	glDisable(GL_CULL_FACE);
 	/* save the modelview matrix */
 	glPushMatrix();
+	
+	/* some translation by half pixels to get the coordinates the user intends to use */
+	if (n == 2 || pixellist) {
+		glTranslated(0.5, 0.5, 0.0);
+	} else if (fill) {
+		if (n == 4) {
+			glTranslated(0.5, 0.5, 0.0);
+		}
+	} else {
+		glTranslated(0.5, 0.5, 0.0);
+	}
+	
 	glTranslated(translate_x, translate_y, 0);
 	glScaled(scale_x, scale_y, 0);
 	glRotated(rotate, 0, 0, 1);
@@ -1033,11 +1045,9 @@ static int Lua_Graphics_draw(lua_State *L) {
 
 	glDisable(GL_TEXTURE_2D);
 	if (n == 2 || pixellist) {
-		glTranslated(0.5, 0.5, 0.0);
 		glBegin(GL_POINTS);
 	} else if (fill) {
 		if (n == 4) {
-			glTranslated(0.5, 0.5, 0.0);
 			glBegin(GL_LINE_STRIP);
 		}
 		else if (n == 6)
@@ -1047,7 +1057,6 @@ static int Lua_Graphics_draw(lua_State *L) {
 		else if (n > 8)
 			glBegin(GL_POLYGON);
 	} else {
-		glTranslated(0.5, 0.5, 0.0);
 		if (connect)
 			glBegin(GL_LINE_STRIP);
 		else
@@ -1055,7 +1064,7 @@ static int Lua_Graphics_draw(lua_State *L) {
 	}
 
 	for (i=n+2*(relative-1); i>=2*relative; i=i-2) {
-		glVertex2i(coords[i], coords[i+1]);
+		glVertex2d(coords[i], coords[i+1]);
 	}
 
 	glEnd();
