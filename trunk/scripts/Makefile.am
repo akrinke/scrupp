@@ -6,6 +6,7 @@ script_DATA = \
 	class.lua \
 	color.lua \
 	console.lua \
+	event.lua \
 	font.lua \
 	timer.lua
 	

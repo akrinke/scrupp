@@ -22,17 +22,17 @@ local function get_path(name)
 		if not home then
 			return nil, "HOME environment variable not set"
 		end
-		path = os.getenv("HOME") .. "/." .. unix_name
+		path = home .. "/." .. unix_name
 	elseif scrupp.PLATFORM == "Mac OS X" then
 		if not home then
 			return nil, "HOME environment variable not set"
 		end
-		path = os.getenv("HOME") .. "/Library/Application Support/" .. name
+		path = home .. "/Library/Application Support/" .. name
 	elseif scrupp.PLATFORM == "Windows" then
 		if not appdata then
 			return nil, "APPDATA environment variable not set"
 		end
-		path = os.getenv("APPDATA") .. "\\" .. name
+		path = appdata .. "\\" .. name
 	end
 
 	return path

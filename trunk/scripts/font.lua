@@ -100,12 +100,14 @@ function Font:print(x, y, ...)
 	local orig_x = x
 	local font = self.font
 	local text
-	local i = 1
-	local next_i = 1
+	local i
+	local next_i
 	local last_char = ""
 
 	for n=1, select("#", ...) do
 		text = tostring(select(n, ...))
+		i = 1
+		next_i = 1
 		while i <= text:len() do
 			byte = text:byte(i)
 			if byte < 128 then
@@ -124,6 +126,7 @@ function Font:print(x, y, ...)
 			if char == "\n" then
 				x = orig_x
 				y = y + self.lineSkip
+				last_char = ""
 			else
 				if not chars[char] then
 					chars[char] = {
