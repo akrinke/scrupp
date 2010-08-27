@@ -118,3 +118,15 @@ int getint(lua_State *L, int *result, int key) {
 	lua_pop(L, 1);
 	return 1;
 }
+
+int getdouble(lua_State *L, double *result, int key) {
+	lua_pushinteger(L, key);
+	lua_gettable(L, -2);
+	if (!lua_isnumber(L, -1)) {
+		lua_pop(L, 1);
+		return 0;
+	}
+	*result = lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	return 1;
+}

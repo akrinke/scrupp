@@ -291,7 +291,7 @@ int main(int argc, char *argv[]) {
 		
 		if (lua_toboolean(L, -1) == 0 || redraw) {
 			redraw = 0;
-			/* return value is false or nil -> call draw because frame is not skipped */
+			/* return value is false or nil -> call main.render because frame is not skipped */
 			/* main.render(delta) */
 			lua_getfield(L, -2, "render");
 			lua_pushnumber(L, delta);
