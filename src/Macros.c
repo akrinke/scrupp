@@ -32,6 +32,7 @@ void error (lua_State *L, const char *fmt, ...) {
 	msg = luaL_gsub(L, msg, "[string \"", "'");
 	msg = luaL_gsub(L, msg, "\"]", "'");
 	fputs(msg, stderr);
+	fputs("\n", stderr);
 
 #ifdef USE_GTK
 	gtk_init(NULL, NULL);
@@ -68,7 +69,6 @@ void error (lua_State *L, const char *fmt, ...) {
 	);
 #endif
 
-	fputs("\n", stderr);
 	lua_close(L);
 	exit(1);
 }

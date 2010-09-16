@@ -19,6 +19,7 @@ SUBDIRS = \
 	luasocket \
 	werechipmunk
 LDADD = \
+	$(WINMAIN) \
 	luafilesystem/libluafilesystem.a \
 	lua-oocairo/libluaoocairo.a \
 	luasocket/libluasocket.a \
