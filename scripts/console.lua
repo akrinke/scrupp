@@ -8,9 +8,11 @@ require "class"
 require "font"
 
 local prompt = "> "
+local font = "fonts/VeraMono.ttf"
+local font_size = 14
+
 local left_margin = 10
 local right_margin = 10
-local font_size = 14
 local bg_color = {64, 64, 64, 160}
 local text_color = {255, 255, 255}
 local cursor_color = {255, 255, 255, 64}
@@ -36,7 +38,7 @@ end
 
 -- splits string s in multiple lines and adds it to table t
 local function split_in_lines(s, t)
-	for l in string.gmatch(tostring(s), "%C+") do
+	for l in string.gmatch(tostring(s), "[^\n]+") do
 		t[#t+1] = l
 	end
 end
@@ -52,6 +54,23 @@ local function split_in_fitting_lines(s, c)
 	return lines
 end
 
+-- new print function that outputs to a global variable
+-- instead of stdout
+local function new_print(...)
+	for i=1, select("#", ...) do
+		scrupp._tmp = scrupp._tmp .. tostring(select(i, ...)) .. "\t"
+	end
+	scrupp._tmp = scrupp._tmp .. "\n"
+end
+
+-- new io.write function that outputs to a global variable
+-- instead of stdout
+local function new_io_write(...)
+	for i=1, select("#", ...) do
+		scrupp._tmp = scrupp._tmp .. tostring(select(i, ...))
+	end
+end
+
 Console = class(function(self)
 	self.active = false
 	-- command history
@@ -65,8 +84,9 @@ Console = class(function(self)
 	self.scrolled = 0
 	-- position of the cursor
 	self.cursor_pos = 1
-	-- load monospaced font
-	self.font = Font("fonts/VeraMono.ttf", font_size)
+	-- load font
+	self.font = Font(font, font_size)
+	-- define the cursor
 	local cursor_width = self.font:getTextSize("_")
 	local cursor_height = self.font:getHeight()
 	self.cursor_width = cursor_width
@@ -120,11 +140,18 @@ function Console:keypressed(key, wchar)
 			if self.command == "clear" then
 				self.lines = {}
 			else
+				scrupp._tmp = ""
+				local old_print = print
+				local old_io_write = io.write
+				print = new_print
+				io.write = new_io_write
 				local result, msg = loadstring(self.command:gsub("^=", "return "), "command")
 				if result then
 					-- collect all return values of pcall
 					result, msg = collect(pcall(result))
 				end
+				print = old_print
+				io.write = old_io_write
 				
 				if not result then
 					-- make the error message a little bit shorter
@@ -137,7 +164,12 @@ function Console:keypressed(key, wchar)
 						scrupp.exit()
 					end
 				end
-				-- split the msg
+				-- 1. the output
+				if scrupp._tmp ~= "" then
+					print(scrupp._tmp)
+					split_in_lines(scrupp._tmp, self.lines)
+				end
+				-- 2. the return values
 				split_in_lines(msg, self.lines)
 			end
 			self.tcommand = {}

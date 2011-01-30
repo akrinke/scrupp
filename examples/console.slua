@@ -1,0 +1,46 @@
+--[[
+-- $Id$
+-- Demo of the console plugin
+-- See Copyright Notice in COPYRIGHT
+--]]
+
+scrupp.init("Console Demo", 600, 400, 32, false, true)
+
+-- increase keyboard repeat rate:
+-- after a key is pressed for 200 ms,
+-- repeat it every 40 ms
+scrupp.setKeyRepeat(200, 40)
+
+-- load plugins
+require "font"
+require "console"
+
+local font = Font("fonts/Vera.ttf", 20)
+font:cache()
+
+-- create a console instance
+local console = Console()
+
+main = {
+	render = function()
+		font:print(10, 10, [[
+Press ^ to toogle the console.
+Test it! Type:
+> = 42*24 -- or
+> for k,v in pairs(scrupp) do print(k,v) end
+
+Tip: Try to resize this window!]])
+		console:render()
+	end,
+	
+	keypressed = function(key, wchar)
+		key, wchar = console:keypressed(key, wchar)
+		if key == "ESCAPE" then
+			scrupp.exit()
+		end
+	end,
+	
+	resized = function(w, h)
+		scrupp.init("Console Demo", w, h, 32, false, true)
+	end
+}
