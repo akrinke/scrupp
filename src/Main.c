@@ -200,6 +200,9 @@ int main(int argc, char *argv[]) {
 	luaopen_movie(L, NULL);
 	lua_setglobal(L, NAMESPACE);
 	
+	/* flush the buffer of stdout */
+	fflush(stdout);
+	
 	lua_getglobal(L, "package");
 	lua_getfield(L, -1, "preload");
 
