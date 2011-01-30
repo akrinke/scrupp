@@ -6,12 +6,15 @@
 
 require "class"
 
+local mfloor = math.floor
+
 Font = class(function(self, font, size)
-	font = scrupp.addFont(font, size)	
+	font = scrupp.addFont(font, size)
 	self.font = font
 	self.color = {255, 255, 255}
 	self.height = font:getHeight()
 	self.lineSkip = font:getLineSkip()
+	self.tabWidth = 8 * font:getTextSize("m")
 	-- table containing everything needed to render each glyph
 	self.chars = {}
 	-- used for kerning calculations
@@ -125,6 +128,12 @@ function Font:print(x, y, ...)
 
 			if char == "\n" then
 				x = orig_x
+				y = y + self.lineSkip
+				last_char = ""
+			elseif char == "\t" then
+				x = orig_x + self.tabWidth * (1 + mfloor((x - orig_x) / self.tabWidth))
+				last_char = ""
+			elseif char == "\f" then
 				y = y + self.lineSkip
 				last_char = ""
 			else
