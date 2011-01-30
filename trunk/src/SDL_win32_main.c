@@ -7,8 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NO_STDIO_REDIRECT
-
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -273,11 +271,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int sw)
 	size_t nLen;
 #endif
 #ifndef NO_STDIO_REDIRECT
-	DWORD pathlen;
 #ifdef _WIN32_WCE
+	DWORD pathlen;
 	wchar_t path[MAX_PATH];
 #else
-	char path[MAX_PATH];
+	char *path;
 #endif
 	FILE *newfp;
 #endif
@@ -292,16 +290,17 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int sw)
 	}
 
 #ifndef NO_STDIO_REDIRECT
+#ifdef _WIN32_WCE
 	pathlen = GetModuleFileName(NULL, path, SDL_arraysize(path));
 	while ( pathlen > 0 && path[pathlen] != '\\' ) {
 		--pathlen;
 	}
 	path[pathlen] = '\0';
 
-#ifdef _WIN32_WCE
 	wcsncpy( stdoutPath, path, SDL_arraysize(stdoutPath) );
 	wcsncat( stdoutPath, DIR_SEPERATOR STDOUT_FILE, SDL_arraysize(stdoutPath) );
 #else
+	path = getenv("TEMP");
 	SDL_strlcpy( stdoutPath, path, SDL_arraysize(stdoutPath) );
 	SDL_strlcat( stdoutPath, DIR_SEPERATOR STDOUT_FILE, SDL_arraysize(stdoutPath) );
 #endif
