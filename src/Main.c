@@ -12,6 +12,7 @@
 #include "Graphics.h"
 #include "Mouse.h"
 #include "Keyboard.h"
+#include "Joystick.h"
 #include "Sound.h"
 #include "Movie.h"
 
@@ -197,6 +198,7 @@ int main(int argc, char *argv[]) {
 	luaopen_sound(L, NULL);
 	luaopen_mouse(L, NULL);
 	luaopen_keyboard(L, NULL);
+	luaopen_joystick(L, NULL);
 	luaopen_movie(L, NULL);
 	lua_setglobal(L, NAMESPACE);
 	
@@ -382,6 +384,38 @@ int main(int argc, char *argv[]) {
 				lua_pushstring(L, buttonNames[event.button.button-1]);
 				if ((lua_pcall(L, 3, 0, -6) != 0) && !check_for_exit(L)) {
 					error(L, "Error running main.mousereleased:\n\t%s\n", lua_tostring(L, -1));
+				}
+				break;
+			
+			case SDL_JOYBUTTONDOWN:
+				lua_getfield(L, -1, "joystickpressed");
+				if (lua_isnil(L, -1)) {
+					lua_pop(L, 1); /* pop if it's nil */
+					break;
+				}
+				lua_pushliteral(L, "Scrupp:joystick_table");
+				lua_rawget(L, LUA_REGISTRYINDEX);
+				lua_rawgeti(L, -1, event.jbutton.which);
+				lua_remove(L, -2); /* remove the joystick_table */
+				lua_pushinteger(L, event.jbutton.button+1);
+				if ((lua_pcall(L, 2, 0, -5) != 0) && !check_for_exit(L)) {
+					error(L, "Error running main.joystickpressed:\n\t%s\n", lua_tostring(L, -1));
+				}
+				break;
+			
+			case SDL_JOYBUTTONUP:
+				lua_getfield(L, -1, "joystickreleased");
+				if (lua_isnil(L, -1)) {
+					lua_pop(L, 1); /* pop if it's nil */
+					break;
+				}
+				lua_pushliteral(L, "Scrupp:joystick_table");
+				lua_rawget(L, LUA_REGISTRYINDEX);
+				lua_rawgeti(L, -1, event.jbutton.which);
+				lua_remove(L, -2); /* remove the joystick_table */
+				lua_pushinteger(L, event.jbutton.button+1);
+				if ((lua_pcall(L, 2, 0, -5) != 0) && !check_for_exit(L)) {
+					error(L, "Error running main.joystickreleased:\n\t%s\n", lua_tostring(L, -1));
 				}
 				break;
 				

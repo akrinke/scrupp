@@ -201,7 +201,7 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 		flags |= SDL_RESIZABLE;
 	}
 	if (screen == NULL) {
-		if ( SDL_Init ( SDL_INIT_VIDEO | SDL_INIT_AUDIO ) != 0 )
+		if ( SDL_Init ( SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK ) != 0 )
 			return luaL_error(L, "Couldn't initialize SDL: %s", SDL_GetError ());
 		atexit(SDL_Quit);
 	} else {
