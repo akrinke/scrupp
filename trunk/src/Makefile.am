@@ -3,6 +3,7 @@ scrupp_SOURCES = \
 	FileIO.h FileIO.c \
 	Font.h Font.c \
 	Graphics.h Graphics.c \
+	Joystick.h Joystick.c \
 	Keyboard.h Keyboard.c \
 	Macros.h Macros.c \
 	Main.h Main.c \
