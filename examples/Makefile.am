@@ -1,4 +1,4 @@
-SUBDIRS = cairo luasocket
+SUBDIRS = cairo chipmunk luasocket
 
 exampledir = $(pkgdatadir)/examples
 example_DATA = \
