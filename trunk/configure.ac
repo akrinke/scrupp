@@ -22,6 +22,9 @@ AC_SUBST([WINMAIN])
 
 # Checks for libraries:
 
+# Check for libm
+AC_CHECK_LIB([m], [ceil])
+
 # Check for pkg-config
 PKG_PROG_PKG_CONFIG
 
@@ -111,7 +114,7 @@ AC_ARG_ENABLE(gtk, [AC_HELP_STRING([--disable-gtk],
 if test "x$enable_gtk" = "xyes" ; then
     PKG_CHECK_MODULES(GTK, [gtk+-2.0 >= 2.0.0], 
     [
-        AC_DEFINE([USE_GTK], [1], [Define to 1 if you have gtk2 installes.])
+        AC_DEFINE([USE_GTK], [1], [Define to 1 if you have gtk2 installed.])
     ],[
         AC_MSG_RESULT(no)
         AC_MSG_ERROR([

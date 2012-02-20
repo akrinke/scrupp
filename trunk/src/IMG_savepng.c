@@ -21,6 +21,7 @@
 */
 
 /**
+ * 6/15/11 - Fixed problems with libpng15 & zlib - Andreas Krinke
  * 4/17/04 - IMG_SavePNG & IMG_SavePNG_RW - Philip D. Bober
  * 11/08/2004 - Compr fix, levels -1,1-7 now work - Tyler Montbriand
  */
@@ -28,6 +29,7 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_byteorder.h>
 #include <png.h>
+#include <zlib.h>
 #include "IMG_savepng.h"
 
 int IMG_SavePNG(const char *file, SDL_Surface *surf,int compression){
@@ -84,17 +86,17 @@ int IMG_SavePNG_RW(SDL_RWops *src, SDL_Surface *surf,int compression){
 		goto savedone;
 	}
 	/* setup custom writer functions */
-	png_set_write_fn(png_ptr,(voidp)src,png_write_data,NULL);
+	png_set_write_fn(png_ptr,(png_voidp)src,png_write_data,NULL);
 
 	if (setjmp(png_jmpbuf(png_ptr))){
 		SDL_SetError("Unknown error writing PNG");
 		goto savedone;
 	}
 
-	if(compression>Z_BEST_COMPRESSION)
+	if(compression>IMG_COMPRESS_MAX)
 		compression=Z_BEST_COMPRESSION;
 
-	if(compression == Z_NO_COMPRESSION) // No compression
+	if(compression == IMG_COMPRESS_OFF) // No compression
 	{
 		png_set_filter(png_ptr,0,PNG_FILTER_NONE);
 		png_set_compression_level(png_ptr,Z_NO_COMPRESSION);
