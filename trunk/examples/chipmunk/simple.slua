@@ -1,0 +1,64 @@
+--[[
+-- $Id$
+-- Example using the builtin physics library Chipmunk.
+-- The Lua library Werechipmunk is used as a wrapper for Chipmunk.
+-- All graphics are generated on the fly using Cairo.
+-- See Copyright Notice in COPYRIGHT
+--]]
+
+local cp  = require "werechip"
+local cph = require "cp-helpers"
+
+scrupp.init("Werechipmunk Demo: Simple", 640, 480, 32, false)
+
+local demo = {
+	render = function(demo)
+		local img, body
+		for i=1,#demo.images do
+			img = demo.images[i]
+			body = demo.bodies[i]
+			img:setRotation(math.deg(body:getAngle()))
+			img:render(demo.bodies[i]:getPosition())
+		end
+	end
+}
+
+-- initialize the space and all objects (physically and visually)
+local space = cp.newSpace()
+space:setIterations(10)
+space:resizeStaticHash(30, 1000)
+space:resizeActiveHash(30, 1000)
+space:setGravity(0, 300)
+
+local staticBody = cp.newStaticBody()
+
+local groundShape = cp.newSegmentShape(staticBody, 0, 480, 640, 480, 0)
+groundShape:setElasticity(1)
+groundShape:setFriction(1)
+groundShape:setLayers(cph.NOT_GRABABLE_MASK)
+space:addStaticShape(groundShape)
+
+ground = cph.generateSegmentShapeImage(groundShape)
+
+local radius = 15
+local mass = 10
+local ballBody = cp.newBody(mass, cp.calcCircleMoment(mass, 0, radius, 0, 0))
+ballBody:setPosition(320, 480 - radius - 5)
+space:addBody(ballBody)
+
+local ballShape = space:addShape(cp.newCircleShape(ballBody, radius, 0, 0))
+ballShape:setElasticity(0.5)
+ballShape:setFriction(0.9)
+
+ball = cph.generateCircleShapeImage(ballShape)
+
+-- pick random color
+math.randomseed(os.time())
+ball:setColor(math.random(100, 255), math.random(100, 255), math.random(100, 255))
+
+demo.space = space
+demo.images = {ground, ball}
+demo.bodies = {staticBody, ballBody}
+
+main = cph.generateCallbacks(demo)
+

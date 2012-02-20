@@ -145,6 +145,7 @@ AC_OUTPUT([Makefile
            examples/Makefile
            examples/cairo/Makefile
            examples/cairo/images/Makefile
+           examples/chipmunk/Makefile
            examples/luasocket/Makefile
            fonts/Makefile
            scripts/Makefile

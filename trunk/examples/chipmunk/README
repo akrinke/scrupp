@@ -1,0 +1,8 @@
+$Id$
+
+This directory contains examples of how to use the Chipmunk physics library.
+They are based on the examples that come with the Chipmunk source
+distribution. These examples were translated to Scrupp/Lua and use the Lua
+library Werechipmunk to access the functionality of Chipmunk. The graphics 
+are created on the fly using Cairo.
+

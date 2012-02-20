@@ -1,0 +1,108 @@
+--[[
+-- $Id$
+-- Example using the builtin physics library Chipmunk.
+-- The Lua library Werechipmunk is used as a wrapper for Chipmunk.
+-- All graphics are generated on the fly using Cairo.
+-- See Copyright Notice in COPYRIGHT
+--]]
+
+local cp  = require "werechip"
+local cph = require "cp-helpers"
+
+scrupp.init("Werechipmunk Demo: PyramidStack", 640, 480, 32, false)
+
+local demo = {
+	render = function(demo)
+		local img, body
+		for i=1,#demo.images do
+			img = demo.images[i]
+			body = demo.bodies[i]
+			img:setRotation(math.deg(body:getAngle()))
+			img:render(demo.bodies[i]:getPosition())
+		end
+	end
+}
+
+-- initialize the space and all objects (physically and visually)
+demo.images = {}
+demo.bodies = {}
+
+local staticBody = cp.newStaticBody()
+cp.resetShapeIdCounter()
+
+local space = cp.newSpace()
+space:setIterations(20)
+space:resizeStaticHash(40, 1000)
+space:resizeActiveHash(40, 1000)
+space:setGravity(0, 100)
+
+-- Create segments around the edge of the screen.
+
+local shape
+shape = space:addStaticShape(cp.newSegmentShape(staticBody, 0, 0, 0, 480, 0))
+shape:setElasticity(1)
+shape:setFriction(1)
+shape:setLayers(cph.NOT_GRABABLE_MASK)
+demo.images[#demo.images+1] = cph.generateSegmentShapeImage(shape)
+demo.bodies[#demo.bodies+1] = staticBody
+
+shape = space:addStaticShape(cp.newSegmentShape(staticBody, 640, 0, 640, 480, 0))
+shape:setElasticity(1)
+shape:setFriction(1)
+shape:setLayers(cph.NOT_GRABABLE_MASK)
+demo.images[#demo.images+1] = cph.generateSegmentShapeImage(shape)
+demo.bodies[#demo.bodies+1] = staticBody
+
+shape = space:addStaticShape(cp.newSegmentShape(staticBody, 0, 480, 640, 480, 0))
+shape:setElasticity(1)
+shape:setFriction(1)
+shape:setLayers(cph.NOT_GRABABLE_MASK)
+demo.images[#demo.images+1] = cph.generateSegmentShapeImage(shape)
+demo.bodies[#demo.bodies+1] = staticBody
+
+-- Add lots of boxes.
+local body, box
+local verts = {
+	-15, -15,
+	-15,  15,
+	 15,  15,
+	 15, -15
+}
+
+for i=0,13 do
+	for j=0,i do
+		body = cp.newBody(1, cp.calcPolyMoment(1, verts, 0, 0))
+		body:setPosition(j*32 - i*16 + 320, i*32)
+		space:addBody(body)
+		shape = cp.newPolyShape(body, verts, 0, 0)
+		shape:setElasticity(0)
+		shape:setFriction(0.8)
+		space:addShape(shape)
+		box = box or cph.generatePolyShapeImage(shape)
+		box:setColor(255,0,0)
+		demo.images[#demo.images+1] = box
+		demo.bodies[#demo.bodies+1] = body			
+	end
+end
+	
+-- Add a ball to make things more interesting.
+local radius = 15
+local body = space:addBody(cp.newBody(10, cp.calcCircleMoment(10, 0, radius, 0, 0)))
+body:setPosition(320, 480 - radius - 5)
+
+shape = space:addShape(cp.newCircleShape(body, radius, 0, 0))
+shape:setElasticity(0)
+shape:setFriction(0.9)
+
+local ball = cph.generateCircleShapeImage(shape)
+demo.images[#demo.images+1] = ball
+demo.bodies[#demo.bodies+1] = body
+
+-- pick random color for the ball
+math.randomseed(os.time())
+ball:setColor(math.random(100, 255), math.random(100, 255), math.random(100, 255))
+
+demo.space = space
+
+main = cph.generateCallbacks(demo)
+
