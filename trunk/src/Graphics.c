@@ -219,8 +219,6 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 	}
 	/* set window caption */
 	SDL_WM_SetCaption (appName, appName);
-	/* enable UNICODE translation of key press events */
-	SDL_EnableUNICODE(1);
 	/* enable double buffering */
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE,   5);
@@ -277,13 +275,13 @@ static Uint32 getpixel(SDL_Surface *surface, int x, int y) {
 	int bpp = surface->format->BytesPerPixel;
 	/* Here p is the address to the pixel we want to retrieve */
 	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
-	switch(bpp) {
+	switch (bpp) {
 	case 1:
 		return *p;
 	case 2:
 		return *(Uint16 *)p;
 	case 3:
-		if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
+		if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
 			return p[0] << 16 | p[1] << 8 | p[2];
 		else
 			return p[0] | p[1] << 8 | p[2] << 16;
