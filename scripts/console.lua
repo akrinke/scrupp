@@ -117,6 +117,12 @@ end
 function Console:keypressed(key, wchar)
 	if key == "^" then
 		self.active = not self.active
+		if self.active then
+			self.unicodeWasEnabled = scrupp.unicodeIsEnabled()
+			scrupp.enableUnicode()
+		elseif not self.unicodeWasEnabled then
+			scrupp.disableUnicode()
+		end
 		return "", ""
 	elseif self.active then
 		-- handle input

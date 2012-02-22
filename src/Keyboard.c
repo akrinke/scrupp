@@ -16,6 +16,21 @@
   lua_pushliteral(L, name); \
   lua_rawseti(L, -2, val);
 
+static int Lua_Keyboard_enableUnicode(lua_State *L) {
+	SDL_EnableUNICODE(1);
+	return 0;
+}
+
+static int Lua_Keyboard_disableUnicode(lua_State *L) {
+	SDL_EnableUNICODE(0);
+	return 0;
+}
+
+static int Lua_Keyboard_unicodeIsEnabled(lua_State *L) {
+	lua_pushboolean(L, SDL_EnableUNICODE(-1));
+	return 1;
+}
+
 static int Lua_Keyboard_keyIsDown(lua_State *L) {
 	Uint8 *keystate = SDL_GetKeyState(NULL);
 	Uint16 key;
@@ -44,6 +59,9 @@ static int Lua_Keyboard_setKeyRepeat(lua_State *L) {
 }
 
 static const struct luaL_Reg keyboardlib [] = {
+	{"enableUnicode", Lua_Keyboard_enableUnicode},
+	{"disableUnicode", Lua_Keyboard_disableUnicode},
+	{"unicodeIsEnabled", Lua_Keyboard_unicodeIsEnabled},
 	{"keyIsDown", Lua_Keyboard_keyIsDown},
 	{"setKeyRepeat", Lua_Keyboard_setKeyRepeat},
 	{NULL, NULL}
