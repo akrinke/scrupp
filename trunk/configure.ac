@@ -48,7 +48,11 @@ PKG_CHECK_MODULES([LUAJIT], [luajit],
         fi
       done
     ])
-  PKG_CHECK_MODULES(LUA, [${LUA_PKG_NAME} >= 5.1])
+  PKG_CHECK_MODULES(LUA, [${LUA_PKG_NAME} >= 5.1 ${LUA_PKG_NAME} < 5.2], ,
+    [AC_CHECK_LIB(lua, luaL_newstate, ,
+                  AC_MSG_ERROR([Lua development files are required to compile Scrupp])
+    )
+  ])
  ])
 
 # Check for PhysFS
