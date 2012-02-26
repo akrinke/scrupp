@@ -21,6 +21,11 @@
 
 SDL_Surface *screen;
 
+/* glClearColor, stored as byte to avoid rounding errors if returned */
+GLubyte r_clear = 0;
+GLubyte g_clear = 0;
+GLubyte b_clear = 0;
+
 Lua_Image *first_image = NULL;
 
 /* calculates the next higher power of two */
@@ -230,7 +235,7 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 								width, height, bpp, SDL_GetError());
 	/* set the OpenGL state */
 	/* set background color */
-	glClearColor( 0, 0, 0, 1);
+	glClearColor((GLfloat)r_clear/255.0f, (GLfloat)g_clear/255.0f, (GLfloat)b_clear/255.0f, 1.0f);
 	/* set line antialiasing */
 	glEnable(GL_LINE_SMOOTH);
 	/* enable blending */
@@ -330,6 +335,30 @@ static int Lua_Graphics_showCursor(lua_State *L) {
 		}
 		return 0;
 	}
+}
+
+static int Lua_Graphics_setBackgroundColor(lua_State *L) {
+	if (lua_istable(L, 1)) {
+		lua_pushinteger(L, 1);
+		lua_gettable(L, 1);
+		lua_pushinteger(L, 2);
+		lua_gettable(L, 1);
+		lua_pushinteger(L, 3);
+		lua_gettable(L, 1);
+		lua_remove(L, 1);
+	}
+	r_clear = (GLubyte)luaL_checkint(L, 1);
+	g_clear = (GLubyte)luaL_checkint(L, 2);
+	b_clear = (GLubyte)luaL_checkint(L, 3);
+	glClearColor((GLfloat)r_clear/255.0f, (GLfloat)g_clear/255.0f, (GLfloat)b_clear/255.0f, 1.0f);
+	return 0;
+}
+
+static int Lua_Graphics_getBackgroundColor(lua_State *L) {
+	lua_pushinteger(L, r_clear);
+	lua_pushinteger(L, g_clear);
+	lua_pushinteger(L, b_clear);
+	return 3;
 }
 
 static int Lua_Graphics_getWindowWidth(lua_State *L) {
@@ -1076,6 +1105,8 @@ static int Lua_Graphics_draw(lua_State *L) {
 
 static const struct luaL_Reg graphicslib [] = {
 	{"init",				Lua_Graphics_init},
+	{"setBackgroundColor",	Lua_Graphics_setBackgroundColor},
+	{"getBackgroundColor",	Lua_Graphics_getBackgroundColor},
 	{"getWindowWidth",		Lua_Graphics_getWindowWidth},
 	{"getWindowHeight",		Lua_Graphics_getWindowHeight},
 	{"getWindowSize",		Lua_Graphics_getWindowSize},

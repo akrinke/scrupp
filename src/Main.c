@@ -324,19 +324,22 @@ int main(int argc, char *argv[]) {
 				lua_rawget(L, LUA_REGISTRYINDEX);
 				lua_rawgeti(L, -1, event.key.keysym.sym);
 				lua_remove(L, -2); /* remove the key_table */
-				/* get the utf-16 code */
-				wchar = event.key.keysym.unicode;
 				buf[0] = 0; buf[1] = 0; buf[2] = 0; buf[3] = 0;
-				/* convert utf-16 to utf-8 */
-				if (wchar < 0x80) {
-					buf[0] = wchar;
-				} else if (wchar < 0x800) {
-					buf[0] = (0xC0 | wchar >> 6);
-					buf[1] = (0x80 | wchar & 0x3F);
-				} else {
-					buf[0] = (0xE0 | wchar >> 12);
-					buf[1] = (0x80 | wchar >> 6 & 0x3F);
-					buf[2] = (0x80 | wchar & 0x3F);
+				if (SDL_EnableUNICODE(-1) == 1) {
+					/* get the utf-16 code */
+					wchar = event.key.keysym.unicode;
+					printf("wchar: %d\n", wchar);
+					/* convert utf-16 to utf-8 */
+					if (wchar < 0x80) {
+						buf[0] = wchar;
+					} else if (wchar < 0x800) {
+						buf[0] = (0xC0 | wchar >> 6);
+						buf[1] = (0x80 | wchar & 0x3F);
+					} else {
+						buf[0] = (0xE0 | wchar >> 12);
+						buf[1] = (0x80 | wchar >> 6 & 0x3F);
+						buf[2] = (0x80 | wchar & 0x3F);
+					}
 				}
 				lua_pushstring(L, &buf[0]);
 				if ((lua_pcall(L, 2, 0, -5) != 0) && !check_for_exit(L)) {
