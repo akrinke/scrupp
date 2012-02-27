@@ -144,7 +144,7 @@ static int cpBody_tostring (lua_State *L) {
 static const luaL_reg cpBody_functions[] = {
   {"newBody",       cpBody_new},
   {"newStaticBody", cpBody_newStatic},
-  {NULL, NULL}  
+  {NULL, NULL}
 };
 
 static const luaL_reg cpBody_methods[] = {
@@ -177,6 +177,7 @@ static const luaL_reg cpBody_methods[] = {
 static const luaL_reg cpBody_meta[] = {
   {"__gc",       cpBody_gc},
   {"__tostring", cpBody_tostring},
+  {NULL, NULL}
 };
 
 int cpBody_register (lua_State *L) {
