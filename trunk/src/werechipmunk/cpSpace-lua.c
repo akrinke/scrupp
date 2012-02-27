@@ -429,6 +429,7 @@ static const luaL_reg cpSpace_methods[] = {
 static const luaL_reg cpSpace_meta[] = {
   {"__gc",       cpSpace_gc},
   {"__tostring", cpSpace_tostring},
+  {NULL, NULL}
 };
 
 int cpSpace_register (lua_State *L) {

@@ -105,6 +105,7 @@ static const luaL_reg cpCircleShape_methods[] = {
 static const luaL_reg cpCircleShape_meta[] = {
   {"__gc",       cpShape_gc},
   {"__tostring", cpCircleShape_tostring},
+  {NULL, NULL}
 };
 
 int cpCircleShape_register (lua_State *L) {
