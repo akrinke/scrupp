@@ -26,6 +26,8 @@
 #define DEFINE_SHAPE_METHODS \
   {"getBody", cpShape_getBody}, \
   {"setBody", cpShape_setBody}, \
+  {"isSensor", cpShape_isSensor}, \
+  {"setSensor", cpShape_setSensor}, \
   {"getCollisionType", cpShape_getCollisionType }, \
   {"setCollisionType", cpShape_setCollisionType }, \
   {"getGroup", cpShape_getGroup}, \
@@ -44,6 +46,8 @@
 cpShape *check_cpShape (lua_State *L, int index);
 int cpShape_getBody (lua_State *L);
 int cpShape_setBody (lua_State *L);
+int cpShape_isSensor (lua_State *L);
+int cpShape_setSensor (lua_State *L);
 int cpShape_getCollisionType (lua_State *L);
 int cpShape_setCollisionType (lua_State *L);
 int cpShape_getGroup (lua_State *L);
