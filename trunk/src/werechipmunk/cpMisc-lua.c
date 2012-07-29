@@ -81,11 +81,6 @@ static const luaL_reg cpMisc_functions[] = {
   {NULL, NULL}
 };
 
-static int cpMisc_register (lua_State *L) {
-  luaL_register(L, NULL, cpMisc_functions);
-  return 0; 
-}
-
 // entry point for lua lib loading
 int luaopen_werechip (lua_State *L) {
   cpInitChipmunk();
@@ -143,11 +138,10 @@ int luaopen_werechip (lua_State *L) {
   lua_setmetatable(L, -2);
   lua_rawset(L, LUA_REGISTRYINDEX);
 
-  lua_newtable(L);
+  luaL_register(L, "werechip", cpMisc_functions);
   cpArbiter_register(L);
   cpBB_register(L);
   cpBody_register(L);
-  cpMisc_register(L);
   cpSpace_register(L);
   cpVect_register(L);
   
