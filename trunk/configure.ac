@@ -139,6 +139,7 @@ AC_OUTPUT([Makefile
            src/Makefile
            src/chipmunk/Makefile
            src/luafilesystem/Makefile
+           src/luagl/Makefile
            src/lua-oocairo/Makefile
            src/luasocket/Makefile
            src/werechipmunk/Makefile
@@ -151,6 +152,7 @@ AC_OUTPUT([Makefile
            examples/cairo/images/Makefile
            examples/chipmunk/Makefile
            examples/luasocket/Makefile
+           examples/opengl/Makefile
            fonts/Makefile
            scripts/Makefile
            scripts/interface/Makefile

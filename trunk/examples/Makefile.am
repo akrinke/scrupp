@@ -1,4 +1,4 @@
-SUBDIRS = cairo chipmunk luasocket
+SUBDIRS = cairo chipmunk luasocket opengl
 
 exampledir = $(pkgdatadir)/examples
 example_DATA = \

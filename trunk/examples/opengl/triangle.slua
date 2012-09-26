@@ -1,0 +1,16 @@
+require "luagl"
+
+scrupp.init("Test", 600, 400, 32, false)
+
+main = {
+	render = function(dt)
+		gl.Begin('TRIANGLES')
+			gl.Color(1,0,0)
+			gl.Vertex(500,10,0)
+			gl.Color(0,1,0)
+			gl.Vertex(100,10,0)
+			gl.Color(0,0,1)
+			gl.Vertex(300,350,0)			
+		gl.End()
+	end
+}
