@@ -16,12 +16,14 @@ EXTRA_scrupp_SOURCES = SDL_win32_main.c
 SUBDIRS = \
 	chipmunk \
 	luafilesystem \
+	luagl \
 	lua-oocairo \
 	luasocket \
 	werechipmunk
 LDADD = \
 	$(WINMAIN) \
 	luafilesystem/libluafilesystem.a \
+	luagl/libluagl.a \
 	lua-oocairo/libluaoocairo.a \
 	luasocket/libluasocket.a \
 	werechipmunk/libwerechipmunk.a \
