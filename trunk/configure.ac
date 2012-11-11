@@ -69,6 +69,12 @@ if test "x$no_gl" = "xyes"; then
     AC_MSG_ERROR([OpenGL is required to compile Scrupp])
 fi
 
+# Check for GLU
+AX_CHECK_GLU
+if test "x$no_glu" = "xyes"; then
+    AC_MSG_ERROR([GLU is required to compile Scrupp])
+fi
+
 # Check for Cairo
 PKG_CHECK_MODULES(CAIRO,cairo, ,
                   AC_MSG_ERROR([Cairo development files are required to compile Scrupp])
@@ -133,8 +139,8 @@ fi
 AC_ARG_ENABLE(debug, [AC_HELP_STRING([--enable-debug],
         [compile with debugging on])], AC_DEFINE(DEBUG), AC_DEFINE(NDEBUG))
 
-CFLAGS="$CFLAGS $LUAJIT_CFLAGS $LUA_CFLAGS $GL_CFLAGS $CAIRO_CFLAGS $LIBPNG_CFLAGS $SDL_CFLAGS $SMPEG_CFLAGS $GTK_CFLAGS"
-LIBS="$LIBS $LUAJIT_LIBS $LUA_LIBS $GL_LIBS $CAIRO_LIBS $LIBPNG_LIBS $SDL_LIBS $SMPEG_LIBS $GTK_LIBS $LUASOCKET_LIBS"
+CFLAGS="$CFLAGS $LUAJIT_CFLAGS $LUA_CFLAGS $GL_CFLAGS $GLU_CFLAGS $CAIRO_CFLAGS $LIBPNG_CFLAGS $SDL_CFLAGS $SMPEG_CFLAGS $GTK_CFLAGS"
+LIBS="$LIBS $LUAJIT_LIBS $LUA_LIBS $GL_LIBS $GLU_LIBS $CAIRO_LIBS $LIBPNG_LIBS $SDL_LIBS $SMPEG_LIBS $GTK_LIBS $LUASOCKET_LIBS"
 AC_OUTPUT([Makefile
            src/Makefile
            src/chipmunk/Makefile
