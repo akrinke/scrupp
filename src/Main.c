@@ -19,8 +19,9 @@
 /* luafilesystem */
 #include "luafilesystem/lfs.h"
 
-/* luagl */
+/* luagl and luaglu */
 #include "luagl/luagl.h"
+#include "luagl/luaglu.h"
 
 /* cairo binding lua-oocairo */
 #include "lua-oocairo/oocairo.h"
@@ -218,6 +219,10 @@ int main(int argc, char *argv[]) {
 	/* put luaopen_luagl in package.preload["luagl"] */
 	lua_pushcfunction(L, luaopen_luagl);
 	lua_setfield(L, -2, "luagl");
+
+	/* put luaopen_luaglu in package.preload["luaglu"] */
+	lua_pushcfunction(L, luaopen_luaglu);
+	lua_setfield(L, -2, "luaglu");
 
 	/* put luaopen_oocairo in package.preload["oocairo"] */
 	lua_pushcfunction(L, luaopen_oocairo);
