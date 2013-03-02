@@ -75,12 +75,10 @@ static void FS_Quit(void) {
 }
 
 /* extracts the dirname and the basename from the path */
-static void splitPath(const char *path, char **dir, char **base) {
+static void splitPath(const char *path, const char *dirsep, char **dir, char **base) {
 	char *ptr;
-	const char *dirsep = NULL;
 	*base = (char *)path;
 	*dir = (char *)".";
-	dirsep = PHYSFS_getDirSeparator();
 	if (strlen(dirsep) == 1) { /* fast path. */
 		ptr = strrchr(path, *dirsep);
 	}
@@ -199,7 +197,13 @@ void FS_Init(lua_State *L, char *argv[], char **pFilename) {
 			*pFilename = (char *)DEFAULT_FILE;
 		} else {
 			/* chdir was unsuccessful -> archive or Lua file was probably given on command line */
-			splitPath(*pFilename, &dir, &base);
+			splitPath(*pFilename, PHYSFS_getDirSeparator(), &dir, &base);
+			#ifdef __WIN32__
+				/* if the path contains no "\\", let's try "/" */
+				if (strcmp(dir, ".") == 0) {
+					splitPath(*pFilename, "/", &dir, &base);
+				}
+			#endif
 			/* change the working directory to the directory with the archive or the Lua file */
 			chdir(dir);
 			/* check if it's an archive; only zip is supported, so we check for the magic numbers */
