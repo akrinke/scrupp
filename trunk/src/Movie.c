@@ -55,11 +55,13 @@ static int Lua_Movie_load(lua_State *L) {
 	movie_info = (SMPEG_Info *) malloc(sizeof(SMPEG_Info));
 	temp = PHYSFSRWOPS_openRead(filename);
 	if (!temp) {
+		free(movie_info);
 		return luaL_error(L, "Error loading file '%s': %s", filename, SDL_GetError());
 	}
 	
 	movie = SMPEG_new_rwops(temp, movie_info, 0);
 	if (!movie) {
+		free(movie_info);
 		return luaL_error(L, "Error loading file '%s': %s", filename, SMPEG_error(movie));
 	}
 
@@ -77,6 +79,11 @@ static int Lua_Movie_load(lua_State *L) {
 		RMASK, GMASK, BMASK, AMASK);
 	
 	if ((movie_surface == NULL) || (po2_surface == NULL)) {
+		if (movie_surface != NULL)
+			SDL_FreeSurface(movie_surface);
+		if (po2_surface != NULL)
+			SDL_FreeSurface(po2_surface);
+		free(movie_info);
 		return luaL_error(L, "Error loading file '%s': %s", filename, SDL_GetError());
 	}
 
