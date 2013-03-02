@@ -967,8 +967,10 @@ static int Lua_Graphics_draw(lua_State *L) {
 	relative = lua_toboolean(L, -1);
 	if (relative) {
 		n = n - 2;
-		if (n<0)
+		if (n<0) {
+			free(coords);
 			return luaL_argerror(L, 1, "'relative' needs at least one coordinate pair");
+		}
 		translate_x = (GLdouble)coords[0];
 		translate_y = (GLdouble)coords[1];
 	}
