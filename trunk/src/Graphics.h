@@ -69,6 +69,8 @@ typedef struct Lua_Image {
 unsigned int nextHigherPowerOfTwo(unsigned int k);
 int createTexture(lua_State *L, SDL_Surface *src, Lua_Image *dest, GLubyte alpha);
 
+int luaopen_oocairo_wrapper(lua_State *L);
+
 int luaopen_graphics(lua_State *L, const char *parent);
 
 #endif /* __GRAPHICS_H__ */

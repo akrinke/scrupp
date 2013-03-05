@@ -8,6 +8,9 @@
 #include <SDL_image.h>
 #include <cairo.h>
 #include <math.h>
+#include <limits.h>
+
+#include "lua-oocairo/oocairo.h"
 
 #include "Main.h"
 #include "Macros.h"
@@ -20,6 +23,12 @@
 	(Lua_Image *)luaL_checkudata(L, 1, "scrupp.image")
 
 SDL_Surface *screen;
+
+/* Initial value for maximum texture size.
+ * OpenGL standard defines 64 as the lower limit.
+ * Has to be power of two.
+ */
+int max_texture_size = 64;
 
 /* glClearColor, stored as byte to avoid rounding errors if returned */
 GLubyte r_clear = 0;
@@ -55,18 +64,18 @@ static int sendTextureToCard(lua_State *L, Lua_Image *img) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 		/* edit the texture's image data using the information from the surface */
-		glTexImage2D( 	GL_TEXTURE_2D, 0, img->src->format->BytesPerPixel,
-						img->po2_width, img->po2_height, 0,
-						img->texture_format, GL_UNSIGNED_BYTE, img->src->pixels );
+		glTexImage2D(GL_TEXTURE_2D, 0, img->src->format->BytesPerPixel,
+		             img->po2_width, img->po2_height, 0,
+		             img->texture_format, GL_UNSIGNED_BYTE, img->src->pixels );
 	} else {
 		src_rect.w = img->tile_width;
 		src_rect.h = img->tile_height;
 		
 		tile_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, src_rect.w, src_rect.h, 32,
-											RMASK, GMASK, BMASK, AMASK);
+		                                    RMASK, GMASK, BMASK, AMASK);
 		if (tile_surface == NULL)
 			return luaL_error(L, "CreateRGBSurface failed: %s", SDL_GetError());
-				
+		
 		SDL_SetAlpha(img->src, 0, SDL_ALPHA_TRANSPARENT);
 		textures = (GLuint *)malloc(sizeof(GLuint) * img->x_tiles * img->y_tiles);
 		glGenTextures(img->x_tiles * img->y_tiles, textures);
@@ -79,9 +88,9 @@ static int sendTextureToCard(lua_State *L, Lua_Image *img) {
 				glBindTexture(GL_TEXTURE_2D, textures[x+y*img->x_tiles]);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTexImage2D( 	GL_TEXTURE_2D, 0, img->src->format->BytesPerPixel,
-								src_rect.w, src_rect.h, 0,
-								img->texture_format, GL_UNSIGNED_BYTE, tile_surface->pixels );
+				glTexImage2D(GL_TEXTURE_2D, 0, img->src->format->BytesPerPixel,
+				             src_rect.w, src_rect.h, 0,
+				             img->texture_format, GL_UNSIGNED_BYTE, tile_surface->pixels );
 			}
 		}
 		SDL_FreeSurface(tile_surface);
@@ -111,8 +120,8 @@ int createTexture(lua_State *L, SDL_Surface *src, Lua_Image *dest, GLubyte alpha
 	tile_width = new_width;
 	tile_height = new_height;
 
-	new_surface = SDL_CreateRGBSurface( SDL_SWSURFACE, new_width, new_height, 32,
-										RMASK, GMASK, BMASK, AMASK);
+	new_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, new_width, new_height, 32,
+	                                   RMASK, GMASK, BMASK, AMASK);
 	if ( new_surface == NULL )
 		return luaL_error(L, "CreateRGBSurface failed: %s", SDL_GetError());
 
@@ -137,25 +146,8 @@ int createTexture(lua_State *L, SDL_Surface *src, Lua_Image *dest, GLubyte alpha
 		return luaL_error(L, "Image is not truecolor!");
 	}
 	
-	/* check if the graphics card can handle a texture with the chosen size */
-	glTexImage2D(	GL_PROXY_TEXTURE_2D, 0, new_surface->format->BytesPerPixel, 
-					new_width, new_height, 0,
-					GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &dummy_width);
-	while (dummy_width == 0) {
-		if (tile_width > tile_height) {
-			tile_width = tile_width / 2;
-		} else {
-			tile_height = tile_height / 2;
-		}
-		/* check if the smaller texture can be handled by the graphics card */
-		glTexImage2D(	GL_PROXY_TEXTURE_2D, 0, new_surface->format->BytesPerPixel, 
-						tile_width, tile_height, 0,
-						GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-		glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &dummy_width);		
-	}
-	x_tiles = (char) ceil((double)old_width / tile_width);
-	y_tiles = (char) ceil((double)old_height / tile_height);
+	x_tiles = (char) ceil((double)old_width / max_texture_size);
+	y_tiles = (char) ceil((double)old_height / max_texture_size);
 	
 	dest->src = new_surface;
 	dest->texture_format = texture_format;
@@ -193,6 +185,7 @@ int createTexture(lua_State *L, SDL_Surface *src, Lua_Image *dest, GLubyte alpha
 /* initialize SDL */
 static int initSDL (lua_State *L, const char *appName, int width, int height, int bpp, int fullscreen, int resizable) {
 	Uint32 flags;
+	int dummy_size = 1;
 	Lua_Image *image_node;
 	Lua_Movie *movie_node;
 	SDL_Surface *movie_po2_surface;
@@ -231,8 +224,8 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,  5);
 	screen = SDL_SetVideoMode(width, height, bpp, flags);
 	if (screen == NULL)
-		return luaL_error(L, 	"Couldn't set %dx%dx%d video mode: %s",
-								width, height, bpp, SDL_GetError());
+		return luaL_error(L, "Couldn't set %dx%dx%d video mode: %s",
+		                     width, height, bpp, SDL_GetError());
 	/* set the OpenGL state */
 	/* set background color */
 	glClearColor((GLfloat)r_clear/255.0f, (GLfloat)g_clear/255.0f, (GLfloat)b_clear/255.0f, 1.0f);
@@ -250,6 +243,18 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 	glOrtho( 0, width, height, 0, -1, 1 );
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();
+
+	/* determine the maximum texture size */
+	while (dummy_size != 0 && max_texture_size <= INT_MAX/2) {
+		max_texture_size *= 2;
+		glTexImage2D(GL_PROXY_TEXTURE_2D, 0, 4, 
+		             max_texture_size, max_texture_size, 0,
+		             GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &dummy_size);
+	}
+	if (dummy_size == 0)
+		max_texture_size /= 2;
+
 	/* reloading all images */
 	image_node = first_image;
 	while (image_node != NULL) {
@@ -266,9 +271,9 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 		glBindTexture(GL_TEXTURE_2D, movie_node->texture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(	GL_TEXTURE_2D, 0, GL_RGB, 
-						movie_node->po2_width, movie_node->po2_height, 0, 
-						GL_RGBA, GL_UNSIGNED_BYTE, movie_po2_surface->pixels );
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
+		             movie_node->po2_width, movie_node->po2_height, 0, 
+		             GL_RGBA, GL_UNSIGNED_BYTE, movie_po2_surface->pixels );
 		SDL_FreeSurface(movie_po2_surface);
 		movie_node = movie_node->next;
 	}
@@ -308,8 +313,8 @@ static int Lua_Graphics_init(lua_State *L) {
 	int resizable;
 	luaL_checkany(L, 5);
 	fullscreen = lua_toboolean(L, 5);
-	/* 	lua_toboolean returns 0 when called with a non-valid index
-		this way resizable becomes optional */
+	/* lua_toboolean returns 0 when called with a non-valid index
+	   this way resizable becomes optional */
 	resizable = lua_toboolean(L, 6);
 	initSDL(L, appName, width, height, bpp, fullscreen, resizable);
 	return 0;
@@ -385,14 +390,14 @@ static int Lua_Graphics_getTicks(lua_State *L) {
 static int Lua_Graphics_translateView(lua_State *L) {
 	GLdouble translateX = (GLdouble)luaL_checknumber(L, 1);
 	GLdouble translateY = (GLdouble)luaL_checknumber(L, 2);
-	glTranslated(translateX, translateY, 0);	
+	glTranslated(translateX, translateY, 0);
 	return 0;
 }
 
 static int Lua_Graphics_scaleView(lua_State *L) {
 	GLdouble scaleX = (GLdouble)luaL_checknumber(L, 1);
 	GLdouble scaleY = (GLdouble)luaL_checknumber(L, 2);
-	glScaled(scaleX, scaleY, 0);	
+	glScaled(scaleX, scaleY, 0);
 	return 0;
 }
 
@@ -452,10 +457,10 @@ static int Lua_Image_loadFromString(lua_State *L) {
 	Lua_Image *ptr;
 
 	if (SDL_GetVideoSurface() == NULL)
-		return luaL_error(L, "Run " NAMESPACE ".init() before loading images.");	
+		return luaL_error(L, "Run " NAMESPACE ".init() before loading images.");
 	rw = SDL_RWFromConstMem(string, len);
 	if (rw == NULL)
-		return luaL_error(L, "Error reading string.");	
+		return luaL_error(L, "Error reading string.");
 	surface = IMG_Load_RW(rw, 1);
 	if (surface == NULL)
 		return luaL_error(L, "Error loading image from string: %s", IMG_GetError());
@@ -489,15 +494,14 @@ static int Lua_Image_loadFromCairoSurface(lua_State *L) {
 		amask = 0x00000000;
 	}
 
-			
 	cairo_data = cairo_image_surface_get_data(*cairo_surface);	
 	if (cairo_data == NULL) {
 		return luaL_error(L, "Cairo surface is no image surface!");
-	}	
+	}
 	/* printf("width: %d\theight: %d\tstride: %d\n", width, height, stride); */
 
-	sdl_surface = SDL_CreateRGBSurfaceFrom(	(void *) cairo_data, width, height, 32, stride,
-											rmask, gmask, bmask, amask);	
+	sdl_surface = SDL_CreateRGBSurfaceFrom((void *) cairo_data, width, height, 32, stride,
+	                                       rmask, gmask, bmask, amask);
 	if (sdl_surface == NULL) {
 		return luaL_error(L, "Error creating SDL surface: %s", SDL_GetError());
 	}
@@ -507,6 +511,94 @@ static int Lua_Image_loadFromCairoSurface(lua_State *L) {
 	luaL_getmetatable(L, "scrupp.image");
 	lua_setmetatable(L, -2);
 	return 1;
+}
+
+static int Lua_Cairo_renderSurface(lua_State *L) {
+	/* the name of the metatable is defined in the sources of Lua-OOCairo (oocairo.c) */
+	cairo_surface_t **cairo_surface = (cairo_surface_t **)luaL_checkudata(L, 1, "6d31a064-6711-11dd-bdd8-00e081225ce5");
+	int x = luaL_checkint(L, 2);
+	int y = luaL_checkint(L, 3);
+	cairo_format_t cairo_format = cairo_image_surface_get_format(*cairo_surface);
+	GLenum texture_format;
+	unsigned char *cairo_data;
+	int width = cairo_image_surface_get_width(*cairo_surface);
+	int height = cairo_image_surface_get_height(*cairo_surface);
+	int stride = cairo_image_surface_get_stride(*cairo_surface);
+	int po2_width = nextHigherPowerOfTwo(width);
+	int po2_height = nextHigherPowerOfTwo(height);
+	int x_tiles = (int) ceil((double) width / max_texture_size);
+	int y_tiles = (int) ceil((double) height / max_texture_size);
+	GLuint *textures;
+	GLrect tex_coords = {0, 0, (GLfloat) width / po2_width, (GLfloat) height / po2_height};
+		
+	if (SDL_GetVideoSurface() == NULL) {
+		return luaL_error(L, "Run " NAMESPACE ".init() before loading images.");
+	}
+	
+	if (stride != 4*width) {
+		return luaL_error(L, "Unexpected stride value for surface.");
+	}
+
+	if (cairo_format == CAIRO_FORMAT_ARGB32) {
+		texture_format = GL_RGBA;
+		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	} else if (cairo_format == CAIRO_FORMAT_RGB24) {
+		texture_format = GL_RGB;
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	} else {
+		return luaL_error(L, "Cairo surface has invalid format (only RGB24 and ARGB32 are supported)!");
+	}
+	
+	cairo_surface_flush(*cairo_surface);
+	cairo_data = cairo_image_surface_get_data(*cairo_surface);
+	if (cairo_data == NULL) {
+		return luaL_error(L, "Cairo surface is no image surface!");
+	}
+	
+	/* generate texture object(s) */
+	textures = (GLuint *)malloc(sizeof(GLuint) * x_tiles * y_tiles);
+	glGenTextures(x_tiles * y_tiles, textures);
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_TEXTURE_2D);
+	glPushMatrix();
+	glTranslatef((GLfloat)x, (GLfloat)y, 0);
+	
+	if (x_tiles == 1 && y_tiles == 1) {
+		glBindTexture(GL_TEXTURE_2D, *textures);
+		/* set the texture's stretching properties */
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		// the texture does not wrap over at the edges (no repeat)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		glTexImage2D(GL_TEXTURE_2D, 0, texture_format,
+		             po2_width, po2_height, 0,
+		             texture_format, GL_UNSIGNED_BYTE, NULL);
+		/* TODO: Consider endianness */
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+		                width, height, GL_BGRA, GL_UNSIGNED_BYTE, cairo_data);
+		glBegin(GL_QUADS);
+			glTexCoord2f(tex_coords.x1, tex_coords.y1);
+			glVertex2i(0, 0);
+			glTexCoord2f(tex_coords.x1, tex_coords.y2);
+			glVertex2i(0, height);
+			glTexCoord2f(tex_coords.x2, tex_coords.y2);
+			glVertex2i(width, height);
+			glTexCoord2f(tex_coords.x2, tex_coords.y1);
+			glVertex2i(width, 0);
+		glEnd();
+
+	} else {
+		/* TODO */
+		glPopMatrix();
+		glDeleteTextures(x_tiles * y_tiles, textures);
+		free(textures);
+		return luaL_error(L, "Cairo surface is too large for your graphics hardware.");
+	}
+	glPopMatrix();
+	glDeleteTextures(x_tiles * y_tiles, textures);
+	free(textures);
+	return 0;
 }
 
 static int Lua_Image_getWidth(lua_State *L) {
@@ -568,7 +660,7 @@ static int Lua_Image_setColor(lua_State *L) {
 	}
 	r = (GLubyte)luaL_checkint(L, 2);
 	g = (GLubyte)luaL_checkint(L, 3);
-	b = (GLubyte)luaL_checkint(L, 4);	
+	b = (GLubyte)luaL_checkint(L, 4);
 	if (image->color == NULL) {
 		image->color = (GLubyte *)malloc(3*sizeof(GLubyte));
 	}
@@ -726,7 +818,7 @@ static int Lua_Image_clearRect(lua_State *L) {
 	free(image->rect);
 	image->rect = NULL;
 	return 0;
-}	
+}
 
 static int Lua_Image_render(lua_State *L) {
 	Lua_Image *image = checkimage(L);
@@ -795,7 +887,7 @@ static int Lua_Image_render(lua_State *L) {
 		lua_getfield(L, -1, "rect");
 		if (lua_istable(L, -1)) {
 			if (!getint(L, &clip_rect.x, 1) || !getint(L, &clip_rect.y, 2) ||
-				!getint(L, &clip_rect.w, 3) || !getint(L, &clip_rect.h, 4))
+			    !getint(L, &clip_rect.w, 3) || !getint(L, &clip_rect.h, 4))
 				return luaL_argerror(L, 2, "'rect' has invalid or missing elements");
 
 			texCoords.x1 = (GLfloat) clip_rect.x / image->po2_width;
@@ -821,6 +913,7 @@ static int Lua_Image_render(lua_State *L) {
 		y = luaL_checkint(L, 3);
 	}
 
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	/* blit the OpenGL texture (wrapped in a Lua_Image) */
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_TEXTURE_2D);
@@ -863,7 +956,6 @@ static int Lua_Image_render(lua_State *L) {
 		}
 		glPopMatrix();
 		glTranslatef(0.0f, (GLfloat)image->tile_height-0.0f, 0.0f);
-
 	}
 
 	/* restore the modelview matrix */
@@ -1004,8 +1096,8 @@ static int Lua_Graphics_draw(lua_State *L) {
 	lua_getfield(L, -1, "color");
 	if (lua_istable(L, -1)) {
 		if (!getint(L, &color[0], 1) || !getint(L, &color[1], 2) || !getint(L, &color[2], 3)) {
-				free(coords);
-				return luaL_argerror(L, 1, "'color' has invalid or missing elements");
+			free(coords);
+			return luaL_argerror(L, 1, "'color' has invalid or missing elements");
 		}
 		/* the alpha value of the color is optional */
 		getint(L, &color[3], 4);
@@ -1038,6 +1130,7 @@ static int Lua_Graphics_draw(lua_State *L) {
 		luaL_argerror(L, 1, "unconnected lines need an even number of coordinate-pairs");
 	}
 
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_CULL_FACE);
 	/* save the modelview matrix */
 	glPushMatrix();
@@ -1106,60 +1199,76 @@ static int Lua_Graphics_draw(lua_State *L) {
 }
 
 static const struct luaL_Reg graphicslib [] = {
-	{"init",				Lua_Graphics_init},
-	{"setBackgroundColor",	Lua_Graphics_setBackgroundColor},
-	{"getBackgroundColor",	Lua_Graphics_getBackgroundColor},
-	{"getWindowWidth",		Lua_Graphics_getWindowWidth},
-	{"getWindowHeight",		Lua_Graphics_getWindowHeight},
-	{"getWindowSize",		Lua_Graphics_getWindowSize},
-	{"showCursor",			Lua_Graphics_showCursor},
-	{"getTicks",			Lua_Graphics_getTicks},
-	{"translateView",		Lua_Graphics_translateView},
-	{"scaleView",			Lua_Graphics_scaleView},
-	{"rotateView",			Lua_Graphics_rotateView},
-	{"saveView",			Lua_Graphics_saveView},
-	{"restoreView",			Lua_Graphics_restoreView},
-	{"resetView",			Lua_Graphics_resetView},
-	{"addImage",			Lua_Image_load},
-	{"addImageFromString",	Lua_Image_loadFromString},
-	{"addImageFromCairo",	Lua_Image_loadFromCairoSurface},
-	{"draw",				Lua_Graphics_draw},
+	{"init",               Lua_Graphics_init},
+	{"setBackgroundColor", Lua_Graphics_setBackgroundColor},
+	{"getBackgroundColor", Lua_Graphics_getBackgroundColor},
+	{"getWindowWidth",     Lua_Graphics_getWindowWidth},
+	{"getWindowHeight",    Lua_Graphics_getWindowHeight},
+	{"getWindowSize",      Lua_Graphics_getWindowSize},
+	{"showCursor",         Lua_Graphics_showCursor},
+	{"getTicks",           Lua_Graphics_getTicks},
+	{"translateView",      Lua_Graphics_translateView},
+	{"scaleView",          Lua_Graphics_scaleView},
+	{"rotateView",         Lua_Graphics_rotateView},
+	{"saveView",           Lua_Graphics_saveView},
+	{"restoreView",        Lua_Graphics_restoreView},
+	{"resetView",          Lua_Graphics_resetView},
+	{"addImage",           Lua_Image_load},
+	{"addImageFromString", Lua_Image_loadFromString},
+	{"addImageFromCairo",  Lua_Image_loadFromCairoSurface},
+	{"draw",               Lua_Graphics_draw},
 	{NULL, NULL}
 };
 
 static const struct luaL_Reg imagelib_m [] = {
-	{"__gc",				image_gc},
-	{"__tostring",			image_tostring},
-	{"getWidth",			Lua_Image_getWidth},
-	{"getHeight",			Lua_Image_getHeight},
-	{"getSize",				Lua_Image_getSize},
-	{"isTransparent",		Lua_Image_isTransparent},
-	{"setAlpha",			Lua_Image_setAlpha},
-	{"getAlpha",			Lua_Image_getAlpha},
-	{"setColor",			Lua_Image_setColor},
-	{"getColor",			Lua_Image_getColor},
-	{"clearColor",			Lua_Image_clearColor},
-	{"setCenterX",			Lua_Image_setCenterX},
-	{"getCenterX",			Lua_Image_getCenterX},
-	{"setCenterY",			Lua_Image_setCenterY},
-	{"getCenterY",			Lua_Image_getCenterY},
-	{"setCenter",			Lua_Image_setCenter},
-	{"getCenter",			Lua_Image_getCenter},
-	{"setScaleX",			Lua_Image_setScaleX},
-	{"getScaleX",			Lua_Image_getScaleX},
-	{"setScaleY",			Lua_Image_setScaleY},
-	{"getScaleY",			Lua_Image_getScaleY},
-	{"setScale",			Lua_Image_setScale},
-	{"getScale",			Lua_Image_getScale},
-	{"setRotation",			Lua_Image_setRotation},
-	{"getRotation",			Lua_Image_getRotation},
-	{"setRect",				Lua_Image_setRect},
-	{"getRect",				Lua_Image_getRect},
-	{"clearRect",			Lua_Image_clearRect},
-	{"toString",			Lua_Image_toString},
-	{"render",				Lua_Image_render},
+	{"__gc",          image_gc},
+	{"__tostring",    image_tostring},
+	{"getWidth",      Lua_Image_getWidth},
+	{"getHeight",     Lua_Image_getHeight},
+	{"getSize",	      Lua_Image_getSize},
+	{"isTransparent", Lua_Image_isTransparent},
+	{"setAlpha",      Lua_Image_setAlpha},
+	{"getAlpha",      Lua_Image_getAlpha},
+	{"setColor",      Lua_Image_setColor},
+	{"getColor",      Lua_Image_getColor},
+	{"clearColor",    Lua_Image_clearColor},
+	{"setCenterX",    Lua_Image_setCenterX},
+	{"getCenterX",    Lua_Image_getCenterX},
+	{"setCenterY",    Lua_Image_setCenterY},
+	{"getCenterY",    Lua_Image_getCenterY},
+	{"setCenter",     Lua_Image_setCenter},
+	{"getCenter",     Lua_Image_getCenter},
+	{"setScaleX",     Lua_Image_setScaleX},
+	{"getScaleX",     Lua_Image_getScaleX},
+	{"setScaleY",     Lua_Image_setScaleY},
+	{"getScaleY",     Lua_Image_getScaleY},
+	{"setScale",      Lua_Image_setScale},
+	{"getScale",      Lua_Image_getScale},
+	{"setRotation",   Lua_Image_setRotation},
+	{"getRotation",   Lua_Image_getRotation},
+	{"setRect",       Lua_Image_setRect},
+	{"getRect",       Lua_Image_getRect},
+	{"clearRect",     Lua_Image_clearRect},
+	{"toString",      Lua_Image_toString},
+	{"render",        Lua_Image_render},
 	{NULL, NULL}
 };
+
+int luaopen_oocairo_wrapper(lua_State *L) {
+	/* call the original luaopen_oocairo */
+	lua_pushcfunction(L, luaopen_oocairo);
+	lua_insert(L, -2);
+	lua_call(L, 1, 1);
+	
+	/* add method "render" to Cairo surface objects */
+	luaL_getmetatable(L, "6d31a064-6711-11dd-bdd8-00e081225ce5");
+	lua_pushliteral(L, "render");
+	lua_pushcfunction(L, Lua_Cairo_renderSurface);
+	lua_rawset(L, -3);
+	lua_pop(L, 1);
+	
+	return 1;
+}
 
 int luaopen_graphics(lua_State *L, const char *parent) {
 	luaL_newmetatable(L, "scrupp.image");
@@ -1169,5 +1278,6 @@ int luaopen_graphics(lua_State *L, const char *parent) {
 	luaL_register(L, NULL, imagelib_m);
 	lua_pop(L, 1);	/* pop the metatable */
 	luaL_register(L, parent, graphicslib);
+
 	return 1;
 }
