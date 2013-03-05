@@ -23,9 +23,6 @@
 #include "luagl/luagl.h"
 #include "luagl/luaglu.h"
 
-/* cairo binding lua-oocairo */
-#include "lua-oocairo/oocairo.h"
-
 /* luasocket */
 #include "luasocket/luasocket.h"
 #include "luasocket/mime.h"
@@ -224,8 +221,8 @@ int main(int argc, char *argv[]) {
 	lua_pushcfunction(L, luaopen_luaglu);
 	lua_setfield(L, -2, "luaglu");
 
-	/* put luaopen_oocairo in package.preload["oocairo"] */
-	lua_pushcfunction(L, luaopen_oocairo);
+	/* put wrapper for luaopen_oocairo in package.preload["oocairo"] */
+	lua_pushcfunction(L, luaopen_oocairo_wrapper);
 	lua_setfield(L, -2, "oocairo");
 	
 	/* put luaopen_socket_core in package.preload["socket.core"] */
