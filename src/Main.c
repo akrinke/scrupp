@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
 	char buf[4] = {0};
 	int redraw = 0;		/* redraw is needed or not */
 	double lastTime;	/* last iteration's tick value */
-	double delta = 0.0;
+	double delta = minimumDelta;
 	int i, n, narg;
 	char *filename = NULL;
 	fprintf(stdout, "%s v%s\n", PROG_NAME, VERSION);
@@ -337,7 +337,6 @@ int main(int argc, char *argv[]) {
 				if (SDL_EnableUNICODE(-1) == 1) {
 					/* get the utf-16 code */
 					wchar = event.key.keysym.unicode;
-					printf("wchar: %d\n", wchar);
 					/* convert utf-16 to utf-8 */
 					if (wchar < 0x80) {
 						buf[0] = wchar;
