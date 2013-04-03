@@ -4,4 +4,6 @@ SUBDIRS = src doc examples fonts scripts
 
 dist_pkgdata_DATA = \
 	main.slua \
-	COPYRIGHT
+	LICENSE.txt \
+	LICENSES.txt \
+	NOTICE.txt
