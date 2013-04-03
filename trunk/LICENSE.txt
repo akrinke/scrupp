@@ -1,5 +1,7 @@
-Scrupp License
---------------
+NOTICE
+This package contains software licensed unter different licenses, please refer
+to the NOTICE.txt file for further information and LICENSES.txt for full
+license texts.
 
 Scrupp is licensed under the terms of the MIT license reproduced below.
 This means that Scrupp is free software and can be used for both academic
@@ -7,7 +9,7 @@ and commercial purposes at absolutely no cost.
 
 ===============================================================================
 
-Copyright (C) 2005-2010 Andreas Krinke
+Copyright (C) 2005-2013 Andreas Krinke
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,4 +31,3 @@ THE SOFTWARE.
 
 ===============================================================================
 
-(end of COPYRIGHT)

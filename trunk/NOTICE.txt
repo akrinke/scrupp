@@ -1,0 +1,24 @@
+Scrupp
+Copyright 2005-2013 Andreas Krinke
+
+Scrupp is licensed under the MIT license
+(http://opensource.org/licenses/mit-license.php) ("MIT") to all third parties
+and that license is included in the LICENSE.txt file.
+
+Third party libraries
+=====================
+
+Full license texts are found in LICENSES.txt.
+
+scripts/tween.lua
+-----------------
+
+3-Clause BSD License
+
+The easing functions were taken from emmanuelOga's easing functions
+(https://github.com/EmmanuelOga/easing) licensed under the MIT License.
+
+Emmanuel Oga's functions, in turn, were adapted from Penner's Easing Equations
+and http://code.google.com/p/tweener/ (jstweener javascript version) which are
+licensed under the 3-Clause BSD License.
+

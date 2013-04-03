@@ -2,7 +2,7 @@
 -- $Id$
 -- Very simple greeting program
 -- Started if Scrupp is run without arguments
--- See Copyright Notice in COPYRIGHT
+-- See Copyright Notice in LICENSE.txt
 --]]
 
 local width, height = 640, 480
@@ -12,24 +12,54 @@ scrupp.init("Scrupp", width, height, 32, false)
 require "console"
 local console = Console()
 
--- loading fonts
-Fonts = {
-	scrupp.addFont("fonts/Vera.ttf", 28),
-	scrupp.addFont("fonts/Winks.ttf", 150),
+local tween = require "tween"
+
+local random = math.random
+
+-- load fonts
+local fntVera  = scrupp.addFont("fonts/Vera.ttf", 28)
+local fntWinks = scrupp.addFont("fonts/Winks.ttf", 150)
+
+-- generate images of letters and words
+local lblWelcome = fntVera:generateImage("Welcome to")
+local lblWelcomeConf = {
+	x = (width - lblWelcome:getWidth()) / 2,
+	y = 80,
+	color = {255, 255, 255, 0}
 }
 
--- generating images
-Images = {
-	Fonts[1]:generateImage{"Welcome to"},
-	Fonts[2]:generateImage{"Scrupp", color={190,0,0}},
-	Fonts[1]:generateImage{"Just change 'main.slua' to suit your needs!"}
+local lblScrupp = fntWinks:generateImage("Scrupp")
+local lblScruppConf = {
+	x = (width - lblScrupp:getWidth()) / 2, 
+	y = -140,
+    color = {190, 0, 0}
 }
+
+local lblInfo = fntVera:generateImage("Just change 'main.slua' to suit your needs!")
+local lblInfoConf = {
+	x = width+10,
+	y = 350
+}
+
+-- configure animations
+local function colorCycle()
+    tween(1500, lblScruppConf, {color = {random(255), random(255), random(255)}}, 'linear', colorCycle)
+end
+
+tween(3000, lblWelcomeConf, {color = {255, 255, 255, 255}}, 'inQuad',
+    tween, 3000, lblScruppConf, {y = 150}, 'outBounce',
+    tween, 3000, lblInfoConf, {x = (width - lblInfo:getWidth()) /2}, 'outExpo',
+    colorCycle)
+    
 
 main = {
 	render = function(dt)
-		Images[1]:render((width-Images[1]:getWidth())/2,80)
-		Images[2]:render((width-Images[2]:getWidth())/2,150)
-		Images[3]:render((width-Images[3]:getWidth())/2,350)
+		tween.update(dt)
+		--lblWelcome:setAlpha(lblWelcomeConf.alpha)
+		lblWelcome:render(lblWelcomeConf)
+        --lblScrupp:setColor(lblScruppConf.color)
+		lblScrupp:render(lblScruppConf)
+		lblInfo:render(lblInfoConf)
 		console:render()
 	end,
 
