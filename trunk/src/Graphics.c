@@ -161,6 +161,8 @@ int createTexture(lua_State *L, SDL_Surface *src, Lua_Image *dest, GLubyte alpha
 	dest->y_tiles = y_tiles;
 	dest->alpha = alpha;
 	dest->color = NULL;
+	dest->x = 0.0;
+	dest->y = 0.0;
 	dest->center_x = 0.0;
 	dest->center_y = 0.0;
 	dest->scale_x = 1.0;
@@ -692,6 +694,44 @@ static int Lua_Image_clearColor(lua_State *L) {
 	return 0;
 }
 
+static int Lua_Image_setX(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	image->x = (GLdouble)luaL_checknumber(L, 2);
+	return 0;
+}
+
+static int Lua_Image_getX(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	lua_pushnumber(L, image->x);
+	return 1;
+}
+
+static int Lua_Image_setY(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	image->y = (GLdouble)luaL_checknumber(L, 2);
+	return 0;
+}
+
+static int Lua_Image_getY(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	lua_pushnumber(L, image->y);
+	return 1;
+}
+
+static int Lua_Image_setPosition(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	image->x = (GLdouble)luaL_checknumber(L, 2);
+	image->y = (GLdouble)luaL_checknumber(L, 3);
+	return 0;
+}
+
+static int Lua_Image_getPosition(lua_State *L) {
+	Lua_Image *image = checkimage(L);
+	lua_pushnumber(L, image->x);
+	lua_pushnumber(L, image->y);
+	return 2;
+}
+
 static int Lua_Image_setCenterX(lua_State *L) {
 	Lua_Image *image = checkimage(L);
 	image->center_x = (GLdouble)luaL_checknumber(L, 2);
@@ -822,12 +862,14 @@ static int Lua_Image_clearRect(lua_State *L) {
 
 static int Lua_Image_render(lua_State *L) {
 	Lua_Image *image = checkimage(L);
-	int x, y;
+	int narg;
 	myRect clip_rect;
 	int color[] = {255, 255, 255, image->alpha};
 	GLrect texCoords = {0, 0, 0, 0};
 	int width = image->tile_width;
 	int height = image->tile_height;
+	GLdouble x = image->x;
+	GLdouble y = image->y;
 	GLdouble translate_x = image->center_x;
 	GLdouble translate_y = image->center_y;
 	GLdouble scale_x = image->scale_x;
@@ -854,36 +896,42 @@ static int Lua_Image_render(lua_State *L) {
 		height = image->rect->h;
 	}
 	
-	if (lua_istable(L, 2)) {
-		/* x and y are array element 1 and 2 */
-		if (!getint(L, &x, 1) || !getint(L, &y, 2))
-			return luaL_argerror(L, 2, "invalid x or y component in array");
-		/* check for "centerX"-entry */
+	narg = lua_gettop(L);
+	if (narg == 2 && lua_istable(L, 2)) {
+		/* check for "x" and "y" entries */
+		lua_getfield(L, -1, "x");
+		if (lua_isnumber(L, -1))
+			x = (GLdouble)lua_tonumber(L, -1);
+		lua_getfield(L, -2, "y");
+		if (lua_isnumber(L, -1))
+			y = (GLdouble)lua_tonumber(L, -1);
+		lua_pop(L, 2);
+		/* check for "centerX" entry */
 		lua_getfield(L, -1, "centerX");
 		if (lua_isnumber(L, -1))
 			translate_x = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
-		/* check for "centerY"-entry */
+		/* check for "centerY" entry */
 		lua_getfield(L, -1, "centerY");
 		if (lua_isnumber(L, -1))
 			translate_y = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
-		/* check for "scaleX"-entry */
+		/* check for "scaleX" entry */
 		lua_getfield(L, -1, "scaleX");
 		if (lua_isnumber(L, -1))
 			scale_x = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
-		/* check for "scaleY"-entry */
+		/* check for "scaleY" entry */
 		lua_getfield(L, -1, "scaleY");
 		if (lua_isnumber(L, -1))
 			scale_y = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
-		/* check for "rotate"-entry */
+		/* check for "rotate" entry */
 		lua_getfield(L, -1, "rotate");
 		if (lua_isnumber(L, -1))
 			rotation = (GLdouble)lua_tonumber(L, -1);
 		lua_pop(L, 1);
-		/* check for "rect"-entry */
+		/* check for "rect" entry */
 		lua_getfield(L, -1, "rect");
 		if (lua_istable(L, -1)) {
 			if (!getint(L, &clip_rect.x, 1) || !getint(L, &clip_rect.y, 2) ||
@@ -899,7 +947,7 @@ static int Lua_Image_render(lua_State *L) {
 		} else if (!lua_isnil(L, -1))
 			return luaL_argerror(L, 2, "'rect' should be an array and nothing else");
 		lua_pop(L, 1);
-		/* check for "color"-entry */
+		/* check for "color" entry */
 		lua_getfield(L, -1, "color");
 		if (lua_istable(L, -1)) {
 			if (!getint(L, &color[0], 1) || !getint(L, &color[1], 2) || !getint(L, &color[2], 3))
@@ -908,9 +956,11 @@ static int Lua_Image_render(lua_State *L) {
 			getint(L, &color[3], 4);
 		} else if (!lua_isnil(L, -1))
 			return luaL_argerror(L, 1, "'color' should be an array and nothing else");
-	} else {
-		x = luaL_checkint(L, 2);
-		y = luaL_checkint(L, 3);
+	} else if (narg == 3 && lua_isnumber(L, 2) && lua_isnumber(L, 3)) {
+		x = lua_tonumber(L, 2);
+		y = lua_tonumber(L, 3);
+	} else if (narg != 1) {
+		return luaL_error(L, "Wrong type of argument(s).");
 	}
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -920,7 +970,7 @@ static int Lua_Image_render(lua_State *L) {
 
 	/* save the modelview matrix */
 	glPushMatrix();
-	glTranslatef((GLfloat)x, (GLfloat)y, 0);
+	glTranslated(x, y, 0);
 	glScaled(scale_x, scale_y, 0);
 	glRotated(rotation, 0, 0, 1);
 	glTranslated(-translate_x, -translate_y, 0);
@@ -978,7 +1028,7 @@ static int Lua_Image_toString(lua_State *L) {
 	luaL_buffinit(L, &b);
 	rwops = SDL_AllocRW();
 	if (rwops == NULL) {
-		return luaL_error(L, "Could'nt allocate SDL_RWops: %s", SDL_GetError());
+		return luaL_error(L, "Couldn't allocate SDL_RWops: %s", SDL_GetError());
 	}
 	/* this SDL_RWops supports writing only */
 	rwops->seek = NULL;
@@ -1232,6 +1282,12 @@ static const struct luaL_Reg imagelib_m [] = {
 	{"setColor",      Lua_Image_setColor},
 	{"getColor",      Lua_Image_getColor},
 	{"clearColor",    Lua_Image_clearColor},
+	{"setX",          Lua_Image_setX},
+	{"getX",          Lua_Image_getX},
+	{"setY",          Lua_Image_setY},
+	{"getY",          Lua_Image_getY},
+	{"setPosition",   Lua_Image_setPosition},
+	{"getPosition",   Lua_Image_getPosition},
 	{"setCenterX",    Lua_Image_setCenterX},
 	{"getCenterX",    Lua_Image_getCenterX},
 	{"setCenterY",    Lua_Image_setCenterY},

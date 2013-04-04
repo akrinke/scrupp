@@ -51,6 +51,9 @@ typedef struct Lua_Image {
 	GLubyte alpha;
 	/* color (rgb)*/
 	GLubyte* color;
+	/* position of the image */
+	GLdouble x;
+	GLdouble y;
 	/* center of the image */
 	GLdouble center_x;
 	GLdouble center_y;
