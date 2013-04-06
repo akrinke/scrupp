@@ -21,6 +21,7 @@ local mfloor = math.floor
 local mceil = math.ceil
 local mmax = math.max
 local mmin = math.min
+local sformat = string.format
 local ssub = string.sub
 local tconcat = table.concat
 local tinsert = table.insert
@@ -114,8 +115,24 @@ function Console:isActive()
 	return self.active
 end
 
+function Console:print(...)
+	local s = ""
+	local n = select("#", ...)
+	for i=1,n do
+		s = s .. tostring(select(i, ...))
+		if i~=n then
+			s = s .. "\t"
+		end
+	end
+	self.lines[#self.lines+1] = s
+end
+
+function Console:printf(...)
+	self.lines[#self.lines+1] = sformat(...)
+end
+
 function Console:keypressed(key, wchar)
-	if key == "^" then
+	if key == "^" or key == "`" then
 		self.active = not self.active
 		if self.active then
 			self.unicodeWasEnabled = scrupp.unicodeIsEnabled()
@@ -139,8 +156,13 @@ function Console:keypressed(key, wchar)
 			self.command = tconcat(self.tcommand)
 		elseif key == "RETURN" or key == "KP_ENTER" then
 			-- execute command
-			-- put the command at the front of the history
-			tinsert(self.history, 1, self.tcommand)
+
+			-- put the command at the front of the history,
+			-- if it is different from the last one
+			if not self.history[1] or tconcat(self.tcommand) ~= tconcat(self.history[1]) then
+				tinsert(self.history, 1, self.tcommand)
+			end
+			self.history_idx = 0
 			-- put the whole line in the list of old lines
 			self.lines[#self.lines+1] = prompt .. self.command
 			if self.command == "clear" then
@@ -192,7 +214,7 @@ function Console:keypressed(key, wchar)
 			-- move cursor to the right
 			self.cursor_pos = mmin(self.cursor_pos + 1, #self.tcommand + 1)
 		elseif key == "HOME" then
-			self.cursor_pos = 1		
+			self.cursor_pos = 1
 		elseif key == "END" then
 			self.cursor_pos = #self.tcommand + 1
 		elseif key == "UP" then
@@ -200,7 +222,7 @@ function Console:keypressed(key, wchar)
 				-- go up one line
 				if self.scrollable then
 					self.scrolled = self.scrolled + 1
-				end			
+				end
 			elseif self.history_idx < #self.history then
 				-- go back in the history
 				if self.history_idx == 0 then
@@ -208,9 +230,14 @@ function Console:keypressed(key, wchar)
 					self.tcurrent_command = self.tcommand
 				end
 				self.history_idx = self.history_idx + 1
-				self.tcommand = self.history[self.history_idx]
-				self.command = tconcat(self.tcommand)
-				self.cursor_pos = #self.tcommand + 1
+				local tcommand = {}
+				local history_tcommand = self.history[self.history_idx]
+				for i=1,#history_tcommand do
+					tcommand[i] = history_tcommand[i]
+				end
+				self.tcommand = tcommand
+				self.command = tconcat(tcommand)
+				self.cursor_pos = #tcommand + 1
 			end
 		elseif key == "DOWN" then
 			if scrupp.keyIsDown("CTRL") then
@@ -227,7 +254,9 @@ function Console:keypressed(key, wchar)
 				self.command = tconcat(self.tcommand)
 				self.cursor_pos = #self.tcommand + 1
 			end
-		elseif wchar ~= "" and not scrupp.keyIsDown("CTRL") then
+		-- CTRL+Key does not generate input
+		-- ALT GR+Key (which equals CTRL+ALT+Key) does generate input
+		elseif wchar ~= "" and (not scrupp.keyIsDown("CTRL") or scrupp.keyIsDown("RALT"))  then
 			tinsert(self.tcommand, self.cursor_pos, wchar)
 			self.command = tconcat(self.tcommand)
 			self.cursor_pos = self.cursor_pos + 1
@@ -283,8 +312,8 @@ function Console:render()
 			if y < 0 then
 				print("scrollable")
 				self.scrollable = true
-				break 
-			end		
+				break
+			end
 			font:print(left_margin, y, command[i])
 			y = y - line_skip
 		end

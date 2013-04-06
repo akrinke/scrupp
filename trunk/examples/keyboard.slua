@@ -5,6 +5,7 @@
 --]]
 
 scrupp.init("Keyboard Demo", 600, 400, 32, false)
+scrupp.enableUnicode()
 
 -- load the font module
 require "font"
