@@ -86,7 +86,6 @@ function Font:cache(str)
 
 			width, height = font:getTextSize(char)
 			chars[char] = {
-				0, 0, -- placeholders for the x- and y-coordinates used for rendering
 				image = image,
 				rect = {x, 0, width, height},
 				color = {255, 255, 255},
@@ -139,7 +138,6 @@ function Font:print(x, y, ...)
 			else
 				if not chars[char] then
 					chars[char] = {
-						0, 0, -- placeholders for the x- and y-coordinates used for rendering
 						image = font:generateImage(char),
 						width = font:getTextSize(char)
 					}
@@ -154,11 +152,11 @@ function Font:print(x, y, ...)
 						- font:getTextSize(last_char..char)
 					--print(last_char, char, kerning[last_char][char])
 				end				
-				charTable[1] = x - kerning[last_char][char]
-				charTable[2] = y
+				charTable.x = x - kerning[last_char][char]
+				charTable.y = y
 				charTable.color = self.color
 				charTable.image:render(charTable)
-				x = charTable[1] + charTable.width
+				x = charTable.x + charTable.width
 				last_char = char
 			end
 		end

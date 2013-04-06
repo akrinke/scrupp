@@ -20,7 +20,6 @@ function Animation:addFrame(image, x, y, width, height, delay)
 	end
 	
 	self.frames[#self.frames+1] = {
-		0, 0, -- placeholder for the x- and y-coordinates used for rendering
 		image = image,
 		rect = { x, y, width, height },
 		delay = delay
@@ -37,7 +36,6 @@ function Animation:addFrames(image, sizex, sizey, width, height, sep, delay)
 	for i=1, sizey do
 		for j=1, sizex do
 			self.frames[#self.frames+1] = {
-				0, 0, -- placeholder for the x- and y-coordinates used for rendering
 				image = image, 
 				rect = {
 					(j-1)*(width+sep), 	-- x
@@ -103,8 +101,8 @@ function Animation:render(x, y, delta)
 		moment = moment + frame.delay
 		if moment >= self.time then
 			self.activeFrame = i
-			frame[1] = x
-			frame[2] = y
+			frame.x = x
+			frame.y = y
 			frame.image:render(frame)
 			break
 		end
