@@ -1,0 +1,73 @@
+--[[
+-- $Id$
+-- NeHe OpenGL Lesson 04:
+-- http://nehe.gamedev.net/tutorial/rotation/14001/
+--]]
+
+require "luagl"
+require "luaglu"
+
+local rtri = 0.0
+local rquad = 0.0
+
+local function init(w, h)
+    scrupp.init("NeHe Lesson 04", w, h, 32, false, true)
+
+    gl.MatrixMode(gl.PROJECTION)
+    gl.LoadIdentity()
+    glu.Perspective(45.0, w/h, 0.1, 100.0)
+
+    gl.MatrixMode(gl.MODELVIEW)
+    gl.LoadIdentity()
+
+    -- scrupp enables backface culling per default
+    -- so we need to disable it for this lesson
+    gl.Disable(gl.CULL_FACE)
+
+    gl.ShadeModel(gl.SMOOTH)
+    gl.ClearColor(0.0, 0.0, 0.0, 0.0)
+    gl.ClearDepth(1.0)
+    gl.Enable(gl.DEPTH_TEST)
+    gl.DepthFunc(gl.LEQUAL)
+    gl.Hint(gl.PERSPECTIVE_CORRECTION_HINT, gl.NICEST)
+end
+
+init(600, 400)
+
+main = {
+    render = function(dt)
+        gl.Clear(gl.COLOR_BUFFER_BIT+gl.DEPTH_BUFFER_BIT)
+        gl.LoadIdentity()
+        gl.Translate(-1.5, 0.0, -6.0)
+        gl.Rotate(rtri, 0.0, 1.0, 0.0)
+        gl.Begin(gl.TRIANGLES)
+            gl.Color(1.0, 0.0, 0.0)
+            gl.Vertex(0.0, 1.0, 0.0)
+            gl.Color(0.0, 1.0, 0.0)
+            gl.Vertex(-1.0, -1.0, 0.0)
+            gl.Color(0.0, 0.0, 1.0)
+            gl.Vertex( 1.0, -1.0, 0.0)
+        gl.End()
+        gl.LoadIdentity()
+        gl.Translate(1.5, 0.0, -6.0)
+        gl.Rotate(rquad, 1.0, 0.0, 0.0)
+        gl.Color(0.5, 0.5, 1.0)
+        gl.Begin(gl.QUADS)
+            gl.Vertex(-1.0,  1.0, 0.0)
+            gl.Vertex( 1.0,  1.0, 0.0)
+            gl.Vertex( 1.0, -1.0, 0.0)
+            gl.Vertex(-1.0, -1.0, 0.0)
+        gl.End()
+        rtri = rtri + dt * 0.2
+        rquad = rquad - dt * 0.15
+    end,
+
+    keypressed = function(key)
+        if key == "ESCAPE" then
+            scrupp.exit()
+        end
+    end,
+
+    -- on window resize, call the init function
+    resized = init
+}
