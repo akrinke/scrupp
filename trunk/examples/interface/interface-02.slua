@@ -1,0 +1,59 @@
+--[[
+	Interface Library by: Everton Costa
+]]--
+
+scrupp.init("Interface Samples - Button and Desktop", 350, 100, 32, false)
+
+--load the inteface library
+require "interface"
+
+--Change background color to white
+background = interface.addDesktop()
+background:setBgColor{255, 255, 255}
+
+function randomColor()
+	return { math.random()*255,  math.random()*255,  math.random()*255 }
+end
+
+--Add a button and declare a callback as action
+btn = interface.addButton( function() background:setBgColor( randomColor() ) end)
+
+--set the text of the button
+btn:setText("Click here!")
+
+--Connect this button to desktop "Background"
+btn:Connect(background)
+
+--add the shortcut space key
+btn:setKeys{"SPACE"}
+
+main = {
+	render = function(dt)
+		--render the background and all controls connecteds
+		background:update()
+	end,
+
+	keypressed = function(key)
+		--update the background and all controls connecteds on key press
+		background:updateKeyPressed(key)
+	end,
+
+	keyreleased = function(key)
+		--update the background and all controls connecteds on key release
+		background:updateKeyReleased(key)
+		--on press ESC exit sample
+		if key == "ESCAPE" then
+			scrupp.exit()
+		end
+	end,
+
+	mousereleased = function(x, y, button)
+		--update the background and all controls connecteds on mouse button release
+		background:updateMouseReleased(button)
+	end,
+
+	mousepressed =function(x, y, button)
+		--update the background and all controls connecteds on mouse button press
+		background:updateMousePressed(button)
+	end
+}

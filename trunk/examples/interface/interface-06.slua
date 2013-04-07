@@ -1,0 +1,71 @@
+--[[
+	Interface Library by: Everton Costa
+]]--
+
+scrupp.init("Interface Samples - Button and Timer Interaction", 420, 100, 32, false)
+
+--load the inteface library
+require "interface"
+
+--load the Scrupp plugin library 'timer'
+require "timer"
+
+--Change background color to white
+background = interface.addDesktop()
+background:setBgColor{255, 255, 255}
+
+--Add a button and declare a callback as action
+btn = interface.addButton( function() btn:setEnabled(false) timer:start() lbl:setVisible(true) btn:setText("You can't click here now!") end)
+--set the text of the button
+btn:setText("Click here!!!")
+--adjust the width of the button
+btn:setDimension{ btn:getDimension().w + 100, btn:getDimension().h }
+--adjust on center screen again
+btn:setPosition{ btn:getPosition().x-50, btn:getPosition().y - 20 }
+--Connect to desktop 'background'
+btn:Connect(background)
+
+--create a label
+lbl = interface.addLabel()
+--set to visible false
+lbl:setVisible(false)
+--set the dimension
+lbl:setDimension{ lbl:getDimension().w + 100, lbl:getDimension().h }
+--set the position
+lbl:setPosition{ lbl:getPosition().x-50, lbl:getPosition().y + 20 }
+--set the align to center ( C )
+lbl:setAlign("C")
+--set the text
+lbl:setText("Wait...")
+--connect this label to desktop 'background'
+lbl:Connect(background)
+
+
+--create a timer object from timer library (class plugin)
+timer = Timer(2000, function() btn:setEnabled(true) timer:stop() lbl:setVisible(false) btn:setText("Click here!!!") end)
+
+main = {
+	render = function(dt)
+		--update the timer
+		timer:update()
+		--render the background
+		background:update()
+	end,
+
+	keypressed = function(key)
+		btn:updateKeyPressed(key)
+	end,
+
+	keyreleased = function(key)
+		btn:updateKeyReleased(key)
+	end,
+
+	mousereleased = function(x, y, button)
+		btn:updateMouseReleased(button)
+	end,
+
+	mousepressed =function(x, y, button)
+		btn:updateMousePressed(button)
+	end
+
+}

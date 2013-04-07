@@ -1,0 +1,56 @@
+--[[
+	Interface Library by: Everton Costa
+]]--
+
+scrupp.init("Interface Samples - Button Themes", 320, 80, 32, false)
+
+--load the inteface library
+require "interface"
+
+--Change background color to white
+background = interface.addDesktop()
+background:setBgColor{255, 255, 255}
+
+--Add a button and declare a callback as action
+btn = interface.addButton( function() btn:setEnabled(not btn:getEnabled()) btn:setText("Disabled") end)
+--set the text of the button
+btn:setText("Default Theme")
+--set the position
+btn:setPosition{btn:getPosition().x-70, btn:getPosition().y }
+--connect the button to desktop 'background'
+btn:Connect(background)
+
+--Add a button, declare a callback as action and a new theme for this button
+btn2 = interface.addButton( function() btn2:setEnabled(not btn2:getEnabled()) btn2:setText("Disabled") end, {
+	"button-themes/button-normal.png",   --Normal
+	"button-themes/button-disabled.png", --Disabled
+	"button-themes/button-pressed.png",  --Pressed
+	"button-themes/button-focused.png"   --Focused
+})
+--set the text of the button
+btn2:setText("User Theme")
+--set the position
+btn2:setPosition{ btn2:getPosition().x+70, btn2:getPosition().y  }
+--connect the button to desktop 'background'
+btn2:Connect(background)
+
+main = {
+	render = function(dt)
+		--render the background to show it
+		background:update()
+	end,
+
+	mousereleased = function(x, y, button)
+		background:updateMouseReleased(button)
+	end,
+
+	mousepressed = function(x, y, button)
+		background:updateMousePressed(button)
+	end,
+	
+	keypressed = function(key)
+		if key == "ESCAPE" then
+			scrupp.exit()
+		end
+	end
+}

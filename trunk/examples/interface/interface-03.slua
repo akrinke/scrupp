@@ -1,0 +1,93 @@
+--[[
+	Interface Library by: Everton Costa
+]]--
+
+scrupp.init("Interface Samples - Button and Label", 600, 600, 32, false)
+
+--load the inteface library
+require "interface"
+
+--Change background color to white
+background = interface.addDesktop()
+background:setBgColor{255, 255, 255}
+
+function randomColor()
+	return { math.random()*255,  math.random()*255,  math.random()*255 }
+end
+
+--create an empty table to save all the labels
+local labels_table = {}
+
+function reset()
+
+	if #labels_table==0 then return end
+
+	--remove all controls
+	for i=1, #labels_table do
+
+		labels_table[i]:remove()
+		labels_table[i] = nil
+
+	end
+
+end
+
+function createLabel()
+
+	--next index
+	local i = #labels_table+1
+
+	--add a label
+	labels_table[i] = interface.addLabel("Click again!")
+	labels_table[i]:Connect(background)
+	labels_table[i]:setPosition{ math.random()*scrupp.getWindowWidth(), math.random()*scrupp.getWindowHeight() }
+	labels_table[i]:setFgColor( randomColor() )
+
+end
+
+
+--Add a button and declare a action
+btn = interface.addButton( function() createLabel() end)
+
+--set the text of the button
+btn:setText("Click here!")
+
+--Connect this button to desktop "Background"
+btn:Connect(background)
+
+--add the shortcut keys
+btn:setKeys{"SPACE"}
+
+btn2 = interface.addButton( function() reset() end)
+
+btn2:setText("Reset")
+btn2:setPosition{ btn2:getPosition().x, btn2:getPosition().y+50 }
+btn2:Connect(background)
+btn2:setKeys{"BACKSPACE"}
+
+main = {
+	render = function(dt)
+		--render the background and all controls connecteds
+		background:update()
+	end,
+
+	keypressed = function(key)
+		--update the background and all controls connecteds on key press
+		background:updateKeyPressed(key)
+	end,
+
+	keyreleased = function(key)
+		--update the background and all controls connecteds on key release
+		background:updateKeyReleased(key)
+	end,
+
+	mousereleased = function(x, y, button)
+		--update the background and all controls connecteds on mouse button release
+		background:updateMouseReleased(button)
+	end,
+
+	mousepressed = function(x, y, button)
+		--update the background and all controls connecteds on mouse button press
+		background:updateMousePressed(button)
+	end
+}
