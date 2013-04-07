@@ -1,0 +1,64 @@
+--[[
+	Interface Library by: Everton Costa
+]]--
+
+scrupp.init("Interface Samples - Button extra actions", 350, 100, 32, false)
+
+--load the inteface library
+require "interface"
+
+--Change background color to white
+background = interface.addDesktop()
+background:setBgColor{255, 255, 255}
+
+--Add a button and declare a callback as action, image as nil (default), font as nil (default), 
+--a function to on mouse over and other to on mouse leave
+btn = interface.addButton( function() scrupp.exit() end, nil, nil, function() lbl:setVisible(true) end, function() lbl:setVisible(false) end)
+--set the text of the button
+btn:setText("Pass the mouse cursor here")
+--adjust the width of the button
+btn:setDimension{ btn:getDimension().w + 100, btn:getDimension().h }
+--adjust on center screen again
+btn:setPosition{ btn:getPosition().x-50, btn:getPosition().y - 20 }
+
+--create a label
+lbl = interface.addLabel()
+--set to visible false
+lbl:setVisible(false)
+--set the dimension
+lbl:setDimension{ lbl:getDimension().w + 100, lbl:getDimension().h }
+--set the position
+lbl:setPosition{ lbl:getPosition().x-50, lbl:getPosition().y + 20 }
+--set the text style to bold
+lbl:setBoldState(true)
+--set the align to center "C"
+lbl:setAlign("C")
+--set the text
+lbl:setText("Click to exit Sample!")
+
+main = {
+	render = function(dt)
+		--render the background
+		background:update()
+		--render the button 'btn' individually
+		btn:render()
+		--render the label individually
+		lbl:render()
+	end,
+
+	keypressed = function(key)
+		btn:updateKeyPressed(key)
+	end,
+
+	keyreleased = function(key)
+		btn:updateKeyReleased(key)
+	end,
+
+	mousereleased = function(x, y, button)
+		btn:updateMouseReleased(button)
+	end,
+
+	mousepressed =function(x, y, button)
+		btn:updateMousePressed(button)
+	end
+}

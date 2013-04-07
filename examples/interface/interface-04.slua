@@ -1,0 +1,87 @@
+--[[
+	Interface Library by: Everton Costa
+]]--
+
+scrupp.init("Interface Samples - Tips", 250, 200, 32, false)
+
+--load the inteface library
+require "interface"
+
+--Change background color to white
+background = interface.addDesktop()
+background:setBgColor{255, 255, 255}
+
+--Tips
+tip = interface.addTip()
+--set the border color style
+tip:setBorderColor{0, 255, 0}
+--set the background color
+tip:setBgColor{
+	255, --red
+	255, --green
+	255, --blue
+	150  --alpha
+}
+
+btn = interface.addButton( function() end)
+--set the text of the button
+btn:setText("Pass the mouse!")
+--adjust the width of the button
+btn:setDimension{ btn:getDimension().w + 100, btn:getDimension().h }
+--adjust position
+btn:setPosition{ btn:getPosition().x - 50, btn:getPosition().y - 60}
+--connect to the background
+btn:Connect(background)
+
+--add a tip object to the button with the
+--text "Good!" and the time to show to 1/100 s
+btn:Tip(tip, "Good!", 1)
+
+btn2 = interface.addButton( function() end)
+--set the text of the button
+btn2:setText("Pass the mouse and wait!")
+--adjust the width of the button
+btn2:setDimension{ btn2:getDimension().w + 100, btn2:getDimension().h }
+--adjust position
+btn2:setPosition{ btn2:getPosition().x - 50, btn2:getPosition().y }
+--connect to the background
+btn2:Connect(background)
+
+--add other tip object to the button (100 = 1 second)
+btn2:Tip(tip, "Excellent!", 100)
+
+btn3 = interface.addButton( function() end)
+--set the text of the button
+btn3:setText("Pass the mouse and wait, again!")
+--adjust the width of the button
+btn3:setDimension{ btn3:getDimension().w + 100, btn3:getDimension().h }
+--adjust position
+btn3:setPosition{ btn3:getPosition().x - 50, btn3:getPosition().y + 60}
+--connect to the background
+btn3:Connect(background)
+
+--finally...
+btn3:Tip(tip, "Good Job!", 200)
+
+main = {
+	render = function(dt)
+		--render the background
+		background:update()
+	end,
+
+	keypressed = function(key)
+		background:updateKeyPressed(key)
+	end,
+
+	keyreleased = function(key)
+		background:updateKeyReleased(key)
+	end,
+
+	mousereleased = function(x, y, button)
+		background:updateMouseReleased(button)
+	end,
+
+	mousepressed =function(x, y, button)
+		background:updateMousePressed(button)
+	end
+}

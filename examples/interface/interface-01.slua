@@ -1,0 +1,55 @@
+--[[
+	Interface Library by: Everton Costa
+]]--
+
+scrupp.init("Interface Samples - Button action", 300, 100, 32, false)
+
+--load the inteface library
+require "interface"
+
+--Change background color to white
+background = interface.addDesktop()
+background:setBgColor{255, 255, 255}
+
+--Add a button and declare a callback as action
+btn = interface.addButton( function() scrupp.exit() end)
+--set the text of the button
+btn:setText("Click here or press E+X+I+T to exit sample")
+--adjust the width of the button
+btn:setDimension{ btn:getDimension().w + 160, btn:getDimension().h }
+--adjust on center screen again
+btn:setPosition{ btn:getPosition().x-80, btn:getPosition().y }
+
+--add the shortcut keys
+btn:setKeys{"e", "x", "i", "t"}
+
+main = {
+	render = function(dt)
+		--render the background to show it
+		background:update()
+		--render the button 'btn' individually
+		btn:render()
+	end,
+
+	keypressed = function(key)
+		--update the button 'btn' button individually on key press, sending the key
+		btn:updateKeyPressed(key)
+	end,
+
+	keyreleased = function(key)
+		--update the button 'btn' button individually on key release, sending the key
+		btn:updateKeyReleased(key)
+	end,
+
+	mousereleased = function(x, y, button)
+		--update the button 'btn' button individually
+		--on mouse button left release, sending the mouse button
+		btn:updateMouseReleased(button)
+	end,
+
+	mousepressed =function(x, y, button)
+		--update the button 'btn' button individually
+		--on mouse button left press, sending the mouse button
+		btn:updateMousePressed(button)
+	end
+}

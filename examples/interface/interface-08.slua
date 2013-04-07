@@ -1,0 +1,144 @@
+--[[
+	Interface Library by: Everton Costa
+]]--
+
+--[[
+	A small (not commented) sample for Scrupp created by Everton Costa
+	Please, study this code to learn more about Interface Library
+]]--
+
+scrupp.init("Interface Samples - Field - Scrupp Calculator", 400, 100, 32, false)
+
+require "interface"
+
+--variables
+local value1 = 0
+local value2 = 0
+local operator = "+"
+local result = 0
+
+function evaluate()
+	if operator == "+" then --add
+		result = value1 + value2
+	elseif operator == "-" then --subtract
+		result = value1 - value2
+	elseif operator == "*" then --multiply
+		result = value1 * value2
+	elseif operator == "/" then --divide
+		result = value1 / value2
+	end
+end
+
+
+calculator_panel = interface.addDesktop()
+calculator_panel:setBgColor{255, 255, 255}
+
+tip = interface.addTip()
+tip:setBgColor{ 160, 0, 0, 150 }
+tip:setFgColor{ 255, 255, 255 }
+tip:setBorderColor{ 0, 0, 0 }
+
+title_label = interface.addLabel( "Calculator - Create the expression and click on '='" )
+title_label:setAlign("C")
+title_label:setPosition{ title_label:getPosition().x, title_label:getPosition().y -30 }
+title_label:Connect(calculator_panel)
+
+result_label = interface.addLabel( "" )
+result_label:setVisible(false)
+result_label:setFgColor{ 100, 52, 52 }
+result_label:setPosition{ result_label:getPosition().x, result_label:getPosition().y +30 }
+result_label:setAlign("C")
+result_label:Connect(calculator_panel)
+
+box1 = interface.addField( "0", nil, { "button-themes/button-normal.png", "button-themes/button-disabled.png", "button-themes/button-focused.png" }, function() value1 = box1:getValue() end, function() result_label:setVisible(false) end )
+box1:setMask("decimal")
+box1:setLength(6)
+box1:setPosition{ box1:getPosition().x - 90, box1:getPosition().y }
+box1:setDimension{ box1:getDimension().w - 30,  box1:getDimension().h }
+box1:Connect(calculator_panel)
+box1:Tip(tip, "Click and write a value, use '+' or '-' key to invert", 1)
+
+operator_button = interface.addButton( function() calculator_panel:setVisible(false) operator_panel:setVisible(true) end )
+operator_button:setText( operator )
+operator_button:setPosition{ operator_button:getPosition().x + 2, operator_button:getPosition().y + 2}
+operator_button:setDimension{ 35 , operator_button:getDimension().h - 4 }
+operator_button:Connect(calculator_panel)
+operator_button:Tip(tip, "Click to select an other math operator", 100)
+
+box2 = interface.addField( "0", nil, { "button-themes/button-normal.png", "button-themes/button-disabled.png", "button-themes/button-focused.png" }, function() value2 = box2:getValue() end, function() result_label:setVisible(false) end )
+box2:setMask("decimal")
+box2:setLength(6)
+box2:setPosition{ box2:getPosition().x + 30, box2:getPosition().y }
+box2:setDimension{ box2:getDimension().w - 30,  box2:getDimension().h }
+box2:Connect(calculator_panel)
+box2:Tip(tip, "Click and write a value, use '+' or '-' key to invert", 1)
+
+equal_button = interface.addButton(	function()
+	box1.callbackOnKeyEnter() -- load function from class to key enter callback
+	box2.callbackOnKeyEnter()
+	evaluate()
+	result_label:setVisible(true)
+	result_label:setText("The result is: "..tostring(result))
+end )
+equal_button:setText( "=" )
+equal_button:setPosition{ equal_button:getPosition().x + 122, equal_button:getPosition().y + 2}
+equal_button:setDimension{ 35 , equal_button:getDimension().h - 4 }
+equal_button:Connect(calculator_panel)
+equal_button:Tip(tip, "Click to evaluate the expression", 100)
+
+operator_panel = interface.addDesktop()
+operator_panel:setBgColor{255, 255, 255}
+operator_panel:setVisible(false)
+
+info_label = interface.addLabel( "Select an operator:" )
+info_label:setPosition{ info_label:getPosition().x, info_label:getPosition().y -30 }
+info_label:Connect(operator_panel)
+
+local operators_button = {}
+for i=1, 4 do
+	local signal = "+"
+	--get the operator relative to index ' i '
+	if i==2 then signal = "-" elseif i==3 then signal = "*" elseif i==4 then signal = "/" end
+	operators_button[i] = interface.addButton( function() operator = signal operator_button:setText( operator ) calculator_panel:setVisible(true) operator_panel:setVisible(false) result_label:setVisible(false) end )
+	operators_button[i]:setText( signal )
+	operators_button[i]:setPosition{ operators_button[i]:getPosition().x - 80 + (i*40) + (i*4), operators_button[i]:getPosition().y + 2}
+	operators_button[i]:setDimension{ 40 , operators_button[i]:getDimension().h - 4 }
+	operators_button[i]:Connect(operator_panel)
+end
+
+cancel_button = interface.addButton( function() calculator_panel:setVisible(true) operator_panel:setVisible(false) end )
+cancel_button:setText("Cancel")
+cancel_button:setDimension{ cancel_button:getDimension().w , cancel_button:getDimension().h-5 }
+cancel_button:setPosition{ cancel_button:getPosition().x, cancel_button:getPosition().y + 35}
+cancel_button:Connect(operator_panel)
+
+
+main = {
+	render = function(dt)
+		calculator_panel:update()
+		operator_panel:update()
+	end,
+
+	keypressed = function(key)
+		calculator_panel:updateKeyPressed(key)
+		operator_panel:updateKeyPressed(key)
+		if key == "ESCAPE" then
+			scrupp.exit()
+		end
+	end,
+
+	keyreleased = function(key)
+		calculator_panel:updateKeyReleased(key)
+		operator_panel:updateKeyReleased(key)
+	end,
+
+	mousereleased = function(x, y, button)
+		calculator_panel:updateMouseReleased(button)
+		operator_panel:updateMouseReleased(button)
+	end,
+
+	mousepressed =function(x, y, button)
+		calculator_panel:updateMousePressed(button)
+		operator_panel:updateMousePressed(button)
+	end
+}
