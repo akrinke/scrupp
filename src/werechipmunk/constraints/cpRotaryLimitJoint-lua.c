@@ -68,7 +68,7 @@ static int cpRotaryLimitJoint_tostring (lua_State *L) {
 }
 
 static const luaL_reg cpRotaryLimitJoint_functions[] = {
-  {"newPinJoint", cpRotaryLimitJoint_new},
+  {"newRotaryLimitJoint", cpRotaryLimitJoint_new},
   {NULL, NULL}
 };
 

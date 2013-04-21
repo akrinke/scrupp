@@ -68,7 +68,7 @@ static int cpGrooveJoint_tostring (lua_State *L) {
 }
 
 static const luaL_reg cpGrooveJoint_functions[] = {
-  {"newPinJoint", cpGrooveJoint_new},
+  {"newGrooveJoint", cpGrooveJoint_new},
   {NULL, NULL}
 };
 

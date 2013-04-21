@@ -74,7 +74,7 @@ static int cpDampedSpring_tostring (lua_State *L) {
 }
 
 static const luaL_reg cpDampedSpring_functions[] = {
-  {"newPinJoint", cpDampedSpring_new},
+  {"newDampedSpring", cpDampedSpring_new},
   {NULL, NULL}
 };
 

@@ -70,7 +70,7 @@ static int cpDampedRotarySpring_tostring (lua_State *L) {
 }
 
 static const luaL_reg cpDampedRotarySpring_functions[] = {
-  {"newPinJoint", cpDampedRotarySpring_new},
+  {"newDampedRotarySpring", cpDampedRotarySpring_new},
   {NULL, NULL}
 };
 
