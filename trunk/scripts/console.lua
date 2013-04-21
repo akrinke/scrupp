@@ -111,6 +111,29 @@ Console = class(function(self)
 	self.tcurrent_command = nil
 end)
 
+function Console:activate()
+	self.active = true
+	self.unicodeWasEnabled = scrupp.unicodeIsEnabled()
+	scrupp.enableUnicode()
+end
+
+function Console:deactivate()
+	self.active = false
+	if not self.unicodeWasEnabled then
+		scrupp.disableUnicode()
+	end
+end
+
+function Console:toggle()
+	self.active = not self.active
+	if self.active then
+		self.unicodeWasEnabled = scrupp.unicodeIsEnabled()
+		scrupp.enableUnicode()
+	elseif not self.unicodeWasEnabled then
+		scrupp.disableUnicode()
+	end
+end
+
 function Console:isActive()
 	return self.active
 end
@@ -124,22 +147,16 @@ function Console:print(...)
 			s = s .. "\t"
 		end
 	end
-	self.lines[#self.lines+1] = s
+	split_in_lines(s, self.lines)
 end
 
 function Console:printf(...)
-	self.lines[#self.lines+1] = sformat(...)
+	split_in_lines(sformat(...), self.lines)
 end
 
 function Console:keypressed(key, wchar)
 	if key == "^" or key == "`" then
-		self.active = not self.active
-		if self.active then
-			self.unicodeWasEnabled = scrupp.unicodeIsEnabled()
-			scrupp.enableUnicode()
-		elseif not self.unicodeWasEnabled then
-			scrupp.disableUnicode()
-		end
+		self:toggle()
 		return "", ""
 	elseif self.active then
 		-- handle input
@@ -191,6 +208,7 @@ function Console:keypressed(key, wchar)
 						-- scrupp.exit() was called
 						scrupp.exit()
 					end
+					msg = "Error: " .. msg
 				end
 				-- 1. the output
 				if scrupp._tmp ~= "" then

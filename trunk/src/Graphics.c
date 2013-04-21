@@ -200,11 +200,7 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 	} else if (resizable) {
 		flags |= SDL_RESIZABLE;
 	}
-	if (screen == NULL) {
-		if ( SDL_Init ( SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK ) != 0 )
-			return luaL_error(L, "Couldn't initialize SDL: %s", SDL_GetError ());
-		atexit(SDL_Quit);
-	} else {
+	if (screen != NULL) {
 		/* delete all OpenGL textures */
 		image_node = first_image;
 		while (image_node != NULL) {
@@ -305,6 +301,29 @@ static Uint32 getpixel(SDL_Surface *surface, int x, int y) {
 }
 
 /* Lua functions */
+
+static int Lua_Graphics_getFullscreenModes(lua_State *L) {
+	SDL_Rect **modes;
+	int i;
+
+	modes = SDL_ListModes(NULL, SDL_OPENGL|SDL_FULLSCREEN);
+	if (modes == (SDL_Rect **)0)
+		lua_pushnil(L);
+	else if (modes == (SDL_Rect **)-1)
+		lua_pushboolean(L, 1);
+	else {
+		lua_newtable(L);
+		for (i=0; modes[i]; ++i) {
+			lua_createtable(L, 2, 0);
+			lua_pushinteger(L, modes[i]->w);
+			lua_rawseti(L, -2, 1);
+			lua_pushinteger(L, modes[i]->h);
+			lua_rawseti(L, -2, 2);
+			lua_rawseti(L, -2, i+1);
+		}
+	}
+	return 1;
+}
 
 static int Lua_Graphics_init(lua_State *L) {
 	const char* appName = luaL_checkstring(L, 1);
@@ -1249,6 +1268,7 @@ static int Lua_Graphics_draw(lua_State *L) {
 }
 
 static const struct luaL_Reg graphicslib [] = {
+	{"getFullscreenModes", Lua_Graphics_getFullscreenModes},
 	{"init",               Lua_Graphics_init},
 	{"setBackgroundColor", Lua_Graphics_setBackgroundColor},
 	{"getBackgroundColor", Lua_Graphics_getBackgroundColor},
@@ -1327,6 +1347,10 @@ int luaopen_oocairo_wrapper(lua_State *L) {
 }
 
 int luaopen_graphics(lua_State *L, const char *parent) {
+	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK ) != 0 ) {
+		error(L, "Couldn't initialize SDL: %s", SDL_GetError ());
+	}
+
 	luaL_newmetatable(L, "scrupp.image");
 	/* metatable.__index = metatable */
 	lua_pushvalue(L, -1);	/* duplicates the metatable */

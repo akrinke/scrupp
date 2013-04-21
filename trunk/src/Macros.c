@@ -27,6 +27,10 @@ void error (lua_State *L, const char *fmt, ...) {
 	va_start(argp, fmt);
 	vsnprintf(str, 1023, fmt, argp);
 	va_end(argp);
+
+	/* A fullscreen window might hide the error box,
+	 * therefore, we kill SDL first. */
+	SDL_Quit();
 	
 	msg = luaL_gsub(L, str, "[\"", "'");
 	msg = luaL_gsub(L, msg, "[string \"", "'");
