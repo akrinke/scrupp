@@ -69,7 +69,7 @@ static int cpRatchetJoint_tostring (lua_State *L) {
 }
 
 static const luaL_reg cpRatchetJoint_functions[] = {
-  {"newPinJoint", cpRatchetJoint_new},
+  {"newRatchetJoint", cpRatchetJoint_new},
   {NULL, NULL}
 };
 

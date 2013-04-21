@@ -69,7 +69,7 @@ static int cpGearJoint_tostring (lua_State *L) {
 }
 
 static const luaL_reg cpGearJoint_functions[] = {
-  {"newPinJoint", cpGearJoint_new},
+  {"newGearJoint", cpGearJoint_new},
   {NULL, NULL}
 };
 
