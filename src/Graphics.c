@@ -187,9 +187,10 @@ int createTexture(lua_State *L, SDL_Surface *src, Lua_Image *dest, GLubyte alpha
 /* initialize SDL */
 static int initSDL (lua_State *L, const char *appName, int width, int height, int bpp, int fullscreen, int resizable) {
 	Uint32 flags;
-	int dummy_size = 1;
 	Lua_Image *image_node;
 	Lua_Movie *movie_node;
+	char *center;
+	int dummy_size = 1;
 	SDL_Surface *movie_po2_surface;
 	flags = SDL_OPENGL;
 	
@@ -215,6 +216,13 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 	}
 	/* set window caption */
 	SDL_WM_SetCaption (appName, appName);
+	/* center new window */
+	center = SDL_getenv("SDL_VIDEO_CENTERED");
+	if (center && *center == '0') {
+		unsetenv("SDL_VIDEO_CENTERED");
+	} else {
+		SDL_putenv("SDL_VIDEO_CENTERED=1");
+	}
 	/* enable double buffering */
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE,   5);
@@ -224,6 +232,9 @@ static int initSDL (lua_State *L, const char *appName, int width, int height, in
 	if (screen == NULL)
 		return luaL_error(L, "Couldn't set %dx%dx%d video mode: %s",
 		                     width, height, bpp, SDL_GetError());
+	if (center && *center == '0') {
+		SDL_putenv("SDL_VIDEO_CENTERED=0");
+	}
 	/* set the OpenGL state */
 	/* set background color */
 	glClearColor((GLfloat)r_clear/255.0f, (GLfloat)g_clear/255.0f, (GLfloat)b_clear/255.0f, 1.0f);

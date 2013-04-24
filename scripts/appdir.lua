@@ -68,7 +68,7 @@ function Appdir:isWritable()
 	return true
 end
 
-function appdir:validate()
+function Appdir:validate()
 	self:create()
 	assert(self:isWritable())
 end

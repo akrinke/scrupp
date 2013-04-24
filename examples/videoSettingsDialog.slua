@@ -1,0 +1,29 @@
+--[[
+    $Id$
+    Demonstration of the video settings dialog.
+    Allows the user to set resolution and fullscreen/windowed mode.
+--]]
+
+require "console"
+local videoSettingsDialog = require "interface.videoSettingsDialog"
+
+local c = Console()
+local modes = scrupp.getFullscreenModes()
+
+videoSettingsDialog.show(modes, function(w, h, f)
+    scrupp.init("Main Window", w, h, 32, f)
+    c:toggle()
+    c:printf("Resolution %d x %d was selected.", w, h)
+    c:print("Press ESC to quit.")
+    main = {
+        render = function(dt)
+            c:render()
+        end,
+        keypressed = function(key, wchar)
+            if key=="ESCAPE" then
+                scrupp.exit()
+            end
+            key, wchar = c:keypressed(key, wchar)
+        end
+    }
+end)
