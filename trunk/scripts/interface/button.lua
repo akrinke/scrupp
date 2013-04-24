@@ -381,7 +381,7 @@ function Button:render()
 		--now the text
 		local textToDraw = self.font:generateImage{self.text, color = self.fgColor}
 		local w, h = self.font:getTextSize(self.text)
-		textToDraw:render(self.position[1]+((self.dimension[1]/2)-(w/2)),self.position[2]+((self.dimension[2]/2)-(h/2)))
+		textToDraw:render(math.floor(self.position[1]+((self.dimension[1]/2)-(w/2))),math.floor(self.position[2]+((self.dimension[2]/2)-(h/2))))
 		if scrupp.getMouseX()>=self.position[1] and scrupp.getMouseX()<=self.position[1]+self.dimension[1] and scrupp.getMouseY()>=self.position[2] and scrupp.getMouseY()<=self.position[2]+self.dimension[2] then
 			--Mouse Over call callback
 			if self.mouseOver==false and self.callbackMouseOver~=nil and self.enabled then self.callbackMouseOver(self) self.mouseOver=true self.mouseLeave=false end
