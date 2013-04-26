@@ -8,6 +8,7 @@ example_DATA = \
 	font.slua \
 	keyboard.slua \
 	luasocket.slua \
-	mouse.slua
+	mouse.slua \
+	videoSettingsDialog.slua
 	
 EXTRA_DIST = $(example_DATA)
