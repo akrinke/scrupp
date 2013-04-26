@@ -7,6 +7,7 @@ script_DATA = \
 	label.lua \
 	theme_default.lua \
 	tip.lua \
-	utils.lua
+	utils.lua \
+	videoSettingsDialog.lua
 
 EXTRA_DIST = $(script_DATA)
