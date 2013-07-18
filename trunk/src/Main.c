@@ -55,8 +55,10 @@ int check_for_exit(lua_State *L) {
 	if (len > 0 && strcmp(err_msg, "scrupp.exit") == 0) {
 		done = 1;
 		fprintf(stdout, "Exiting Scrupp.\n");
-		SDL_Quit();
+		/* First, close the Lua state in order to free all
+		 * SDL ressurces. */
 		lua_close(L);
+		SDL_Quit();
 		exit(0);
 		return 1;
 	} else {

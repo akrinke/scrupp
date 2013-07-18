@@ -18,7 +18,8 @@
 
 void error (lua_State *L, const char *fmt, ...) {
 	char str[1024];
-	const char *msg;
+	const char *buf;
+	char *msg;
 #ifdef USE_GTK
 	GtkWidget *dialog;
 #endif
@@ -28,15 +29,19 @@ void error (lua_State *L, const char *fmt, ...) {
 	vsnprintf(str, 1023, fmt, argp);
 	va_end(argp);
 
+	buf = luaL_gsub(L, str, "[\"", "'");
+	buf = luaL_gsub(L, buf, "[string \"", "'");
+	buf = luaL_gsub(L, buf, "\"]", "'");
+	msg = strdup(buf);
+	fputs(msg, stderr);
+	fputs("\n", stderr);
+
+	/* First, close the Lua state in order to free all SDL resources. */
+	lua_close(L);
+
 	/* A fullscreen window might hide the error box,
 	 * therefore, we kill SDL first. */
 	SDL_Quit();
-	
-	msg = luaL_gsub(L, str, "[\"", "'");
-	msg = luaL_gsub(L, msg, "[string \"", "'");
-	msg = luaL_gsub(L, msg, "\"]", "'");
-	fputs(msg, stderr);
-	fputs("\n", stderr);
 
 #ifdef USE_GTK
 	gtk_init(NULL, NULL);
@@ -55,17 +60,17 @@ void error (lua_State *L, const char *fmt, ...) {
 
 #elif __MACOSX__
 	CFUserNotificationDisplayAlert (
-		0, /* timeout */ 
+		0, /* timeout */
 		kCFUserNotificationStopAlertLevel, /* alert level */
-		NULL, /* icon URL */ 
+		NULL, /* icon URL */
 		NULL, /* sound URL */
 		NULL, /* localization URL */
 		CFSTR(PROG_NAME), /* header */
 		CFStringCreateWithCString(
 			NULL, /* choose default allocator */
 			msg,
-			kCFStringEncodingASCII /* encoding */			
-		), 
+			kCFStringEncodingASCII /* encoding */
+		),
 		NULL, /* default button title (OK) */
 		NULL, /* alternate button title */
 		NULL, /* other button title */
@@ -73,7 +78,7 @@ void error (lua_State *L, const char *fmt, ...) {
 	);
 #endif
 
-	lua_close(L);
+	free(msg);
 	exit(1);
 }
 
