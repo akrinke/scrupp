@@ -24,16 +24,16 @@ static int Lua_Joystick_getNumber(lua_State *L) {
 }
 
 static int Lua_Joystick_getNameForIndex(lua_State *L) {
-	int index = luaL_checkint(L, 1);
+	int index = luaL_checkint(L, 1)-1;
 	/* pushes nil if name==NULL */
-	lua_pushstring(L, SDL_JoystickName(index-1));
+	lua_pushstring(L, SDL_JoystickName(index));
 	return 1;
 }
 
 static int Lua_Joystick_open(lua_State *L) {
-	int index = luaL_checkint(L, 1);
+	int index = luaL_checkint(L, 1)-1;
 	SDL_Joystick **ptr;
-	SDL_Joystick *joystick = SDL_JoystickOpen(index-1);
+	SDL_Joystick *joystick = SDL_JoystickOpen(index);
 	
 	if (joystick == NULL) {
 		lua_pushnil(L);
@@ -50,9 +50,17 @@ static int Lua_Joystick_open(lua_State *L) {
 	lua_pushliteral(L, "Scrupp:joystick_table");
 	lua_rawget(L, LUA_REGISTRYINDEX);
 	lua_pushvalue(L, -2);
-	lua_rawseti(L, -2, index-1);
+	lua_rawseti(L, -2, index);
 	lua_pop(L, 1);
 	
+	return 1;
+}
+
+static int Lua_Joystick_get(lua_State *L) {
+	int index = luaL_checkint(L, 1)-1;
+	lua_pushliteral(L, "Scrupp:joystick_table");
+	lua_rawget(L, LUA_REGISTRYINDEX);
+	lua_rawgeti(L, -1, index);
 	return 1;
 }
 
@@ -172,6 +180,7 @@ static const struct luaL_Reg joysticklib [] = {
 	{"getJoystickCount", Lua_Joystick_getNumber},
 	{"getJoystickName", Lua_Joystick_getNameForIndex},
 	{"openJoystick", Lua_Joystick_open},
+	{"getJoystick", Lua_Joystick_get},
 	{NULL, NULL}
 };
 
