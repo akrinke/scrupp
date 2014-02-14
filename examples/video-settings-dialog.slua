@@ -5,12 +5,12 @@
 --]]
 
 require "console"
-local videoSettingsDialog = require "interface.videoSettingsDialog"
+local dlg = require "interface.video-settings-dialog"
 
 local c = Console()
 local modes = scrupp.getFullscreenModes()
 
-videoSettingsDialog.show(modes, function(w, h, f)
+dlg.show(modes, function(w, h, f)
     scrupp.init("Main Window", w, h, 32, f)
     c:toggle()
     c:printf("Resolution %d x %d was selected.", w, h)

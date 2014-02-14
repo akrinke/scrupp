@@ -1,5 +1,5 @@
 --[[
-	$Id$
+    $Id$
     Video Settings Dialog for setting resolution and fullscreen/windows mode.
     See examples/videoSettingsDialog.slua for a demo.
 ]]--
@@ -25,7 +25,7 @@ function videoSettingsDialog.show(modes, callback)
         error("no video modes available")
     end
     if count == 1 then return modes[1] end
-    
+
     scrupp.init("Video Settings", 110, 190, 32, false)
 
     background = interface.addDesktop()

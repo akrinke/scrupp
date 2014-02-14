@@ -9,6 +9,6 @@ example_DATA = \
 	keyboard.slua \
 	luasocket.slua \
 	mouse.slua \
-	videoSettingsDialog.slua
+	video-settings-dialog.slua
 	
 EXTRA_DIST = $(example_DATA)
