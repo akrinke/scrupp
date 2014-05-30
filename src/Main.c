@@ -131,6 +131,12 @@ static inline double get_time(void) {
 
 /* Lua functions */
 
+static int Lua_OS_setenv(lua_State *L) {
+	const char* str = luaL_checkstring(L, 1);
+	lua_pushboolean(L, SDL_putenv(strdup(str)) == 0);
+	return 1;
+}
+
 static int Lua_Main_setDelta(lua_State *L) {
 	minimumDelta = luaL_checknumber(L, 1);
 	return 0;
@@ -183,7 +189,7 @@ int main(int argc, char *argv[]) {
 	if (argc > 1) {
 		n = 1;
 		if (strcmp(argv[1], "--") != 0)
-			filename = argv[1];			
+			filename = argv[1];
 	} else {
 		n = argc - 1;
 	}
@@ -194,6 +200,11 @@ int main(int argc, char *argv[]) {
 	FS_Init(L, argv, &filename);	/* initialize virtual filesystem */
 
 	/* register Lua functions */
+	lua_getglobal(L, "os");
+	lua_pushcfunction(L, Lua_OS_setenv);
+	lua_setfield(L, -2, "setenv");
+	lua_pop(L, 1);
+
 	lua_newtable(L);
 	luaopen_main(L, NULL);
 	luaopen_fileio(L, NULL);
@@ -240,7 +251,7 @@ int main(int argc, char *argv[]) {
 	lua_pushcfunction(L, luaopen_werechip);
 	lua_setfield(L, -2, "werechip");
 	
-	lua_pop(L, 2);	
+	lua_pop(L, 2);
 	
 	/* push the error function for the protected calls later on */
 	lua_pushcfunction(L, error_function);
@@ -367,7 +378,7 @@ int main(int argc, char *argv[]) {
 				lua_pushliteral(L, "Scrupp:key_table");
 				lua_rawget(L, LUA_REGISTRYINDEX);
 				lua_rawgeti(L, -1, event.key.keysym.sym);
-				lua_remove(L, -2); /* remove the key_table */				
+				lua_remove(L, -2); /* remove the key_table */
 				if ((lua_pcall(L, 1, 0, -4) != 0) && !check_for_exit(L)) {
 					error(L, "Error running main.keyreleased:\n\t%s\n", lua_tostring(L, -1));
 				}
