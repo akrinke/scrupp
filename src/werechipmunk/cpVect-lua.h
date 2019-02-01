@@ -23,7 +23,7 @@
 #ifndef CPVECT_LUA_H
 #define CPVECT_LUA_H
 
-inline cpVect check_cpVect(lua_State *L, int index);
-inline void push_cpVect(lua_State *L, cpVect v);
+extern cpVect check_cpVect(lua_State *L, int index);
+extern void push_cpVect(lua_State *L, cpVect v);
 
 #endif
