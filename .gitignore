@@ -1,0 +1,13 @@
+*.[ao]
+scrupp
+
+aclocal.m4
+autom4te.cache
+config.log
+config.status
+configure
+.deps
+.dirstamp
+Makefile
+Makefile.in
+platforms/unix/
